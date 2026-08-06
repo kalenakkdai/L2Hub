@@ -81,3 +81,30 @@ a role is a privileged operation performed by staff.
 4. The caller's role is loaded from `profiles` — never trusted from the token.
 
 `GET /auth/me` returns the current caller's profile.
+
+## Frontend routes
+
+| Route | Access | Purpose |
+|---------------|-----------------|--------------------------------------|
+| `/` | Any | Redirects: signed in → `/dashboard`, otherwise → `/login` |
+| `/login` | Signed out | Email/password sign-in. Signed-in visitors are sent to `/dashboard`. |
+| `/dashboard` | Signed in | Shows the caller's name and role from `/auth/me`, plus logout. |
+| `/dev/health` | Any | Backend health check. Unauthenticated on purpose — diagnostics must work when sign-in does not. |
+
+### Session handling
+
+`AuthProvider` is the single owner of session state. The Supabase client
+persists the session and refreshes the access token on its own, so:
+
+- **The app never stores a second copy of the token.** `apiFetch` reads it
+  from the live session on every request, which means it cannot go stale.
+- **Refresh restores the session** through `getSession()` on mount. A
+  `loading` state prevents the login page flashing before it resolves.
+- **Expired sessions** are caught from either direction: the Supabase client
+  emits `SIGNED_OUT` when a refresh token can no longer be renewed, and a 401
+  from the backend raises `SessionExpiredError`. Both paths sign out, clear
+  the TanStack Query cache, and land on `/login` with an explanation.
+- **Logout** does the same, minus the explanation.
+
+Clearing the query cache on sign-out matters: cached responses belong to the
+user who just left and must not survive into the next session.

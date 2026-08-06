@@ -1,12 +1,14 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { HomePage } from './pages/HomePage'
+import { BrowserRouter } from 'react-router-dom'
+import { AppRoutes } from './AppRoutes'
+import { AuthProvider } from './auth/AuthProvider'
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-      </Routes>
+      {/* Inside the router so auth-aware components can redirect. */}
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   )
 }

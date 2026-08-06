@@ -1,7 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { fetchHealth } from '../api/health'
 
-export function HomePage() {
+/**
+ * Developer diagnostics at /dev/health. Deliberately unauthenticated: it
+ * checks that the frontend can reach the backend, which needs to work even
+ * when sign-in does not.
+ */
+export function DevHealthPage() {
   const healthQuery = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth,
@@ -38,6 +44,10 @@ export function HomePage() {
             </p>
           )}
         </section>
+
+        <Link to="/" className="text-sm text-slate-500 underline hover:text-slate-700">
+          Back to L2 Hub
+        </Link>
       </div>
     </main>
   )
