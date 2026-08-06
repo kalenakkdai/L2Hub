@@ -29,6 +29,55 @@
 | Backend  | http://127.0.0.1:8000       |
 | Health   | http://127.0.0.1:8000/health |
 
-## Data store (local)
+## Data store
 
-SQLite is used for local development. Production database choices can come later.
+Supabase (hosted Postgres) is the database, and Supabase Auth issues user
+identities. Schema changes are versioned SQL files in `supabase/migrations/`.
+
+- `public.profiles` holds app-level identity (name, role), one row per
+  `auth.users` row, created automatically by a signup trigger.
+- Row Level Security is enabled on every application table.
+- The FastAPI backend connects with a privileged role and therefore bypasses
+  RLS; it performs its own authorization. RLS protects direct client access.
+
+SQLite remains the fallback for tests and for running without a Supabase
+project configured.
+
+## Roles
+
+Four roles, least- to most-privileged. The order is declared identically in
+the `public.user_role` Postgres enum and in `backend/app/core/permissions.py`;
+keep them in sync when adding a role.
+
+| Role | Meaning |
+|----------------|---------------------------------------------------|
+| `student` | Default. Every account starts here. |
+| `committee_head` | Leads one committee. |
+| `officer` | Runs the organisation: sessions, grading, roster. |
+| `adviser` | Staff supervisor. Full access. |
+
+Two groupings are used for authorization:
+
+- **Staff** — `officer`, `adviser`. Organisation-wide authority, including
+  reading the full roster.
+- **Leadership** — `committee_head`, `officer`, `adviser`. Leads other members.
+
+`committee_head` is intentionally *not* staff. A committee head should see
+their own committee, not every user, and there is no committees table yet to
+scope that against — so the broad grant is withheld rather than given now and
+revoked later. Backend gates live in `app/api/deps.py`
+(`require_roles`, `require_min_role`, `require_staff`, `require_leadership`).
+
+Role assignment is deliberately one-directional: signup always creates a
+`student`, regardless of what the client sends in its signup metadata. Raising
+a role is a privileged operation performed by staff.
+
+## Authentication flow
+
+1. The frontend signs in through Supabase Auth and receives an access token.
+2. It calls the backend with `Authorization: Bearer <token>`.
+3. The backend verifies the signature (JWKS for ES256/RS256, shared secret for
+   legacy HS256) plus issuer, audience, and expiry.
+4. The caller's role is loaded from `profiles` — never trusted from the token.
+
+`GET /auth/me` returns the current caller's profile.
