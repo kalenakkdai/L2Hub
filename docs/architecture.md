@@ -8,7 +8,7 @@
 
 ## Frontend responsibilities
 
-- Pages and forms for students, officers, and advisers
+- Pages and forms for Members, Committee Heads, ASBO, President, and AC
 - Live countdown display using backend-provided `ends_at`
 - WebSocket client for live participant status
 - Calling backend APIs (never treating frontend-only checks as security)
@@ -34,8 +34,10 @@
 Supabase (hosted Postgres) is the database, and Supabase Auth issues user
 identities. Schema changes are versioned SQL files in `supabase/migrations/`.
 
-- `public.profiles` holds app-level identity (name, role), one row per
-  `auth.users` row, created automatically by a signup trigger.
+- `public.profiles` holds app-level identity, one row per `auth.users` row,
+  created automatically by a signup trigger.
+- Roles are normalized through `roles` and `user_roles`; profiles do not have
+  a role enum or role column. Every signup receives Member.
 - Row Level Security is enabled on every application table.
 - The FastAPI backend connects with a privileged role and therefore bypasses
   RLS; it performs its own authorization. RLS protects direct client access.
@@ -45,32 +47,24 @@ project configured.
 
 ## Roles
 
-Four roles, least- to most-privileged. The order is declared identically in
-the `public.user_role` Postgres enum and in `backend/app/core/permissions.py`;
-keep them in sync when adding a role.
+Five protected system roles (Discord-inspired hierarchy). See
+[`docs/permissions.md`](permissions.md) for permission keys, scopes, and the
+capability matrix.
 
-| Role | Meaning |
-|----------------|---------------------------------------------------|
-| `student` | Default. Every account starts here. |
-| `committee_head` | Leads one committee. |
-| `officer` | Runs the organisation: sessions, grading, roster. |
-| `adviser` | Staff supervisor. Full access. |
+| Role | Slug | Rank |
+|------|------|------|
+| AC | `ac` | 100 |
+| President | `president` | 100 |
+| ASBO | `asbo` | 80 |
+| Committee Head | `committee_head` | 50 |
+| Member | `member` | 10 |
 
-Two groupings are used for authorization:
+AC and President are peer super-admins. Effective access is resolved from role
+assignments + overrides. Backend enforcement lives in
+`app/services/authorization.py`.
 
-- **Staff** — `officer`, `adviser`. Organisation-wide authority, including
-  reading the full roster.
-- **Leadership** — `committee_head`, `officer`, `adviser`. Leads other members.
-
-`committee_head` is intentionally *not* staff. A committee head should see
-their own committee, not every user, and there is no committees table yet to
-scope that against — so the broad grant is withheld rather than given now and
-revoked later. Backend gates live in `app/api/deps.py`
-(`require_roles`, `require_min_role`, `require_staff`, `require_leadership`).
-
-Role assignment is deliberately one-directional: signup always creates a
-`student`, regardless of what the client sends in its signup metadata. Raising
-a role is a privileged operation performed by staff.
+`committee_head` is intentionally *not* staff. A committee head sees their own
+committee, not every user. Feedback remains AC-only.
 
 ## Authentication flow
 
@@ -78,7 +72,8 @@ a role is a privileged operation performed by staff.
 2. It calls the backend with `Authorization: Bearer <token>`.
 3. The backend verifies the signature (JWKS for ES256/RS256, shared secret for
    legacy HS256) plus issuer, audience, and expiry.
-4. The caller's role is loaded from `profiles` — never trusted from the token.
+4. The caller's active roles are loaded from `user_roles` — never trusted from
+   the token.
 
 `GET /auth/me` returns the current caller's profile.
 

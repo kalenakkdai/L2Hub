@@ -1,0 +1,1 @@
+"""Event Summary service package."""

@@ -35,13 +35,13 @@ describe('Sidebar', () => {
   beforeEach(() => mock.__setSession(makeSession()))
 
   it('is a labelled navigation landmark', () => {
-    renderChrome(<Sidebar name="Ada Lovelace" role="officer" />)
+    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
   })
 
   it('marks the current route as the active page', () => {
-    renderChrome(<Sidebar name="Ada Lovelace" role="officer" />)
+    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
       'aria-current',
@@ -50,7 +50,7 @@ describe('Sidebar', () => {
   })
 
   it('renders unbuilt destinations as inert rows, not dead links', () => {
-    renderChrome(<Sidebar name="Ada Lovelace" role="officer" />)
+    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
 
     // "My tasks" has no route yet, so it must not be a link.
     expect(screen.queryByRole('link', { name: /My tasks/ })).not.toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('Sidebar', () => {
 
   it('signs out from the user menu', async () => {
     const user = userEvent.setup()
-    renderChrome(<Sidebar name="Ada Lovelace" role="officer" />)
+    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 
@@ -78,7 +78,7 @@ describe('MobileNavigation', () => {
   beforeEach(() => mock.__setSession(makeSession()))
 
   it('keeps the drawer closed until asked', () => {
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute(
@@ -89,7 +89,7 @@ describe('MobileNavigation', () => {
 
   it('opens a labelled dialog containing the same destinations', async () => {
     const user = userEvent.setup()
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
 
@@ -99,7 +99,7 @@ describe('MobileNavigation', () => {
 
   it('moves focus into the drawer when it opens', async () => {
     const user = userEvent.setup()
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
 
@@ -108,7 +108,7 @@ describe('MobileNavigation', () => {
 
   it('closes on Escape', async () => {
     const user = userEvent.setup()
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
     await user.keyboard('{Escape}')
@@ -118,7 +118,7 @@ describe('MobileNavigation', () => {
 
   it('closes after choosing a destination', async () => {
     const user = userEvent.setup()
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
     await user.click(screen.getByRole('link', { name: 'Dashboard' }))
@@ -128,7 +128,7 @@ describe('MobileNavigation', () => {
 
   it('locks background scrolling while open and restores it after', async () => {
     const user = userEvent.setup()
-    renderChrome(<MobileNavigation name="Ada Lovelace" role="officer" />)
+    renderChrome(<MobileNavigation name="Ada Lovelace" role="asbo" />)
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }))
     expect(document.body.style.overflow).toBe('hidden')

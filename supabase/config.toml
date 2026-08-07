@@ -4,8 +4,8 @@
 # (project ref, database password, API keys) live in .env files that are
 # gitignored, or in the Supabase dashboard.
 #
-# Migrations in supabase/migrations/ are applied manually via the Supabase
-# SQL Editor for this project. See docs/setup.md.
+# Migrations in supabase/migrations/ are applied with `supabase db push` after
+# linking the project. Do not make unversioned dashboard schema edits.
 
 project_id = "l2hub"
 

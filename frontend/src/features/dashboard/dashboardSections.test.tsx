@@ -13,17 +13,17 @@ const renderInRouter = (ui: React.ReactElement) =>
 
 describe('PageHeader', () => {
   it('greets by first name and shows role and committee', () => {
-    render(<PageHeader name="Ada Lovelace" role="officer" committee="Events Committee" />)
+    render(<PageHeader name="Ada Lovelace" role="asbo" committee="Events Committee" />)
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ada')
-    expect(screen.getByText('Officer')).toBeInTheDocument()
+    expect(screen.getByText('ASBO')).toBeInTheDocument()
     expect(screen.getByText('Events Committee')).toBeInTheDocument()
   })
 
   it('omits the committee when the member has none', () => {
-    render(<PageHeader name="Ada Lovelace" role="student" committee={null} />)
+    render(<PageHeader name="Ada Lovelace" role="member" committee={null} />)
 
-    expect(screen.getByText('Student')).toBeInTheDocument()
+    expect(screen.getByText('Member')).toBeInTheDocument()
     expect(screen.queryByText('Events Committee')).not.toBeInTheDocument()
   })
 })

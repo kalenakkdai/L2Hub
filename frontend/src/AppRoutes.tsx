@@ -1,6 +1,16 @@
 import { Route, Routes } from 'react-router-dom'
 import { HomeRedirect } from './components/HomeRedirect'
 import { RequireAuth } from './components/RequireAuth'
+import { UsersPage } from './features/admin/users/UsersPage'
+import {
+  AgendaPage,
+  DebriefsPage,
+  EventSummaryPage,
+  EventsPage,
+  GenerationTheaterPage,
+  LiveBubblesPage,
+  WrappedPage,
+} from './features/event-summary'
 import { DashboardPage } from './pages/DashboardPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
@@ -43,6 +53,70 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireAuth>
+            <UsersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events"
+        element={
+          <RequireAuth>
+            <EventsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/debriefs"
+        element={
+          <RequireAuth>
+            <DebriefsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events/:eventId/summary"
+        element={
+          <RequireAuth>
+            <EventSummaryPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events/:eventId/summary/generating"
+        element={
+          <RequireAuth>
+            <GenerationTheaterPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events/:eventId/wrapped"
+        element={
+          <RequireAuth>
+            <WrappedPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events/:eventId/agenda"
+        element={
+          <RequireAuth>
+            <AgendaPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/events/:eventId/live"
+        element={
+          <RequireAuth>
+            <LiveBubblesPage />
           </RequireAuth>
         }
       />

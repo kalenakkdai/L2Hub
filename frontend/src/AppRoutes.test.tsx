@@ -27,7 +27,7 @@ const PROFILE = {
   id: '11111111-1111-4111-8111-111111111111',
   email: 'ada@example.edu',
   full_name: 'Ada Lovelace',
-  role: 'officer',
+  role: 'asbo',
   created_at: '2026-01-01T00:00:00Z',
 }
 

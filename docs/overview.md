@@ -8,7 +8,7 @@ The first launch feature is a synchronized five-minute event debrief for about 5
 
 Core workflow:
 
-1. An ASB officer or adviser starts a five-minute debrief session.
+1. An ASBO or AC starts a five-minute debrief session.
 2. Students rate the event and participating committees.
 3. Students enter exactly three strengths and three improvements.
 4. Students may request materials with purchasing links.
@@ -21,9 +21,11 @@ Core workflow:
 
 ## Roles
 
-- **student** — draft and submit own debrief; view own grades and published summaries
-- **officer** — manage events/sessions, live progress, agendas
-- **adviser** — officer permissions plus reopen/override and user management
+- **Member** — submit own debrief; view own grades and published summaries
+- **Committee Head** — Member access plus scoped committee operations
+- **ASBO** — manage organization-wide events, sessions, and live progress
+- **President** — peer super-admin with AC
+- **AC** — unrestricted administration, including feedback and role management
 
 ## Important design rules
 

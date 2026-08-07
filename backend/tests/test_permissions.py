@@ -8,24 +8,20 @@ from app.api import deps
 from app.core import permissions
 from app.db.session import get_db
 
-ALL_ROLES = ("student", "committee_head", "officer", "adviser")
+ALL_ROLES = ("member", "committee_head", "asbo", "ac", "president")
 
 
-# ---------------------------------------------------------------------------
-# Role hierarchy
-# ---------------------------------------------------------------------------
-
-
-def test_all_four_roles_are_defined():
+def test_all_system_roles_are_defined():
     assert permissions.ROLE_ORDER == ALL_ROLES
 
 
 def test_roles_are_ordered_least_to_most_privileged():
     ranks = [permissions.rank(role) for role in ALL_ROLES]
     assert ranks == sorted(ranks)
-    assert permissions.rank("student") < permissions.rank("committee_head")
-    assert permissions.rank("committee_head") < permissions.rank("officer")
-    assert permissions.rank("officer") < permissions.rank("adviser")
+    assert permissions.rank("member") < permissions.rank("committee_head")
+    assert permissions.rank("committee_head") < permissions.rank("asbo")
+    assert permissions.rank("asbo") < permissions.rank("ac")
+    assert permissions.rank("president") == permissions.rank("ac")
 
 
 @pytest.mark.parametrize("role", ALL_ROLES)
@@ -33,7 +29,10 @@ def test_every_role_is_valid(role):
     assert permissions.is_valid_role(role)
 
 
-@pytest.mark.parametrize("role", ["", "admin", "Student", "committee-head", "teacher"])
+@pytest.mark.parametrize(
+    "role",
+    ["", "admin", "student", "officer", "adviser", "committee-head", "teacher"],
+)
 def test_unknown_roles_are_invalid(role):
     assert not permissions.is_valid_role(role)
     with pytest.raises(ValueError):
@@ -41,35 +40,38 @@ def test_unknown_roles_are_invalid(role):
 
 
 def test_has_at_least_is_inclusive_of_the_named_role():
-    assert permissions.has_at_least("officer", "officer")
-    assert permissions.has_at_least("adviser", "officer")
-    assert not permissions.has_at_least("committee_head", "officer")
-    assert not permissions.has_at_least("student", "committee_head")
-    assert permissions.has_at_least("committee_head", "student")
+    assert permissions.has_at_least("asbo", "asbo")
+    assert permissions.has_at_least("ac", "asbo")
+    assert permissions.has_at_least("president", "asbo")
+    assert not permissions.has_at_least("committee_head", "asbo")
+    assert not permissions.has_at_least("member", "committee_head")
+    assert permissions.has_at_least("committee_head", "member")
 
 
-def test_staff_excludes_students_and_committee_heads():
-    assert permissions.is_staff("officer")
-    assert permissions.is_staff("adviser")
+def test_staff_excludes_members_and_committee_heads():
+    assert permissions.is_staff("asbo")
+    assert permissions.is_staff("ac")
+    assert permissions.is_staff("president")
     assert not permissions.is_staff("committee_head")
-    assert not permissions.is_staff("student")
+    assert not permissions.is_staff("member")
 
 
-def test_leadership_includes_committee_heads_but_not_students():
+def test_leadership_includes_committee_heads_but_not_members():
     assert permissions.is_leadership("committee_head")
-    assert permissions.is_leadership("officer")
-    assert permissions.is_leadership("adviser")
-    assert not permissions.is_leadership("student")
+    assert permissions.is_leadership("asbo")
+    assert permissions.is_leadership("ac")
+    assert permissions.is_leadership("president")
+    assert not permissions.is_leadership("member")
 
 
-# ---------------------------------------------------------------------------
-# Role gates as FastAPI dependencies
-# ---------------------------------------------------------------------------
+def test_president_is_superadmin_peer_of_ac():
+    assert permissions.is_superadmin("president")
+    assert permissions.is_superadmin("ac")
+    assert not permissions.is_superadmin("asbo")
 
 
 @pytest.fixture
 def gated_app(db_session):
-    """A throwaway app exposing one endpoint per gate."""
     app = FastAPI()
 
     @app.get("/staff-only", dependencies=[Depends(deps.require_staff)])
@@ -80,12 +82,12 @@ def gated_app(db_session):
     def leadership_only():
         return {"ok": True}
 
-    @app.get("/advisers-only", dependencies=[Depends(deps.require_roles("adviser"))])
-    def advisers_only():
+    @app.get("/ac-only", dependencies=[Depends(deps.require_roles("ac"))])
+    def ac_only():
         return {"ok": True}
 
-    @app.get("/officer-or-above", dependencies=[Depends(deps.require_min_role("officer"))])
-    def officer_or_above():
+    @app.get("/asbo-or-above", dependencies=[Depends(deps.require_min_role("asbo"))])
+    def asbo_or_above():
         return {"ok": True}
 
     app.dependency_overrides[get_db] = lambda: db_session
@@ -104,7 +106,13 @@ def call(client, path, token):
 
 @pytest.mark.parametrize(
     ("role", "expected"),
-    [("student", 403), ("committee_head", 403), ("officer", 200), ("adviser", 200)],
+    [
+        ("member", 403),
+        ("committee_head", 403),
+        ("asbo", 200),
+        ("ac", 200),
+        ("president", 200),
+    ],
 )
 def test_staff_gate(gated_client, make_token, make_profile, role, expected):
     profile = make_profile(user_id=uuid.uuid4(), role=role)
@@ -114,7 +122,13 @@ def test_staff_gate(gated_client, make_token, make_profile, role, expected):
 
 @pytest.mark.parametrize(
     ("role", "expected"),
-    [("student", 403), ("committee_head", 200), ("officer", 200), ("adviser", 200)],
+    [
+        ("member", 403),
+        ("committee_head", 200),
+        ("asbo", 200),
+        ("ac", 200),
+        ("president", 200),
+    ],
 )
 def test_leadership_gate_admits_committee_heads(
     gated_client, make_token, make_profile, role, expected
@@ -126,21 +140,33 @@ def test_leadership_gate_admits_committee_heads(
 
 @pytest.mark.parametrize(
     ("role", "expected"),
-    [("student", 403), ("committee_head", 403), ("officer", 403), ("adviser", 200)],
+    [
+        ("member", 403),
+        ("committee_head", 403),
+        ("asbo", 403),
+        ("ac", 200),
+        ("president", 403),
+    ],
 )
 def test_exact_role_gate(gated_client, make_token, make_profile, role, expected):
     profile = make_profile(user_id=uuid.uuid4(), role=role)
-    response = call(gated_client, "/advisers-only", make_token(sub=profile.id))
+    response = call(gated_client, "/ac-only", make_token(sub=profile.id))
     assert response.status_code == expected
 
 
 @pytest.mark.parametrize(
     ("role", "expected"),
-    [("student", 403), ("committee_head", 403), ("officer", 200), ("adviser", 200)],
+    [
+        ("member", 403),
+        ("committee_head", 403),
+        ("asbo", 200),
+        ("ac", 200),
+        ("president", 200),
+    ],
 )
 def test_minimum_role_gate(gated_client, make_token, make_profile, role, expected):
     profile = make_profile(user_id=uuid.uuid4(), role=role)
-    response = call(gated_client, "/officer-or-above", make_token(sub=profile.id))
+    response = call(gated_client, "/asbo-or-above", make_token(sub=profile.id))
     assert response.status_code == expected
 
 
@@ -149,8 +175,11 @@ def test_gates_still_require_authentication(gated_client):
 
 
 def test_unknown_role_in_the_database_fails_closed(gated_client, make_token, make_profile):
-    """A role this build doesn't know must not be treated as privileged."""
     profile = make_profile(user_id=uuid.uuid4(), role="superuser")
+    assert call(gated_client, "/asbo-or-above", make_token(sub=profile.id)).status_code == 403
+    assert call(gated_client, "/staff-only", make_token(sub=profile.id)).status_code == 403
 
-    assert call(gated_client, "/officer-or-above", make_token(sub=profile.id)).status_code == 403
+
+def test_obsolete_role_names_fail_closed(gated_client, make_token, make_profile):
+    profile = make_profile(user_id=uuid.uuid4(), role="obsolete")
     assert call(gated_client, "/staff-only", make_token(sub=profile.id)).status_code == 403

@@ -1,25 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { NAV_SECTIONS } from './navigation'
+import { filterNavSections, NAV_SECTIONS } from './navigation'
 import { NavItem } from './NavItem'
+import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
 import { Wordmark } from './Wordmark'
 
 type MobileNavigationProps = {
   name: string
   role: string
+  permissions?: string[]
 }
 
 /**
  * Compact navigation below lg: a sticky bar plus a slide-over drawer holding
  * the same destinations as the desktop sidebar.
  */
-export function MobileNavigation({ name, role }: MobileNavigationProps) {
+export function MobileNavigation({
+  name,
+  role,
+  permissions,
+}: MobileNavigationProps) {
   const [open, setOpen] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const sections = filterNavSections(NAV_SECTIONS, permissions)
+  const showNotifications = permissions?.includes('notifications.view_own') ?? false
 
-  // Escape closes, focus moves into the drawer, and the page behind it stops
-  // scrolling — the three things a keyboard or screen reader user needs.
   useEffect(() => {
     if (!open) return
 
@@ -53,13 +59,11 @@ export function MobileNavigation({ name, role }: MobileNavigationProps) {
         </button>
 
         <Wordmark />
+        <div className="ml-auto">{showNotifications ? <NotificationBell /> : null}</div>
       </header>
 
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          {/* Mouse convenience only, and hidden from assistive tech: it would
-           * otherwise duplicate the close button's accessible name. Keyboard
-           * users close with Escape or the button inside the drawer. */}
           <div
             aria-hidden="true"
             onClick={() => setOpen(false)}
@@ -87,7 +91,7 @@ export function MobileNavigation({ name, role }: MobileNavigationProps) {
             </div>
 
             <nav aria-label="Main" className="flex-1 overflow-y-auto px-6 pb-4">
-              {NAV_SECTIONS.map((section, index) => (
+              {sections.map((section, index) => (
                 <div
                   key={section.title ?? 'primary'}
                   className={index > 0 ? 'mt-6' : undefined}

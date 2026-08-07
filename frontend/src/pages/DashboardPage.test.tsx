@@ -28,7 +28,7 @@ function profile(overrides: Record<string, unknown> = {}) {
     id: '11111111-1111-4111-8111-111111111111',
     email: 'ada@example.edu',
     full_name: 'Ada Lovelace',
-    role: 'officer',
+    role: 'asbo',
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   }
@@ -54,7 +54,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
     // Greeting uses the first name; the sidebar carries the full name.
     expect(inPage().getByText(/Ada/)).toBeInTheDocument()
-    expect(inPage().getByText('Officer')).toBeInTheDocument()
+    expect(inPage().getByText('ASBO')).toBeInTheDocument()
   })
 
   it('requests /auth/me with the bearer token', async () => {
@@ -70,10 +70,11 @@ describe('DashboardPage', () => {
   })
 
   it.each([
-    ['student', 'Student'],
+    ['member', 'Member'],
     ['committee_head', 'Committee Head'],
-    ['officer', 'Officer'],
-    ['adviser', 'Adviser'],
+    ['asbo', 'ASBO'],
+    ['ac', 'AC'],
+    ['president', 'President'],
   ])('renders the %s role as "%s"', async (role, label) => {
     mockApi(profile({ role }))
 

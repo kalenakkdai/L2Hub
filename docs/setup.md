@@ -5,6 +5,7 @@
 - Python 3.12
 - Node.js 20+ and npm
 - Git
+- Supabase CLI (for linking and applying hosted migrations)
 
 ## Backend
 
@@ -49,33 +50,35 @@ signing secret.
 
 ### Applying migrations
 
-Migrations live in `supabase/migrations/` as plain SQL, newest last. To apply
-one, open the Supabase dashboard → SQL Editor, paste the file's contents, and
-run it. Apply files in filename order and only once each.
+Migrations live in `supabase/migrations/` as versioned SQL. Link the project,
+review the pending diff, then apply in filename order:
 
-`20260805000000_create_profiles.sql` creates:
+```bash
+supabase link --project-ref <project-ref>
+supabase db push --dry-run
+supabase db push
+```
 
-- `public.user_role` — enum of `student`, `committee_head`, `officer`,
-  `adviser`, declared least- to most-privileged
-- `public.profiles` — one row per `auth.users` row
-- `on_auth_user_created` — trigger that creates a profile on signup
-- `public.is_staff()` — helper used by the roster read policy
-- Row Level Security policies, plus a trigger blocking role self-promotion
+Do not edit production tables manually in the dashboard. A schema or policy
+change must be a new migration.
 
-To verify it worked, sign up a test user and confirm a matching row appears in
-`public.profiles` with role `student`.
+The complete sequence creates profiles/RBAC/event tables, then
+`20260807020000_normalize_auth_and_rls.sql` removes the old role enum, seeds
+the five-role hierarchy, assigns Member by default, and installs final RLS.
+See `docs/authentication.md` for every migration, policy, helper, and trigger.
+
+To verify it worked, sign up a test user and confirm:
+
+- a matching row appears in `public.profiles`;
+- there is no role column on that row;
+- `public.user_roles` assigns the protected `member` role.
 
 ### Granting a role
 
-Signup always produces a `student`; the trigger ignores any role the client
-puts in its signup metadata. To promote someone, run this in the SQL Editor
-(which connects as a privileged role, so it passes the self-promotion guard):
-
-```sql
-update public.profiles
-set role = 'officer'          -- or committee_head / adviser
-where email = 'person@example.edu';
-```
+Signup always assigns Member. Elevated access is a row in `user_roles`, never
+profile metadata or a JWT claim. Assign roles only through a caller holding
+`roles.assign` (or a trusted backend maintenance command). Committee Head
+assignments must include `committee_id`.
 
 ### How auth works
 
@@ -83,7 +86,7 @@ The frontend obtains a Supabase access token and sends it as
 `Authorization: Bearer <token>`. The backend verifies the signature itself —
 against the project's JWKS endpoint for ES256/RS256 tokens, or the shared
 secret for legacy HS256 — and checks the issuer, audience, and expiry. Roles
-are read from the `profiles` table, never from claims in the token.
+are read from `user_roles`, never from claims in the token.
 
 Note that the backend connects to Postgres with a privileged role, which
 bypasses RLS. RLS is the safety net for direct client access; the backend's

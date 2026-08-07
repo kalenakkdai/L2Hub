@@ -57,9 +57,9 @@ describe('apiFetch', () => {
   })
 
   it('returns the parsed body on success', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse(200, { role: 'officer' }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse(200, { role: 'asbo' }))
 
-    await expect(apiFetch('/auth/me')).resolves.toEqual({ role: 'officer' })
+    await expect(apiFetch('/auth/me')).resolves.toEqual({ role: 'asbo' })
   })
 
   it('throws SessionExpiredError when there is no session', async () => {
@@ -80,13 +80,13 @@ describe('apiFetch', () => {
 
   it('throws ApiError carrying the status and detail for other failures', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      mockResponse(403, { detail: 'Requires the officer role or higher.' }),
+      mockResponse(403, { detail: 'Requires the ASBO role or higher.' }),
     )
 
     await expect(apiFetch('/roster')).rejects.toMatchObject({
       name: 'ApiError',
       status: 403,
-      message: 'Requires the officer role or higher.',
+      message: 'Requires the ASBO role or higher.',
     })
   })
 

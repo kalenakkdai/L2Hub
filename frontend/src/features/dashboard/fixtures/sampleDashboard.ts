@@ -29,14 +29,14 @@ export const SAMPLE_DASHBOARD: DashboardData = {
 
   featured: {
     kind: 'event',
-    title: 'Spring Formal — Final Planning Session',
+    title: 'Maze Day 2026 — Event Summary',
     summary:
-      'Last run-through before ticket sales open. Bring your committee’s vendor confirmations and the updated budget sheet.',
-    startsAt: hoursFromNow(28),
-    location: 'Room 214 · Student Center',
-    status: { label: 'Response needed', tone: 'warning' },
-    actionLabel: 'RSVP',
-    to: '/events',
+      'Debrief complete. Request generation or open the live participant monitor.',
+    startsAt: hoursFromNow(-20),
+    location: 'Campus · Main Quad',
+    status: { label: 'Not Requested', tone: 'warning' },
+    actionLabel: 'Open event',
+    to: '/events/maze-day-2026/summary',
   },
 
   progress: {
@@ -99,7 +99,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
       id: 'concerns',
       group: 'committee',
       title: 'Anonymous concerns',
-      description: 'Raise something privately with your adviser.',
+      description: 'Raise something privately with an AC.',
       icon: 'ShieldQuestion',
       to: '/concerns',
     },
@@ -152,9 +152,19 @@ export const SAMPLE_DASHBOARD: DashboardData = {
       id: 'wrapped',
       group: 'leadership',
       title: 'Wrapped',
-      description: 'End-of-year recaps for the whole organization.',
+      description: 'Event Summary recaps for completed events.',
       icon: 'BarChart3',
-      to: '/tools/wrapped',
+      to: '/events/maze-day-2026/wrapped',
+      badge: { label: 'Maze Day', tone: 'info' },
+    },
+    {
+      id: 'live-debrief',
+      group: 'events',
+      title: 'Live debrief',
+      description: 'Watch participant bubbles during Maze Day debrief.',
+      icon: 'MessagesSquare',
+      to: '/events/maze-day-2026/live',
+      badge: { label: 'Monitor', tone: 'accent' },
     },
   ],
 

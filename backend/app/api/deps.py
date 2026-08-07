@@ -1,19 +1,17 @@
 import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core import permissions
-from app.core.permissions import UserRole
 from app.core.security import AuthConfigurationError, AuthError, verify_token
 from app.db.session import get_db
 from app.models.profile import Profile
+from app.services import authorization as authz
 
-# auto_error=False so a missing header produces our own 401 with a
-# WWW-Authenticate challenge, rather than FastAPI's bare 403.
 bearer_scheme = HTTPBearer(auto_error=False)
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -23,7 +21,6 @@ _UNAUTHENTICATED = {"WWW-Authenticate": "Bearer"}
 
 
 def get_token_claims(credentials: BearerToken) -> dict:
-    """Verify the bearer token and return its claims."""
     if credentials is None or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,7 +37,6 @@ def get_token_claims(credentials: BearerToken) -> dict:
             headers=_UNAUTHENTICATED,
         ) from exc
     except AuthConfigurationError as exc:
-        # A server-side gap, not a caller mistake — do not imply the token is bad.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Authentication is not configured on this server.",
@@ -51,7 +47,6 @@ TokenClaims = Annotated[dict, Depends(get_token_claims)]
 
 
 def get_current_profile(claims: TokenClaims, db: DbSession) -> Profile:
-    """Load the profile belonging to the verified token's subject."""
     try:
         user_id = uuid.UUID(claims["sub"])
     except (KeyError, ValueError, TypeError) as exc:
@@ -61,11 +56,17 @@ def get_current_profile(claims: TokenClaims, db: DbSession) -> Profile:
             headers=_UNAUTHENTICATED,
         ) from exc
 
-    profile = db.get(Profile, user_id)
+    profile = db.get(
+        Profile,
+        user_id,
+        options=(
+            selectinload(Profile.role_assignments),
+            selectinload(Profile.committee_memberships),
+            selectinload(Profile.permission_overrides),
+        ),
+    )
 
     if profile is None:
-        # The signup trigger should have made this row. Its absence means the
-        # migration has not been applied, or the row was deleted by hand.
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No profile exists for this user.",
@@ -77,50 +78,84 @@ def get_current_profile(claims: TokenClaims, db: DbSession) -> Profile:
 CurrentProfile = Annotated[Profile, Depends(get_current_profile)]
 
 
-def _forbidden(detail: str) -> HTTPException:
-    # 403, not 401: the caller proved who they are, they just lack the role.
+def _forbidden(detail: str | dict) -> HTTPException:
     return HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
-def require_roles(*allowed: UserRole) -> Callable[[Profile], Profile]:
-    """Dependency factory admitting only the listed roles.
+def require_roles(*allowed: str) -> Callable[..., Profile]:
+    allowed_normalized = frozenset(permissions.normalize_role(role) for role in allowed)
 
-    Usage:
-        @router.get("/roster", dependencies=[Depends(require_roles("officer"))])
-    """
-    allowed_set: frozenset[str] = frozenset(allowed)
-
-    def dependency(profile: CurrentProfile) -> Profile:
-        if profile.role not in allowed_set:
-            raise _forbidden(f"Requires one of these roles: {_join(sorted(allowed_set))}.")
+    def dependency(profile: CurrentProfile, db: DbSession) -> Profile:
+        roles = {
+            role["slug"] for role in authz.build_auth_context(db, profile).roles
+        }
+        if roles.isdisjoint(allowed_normalized):
+            raise _forbidden(
+                {
+                    "code": "permission_denied",
+                    "message": "You do not have permission to access this resource.",
+                }
+            )
         return profile
 
     return dependency
 
 
-def require_min_role(minimum: UserRole) -> Callable[[Profile], Profile]:
-    """Dependency factory admitting `minimum` and anything more privileged."""
-
-    def dependency(profile: CurrentProfile) -> Profile:
+def require_min_role(minimum: str) -> Callable[..., Profile]:
+    def dependency(profile: CurrentProfile, db: DbSession) -> Profile:
         try:
-            permitted = permissions.has_at_least(profile.role, minimum)
+            minimum_rank = permissions.rank(minimum)
+            permitted = authz.highest_role_rank(
+                authz.build_auth_context(db, profile)
+            ) >= minimum_rank
         except ValueError as exc:
-            # A role in the database that this build does not know about.
-            # Fail closed rather than guessing where it sits in the hierarchy.
-            raise _forbidden("Your account role is not recognised by this server.") from exc
+            raise _forbidden(
+                {
+                    "code": "permission_denied",
+                    "message": "Your account role is not recognised by this server.",
+                }
+            ) from exc
 
         if not permitted:
-            raise _forbidden(f"Requires the {minimum} role or higher.")
+            raise _forbidden(
+                {
+                    "code": "permission_denied",
+                    "message": "You do not have permission to access this resource.",
+                }
+            )
         return profile
 
     return dependency
 
 
-def _join(roles: Iterable[str]) -> str:
-    return ", ".join(roles)
+def require_permission(
+    permission: str,
+    *,
+    committee_id_param: str | None = None,
+) -> Callable[..., Profile]:
+    """FastAPI dependency factory for permission-key checks.
+
+    If `committee_id_param` is set, the matching path/query value is used as
+    the committee scope for the check.
+    """
+
+    def dependency(
+        profile: CurrentProfile,
+        db: DbSession,
+        committee_id: uuid.UUID | None = None,
+    ) -> Profile:
+        scoped_committee = committee_id
+        authz.require_permission(
+            db,
+            profile,
+            permission,
+            committee_id=scoped_committee,
+        )
+        return profile
+
+    return dependency
 
 
-# Ready-made gates for the common cases.
 require_staff = require_roles(*sorted(permissions.STAFF_ROLES))
 require_leadership = require_roles(*sorted(permissions.LEADERSHIP_ROLES))
 

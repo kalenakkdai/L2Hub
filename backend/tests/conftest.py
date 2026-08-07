@@ -8,14 +8,17 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 from jwt import PyJWKSet
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import app.models  # noqa: F401 — register RBAC tables on Base.metadata
 from app.core import security
 from app.core.config import settings
+from app.db.seed import ensure_catalog
 from app.db.session import Base, get_db
-from app.main import app
+from app.main import app as fastapi_app
+from app.models import Role, UserRoleAssignment
 from app.models.profile import Profile
 
 TEST_SUPABASE_URL = "https://test-project.supabase.co"
@@ -105,7 +108,7 @@ def make_token(signing_key):
 
 @pytest.fixture
 def db_session() -> Iterator[Session]:
-    """An isolated in-memory database with the profiles table created."""
+    """An isolated in-memory database with application tables created."""
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -115,6 +118,7 @@ def db_session() -> Iterator[Session]:
     factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     session = factory()
     try:
+        ensure_catalog(session)
         yield session
     finally:
         session.close()
@@ -125,10 +129,10 @@ def db_session() -> Iterator[Session]:
 @pytest.fixture
 def client(db_session: Session) -> Iterator[TestClient]:
     """A test client whose requests use the in-memory database."""
-    app.dependency_overrides[get_db] = lambda: db_session
-    with TestClient(app) as test_client:
+    fastapi_app.dependency_overrides[get_db] = lambda: db_session
+    with TestClient(fastapi_app) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
+    fastapi_app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -138,20 +142,33 @@ def make_profile(db_session: Session):
     def _make(
         *,
         user_id: uuid.UUID | None = None,
-        email: str = "student@example.edu",
-        full_name: str | None = "Test Student",
-        role: str = "student",
+        email: str = "member@example.edu",
+        full_name: str | None = "Test Member",
+        role: str = "member",
     ) -> Profile:
         profile = Profile(
             id=user_id or uuid.uuid4(),
             email=email,
             full_name=full_name,
-            role=role,
+            status="active",
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
         db_session.add(profile)
+        db_session.flush()
+
+        member_role = db_session.scalar(select(Role).where(Role.slug == "member"))
+        requested_role = db_session.scalar(select(Role).where(Role.slug == role))
+        if member_role is not None:
+            db_session.add(
+                UserRoleAssignment(user_id=profile.id, role_id=member_role.id)
+            )
+        if requested_role is not None and requested_role.slug != "member":
+            db_session.add(
+                UserRoleAssignment(user_id=profile.id, role_id=requested_role.id)
+            )
         db_session.commit()
+        db_session.refresh(profile)
         return profile
 
     return _make

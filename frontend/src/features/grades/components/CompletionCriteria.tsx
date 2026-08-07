@@ -5,8 +5,8 @@ const kindLabels: Record<NonNullable<GradeFeedback['kind']>, string> = {
   completion_criteria: 'Completion Criteria',
   requirements: 'Requirements',
   submission_checks: 'Submission Checks',
-  officer_feedback: 'Officer Feedback',
-  adviser_feedback: 'Adviser Feedback',
+  officer_feedback: 'ASBO Feedback',
+  adviser_feedback: 'AC Feedback',
 }
 
 export function CompletionCriteria({ feedback }: { feedback: GradeFeedback }) {

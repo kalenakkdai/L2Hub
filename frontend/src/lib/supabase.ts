@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '../types/database.types'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
@@ -24,7 +25,7 @@ function rejectSecretKey(key: string): string {
   return key
 }
 
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   required('VITE_SUPABASE_URL', url),
   rejectSecretKey(required('VITE_SUPABASE_PUBLISHABLE_KEY', publishableKey)),
   {

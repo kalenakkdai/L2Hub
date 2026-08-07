@@ -1,0 +1,460 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { fetchCurrentUser } from '../../../api/auth'
+import { ApiError } from '../../../api/client'
+import { FullPageMessage } from '../../../components/FullPageMessage'
+import { ErrorState } from '../../../components/ui/ErrorState'
+import { FeedbackConstellation } from '../components/FeedbackConstellation'
+import { fetchWrapped } from '../api'
+
+type Slide =
+  | { id: string; title: string; body: React.ReactNode }
+  | { id: 'constellation'; title: string; body: React.ReactNode }
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduced(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return reduced
+}
+
+export function WrappedPage() {
+  const { eventId = '' } = useParams()
+  const reducedMotion = usePrefersReducedMotion()
+  const [index, setIndex] = useState(0)
+  const [listMode, setListMode] = useState(false)
+  const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser })
+  const wrappedQuery = useQuery({
+    queryKey: ['events', eventId, 'wrapped'],
+    queryFn: () => fetchWrapped(eventId),
+    enabled: Boolean(eventId),
+  })
+
+  const slides = useMemo((): Slide[] => {
+    const data = wrappedQuery.data
+    if (!data) return []
+    const w = data.wrapped as Record<string, any>
+    return [
+      {
+        id: 'hero',
+        title: w.hero?.title ?? data.event.name,
+        body: (
+          <div className="text-center">
+            <p className="text-sm tracking-[0.25em] text-emerald-200/80 uppercase">
+              Event Wrapped
+            </p>
+            <h2 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
+              {w.hero?.title}
+            </h2>
+            <p className="mt-4 text-lg text-emerald-50/90">{w.hero?.tagline}</p>
+            <p className="mt-6 text-sm text-emerald-100/70">
+              {w.hero?.contributors} contributors · {w.hero?.submissionRate}% submitted
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'rating',
+        title: 'Overall rating',
+        body: (
+          <div className="text-center">
+            <p className="text-6xl font-semibold text-white">
+              {w.overallRating?.score}
+              <span className="text-2xl text-emerald-200/70">
+                /{w.overallRating?.max}
+              </span>
+            </p>
+            <p className="mt-3 text-emerald-100">★★★★★</p>
+          </div>
+        ),
+      },
+      {
+        id: 'committees',
+        title: 'Committee rankings',
+        body: (
+          <ul className="mx-auto max-w-md space-y-3">
+            {(w.committeeRankings ?? []).map(
+              (c: { name: string; rating: number }, i: number) => (
+                <li
+                  key={c.name}
+                  className="flex items-center justify-between rounded-control bg-white/10 px-4 py-3"
+                >
+                  <span className="text-emerald-50">
+                    {i + 1}. {c.name}
+                  </span>
+                  <span className="font-semibold text-white">{c.rating}</span>
+                </li>
+              ),
+            )}
+          </ul>
+        ),
+      },
+      {
+        id: 'participation',
+        title: 'Participation',
+        body: (
+          <div className="text-center">
+            <p className="text-5xl font-semibold text-white">
+              {w.participation?.completionPercent}%
+            </p>
+            <p className="mt-3 text-emerald-100/80">
+              {w.participation?.submitted}/{w.participation?.invited} submitted ·{' '}
+              {w.participation?.absent} absent
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'timeline',
+        title: 'Submission timeline',
+        body: (
+          <div className="mx-auto max-w-lg text-center">
+            <p className="text-emerald-50">
+              Median response in {w.timeline?.medianSeconds}s ·{' '}
+              {w.timeline?.firstMinutePercent}% in the first minute
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              {(w.timeline?.bubbles ?? []).map(
+                (b: { t: number; status: string }, i: number) => (
+                  <span
+                    key={`${b.t}-${i}`}
+                    className={`h-8 w-8 rounded-full ${
+                      b.status === 'submitted'
+                        ? 'bg-emerald-400'
+                        : b.status === 'writing'
+                          ? 'bg-amber-300'
+                          : 'bg-zinc-500'
+                    }`}
+                    title={`${b.status} @ ${b.t}s`}
+                  />
+                ),
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'strengths',
+        title: 'Top strengths',
+        body: (
+          <ul className="mx-auto max-w-xl space-y-3">
+            {(w.topStrengths ?? []).map((t: { id: string; label: string; summary: string }) => (
+              <li key={t.id} className="rounded-control bg-white/10 px-4 py-3">
+                <p className="font-semibold text-white">{t.label}</p>
+                <p className="mt-1 text-sm text-emerald-100/80">{t.summary}</p>
+              </li>
+            ))}
+          </ul>
+        ),
+      },
+      {
+        id: 'improvements',
+        title: 'Top improvements',
+        body: (
+          <ul className="mx-auto max-w-xl space-y-3">
+            {(w.topImprovements ?? []).map(
+              (t: {
+                id: string
+                label: string
+                summary: string
+                recommendedAction?: string
+              }) => (
+                <li key={t.id} className="rounded-control bg-white/10 px-4 py-3">
+                  <p className="font-semibold text-white">{t.label}</p>
+                  <p className="mt-1 text-sm text-emerald-100/80">{t.summary}</p>
+                  {t.recommendedAction ? (
+                    <p className="mt-2 text-sm text-emerald-200">
+                      → {t.recommendedAction}
+                    </p>
+                  ) : null}
+                </li>
+              ),
+            )}
+          </ul>
+        ),
+      },
+      {
+        id: 'materials',
+        title: 'Material requests',
+        body: (
+          <ul className="mx-auto max-w-xl space-y-3">
+            {(w.materialRequests ?? []).map(
+              (m: {
+                name: string
+                requests: number
+                quantity: number
+                estimatedCost: number
+              }) => (
+                <li
+                  key={m.name}
+                  className="flex items-center justify-between rounded-control bg-white/10 px-4 py-3"
+                >
+                  <div>
+                    <p className="font-semibold text-white">{m.name}</p>
+                    <p className="text-xs text-emerald-100/70">
+                      {m.requests} requests · qty {m.quantity}
+                    </p>
+                  </div>
+                  <p className="text-emerald-50">${m.estimatedCost}</p>
+                </li>
+              ),
+            )}
+          </ul>
+        ),
+      },
+      {
+        id: 'breakdown',
+        title: 'Committee breakdown',
+        body: (
+          <div className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-2">
+            {(w.committeeBreakdown ?? []).map(
+              (c: {
+                name: string
+                rating: number
+                strengths: string[]
+                improvements: string[]
+              }) => (
+                <div key={c.name} className="rounded-control bg-white/10 px-4 py-3">
+                  <p className="font-semibold text-white">
+                    {c.name} · {c.rating}
+                  </p>
+                  <p className="mt-2 text-xs text-emerald-100/80">
+                    Strengths: {c.strengths.join(', ')}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-100/80">
+                    Improve: {c.improvements.join(', ')}
+                  </p>
+                </div>
+              ),
+            )}
+          </div>
+        ),
+      },
+      {
+        id: 'historical',
+        title: 'Historical comparison',
+        body: (
+          <div className="mx-auto max-w-lg text-center text-emerald-50">
+            <p className="text-lg">
+              vs {w.historicalComparison?.previousEvent}
+            </p>
+            <p className="mt-4 text-3xl font-semibold text-white">
+              +{w.historicalComparison?.ratingDeltaPercent}% rating
+            </p>
+            <p className="mt-2 text-sm text-emerald-100/80">
+              Parking complaints{' '}
+              {w.historicalComparison?.parkingComplaintDeltaPercent}%
+            </p>
+            <p className="mt-4 text-sm">
+              Resolved: {(w.historicalComparison?.resolvedIssues ?? []).join(', ')}
+            </p>
+            <p className="mt-1 text-sm">
+              Still open: {(w.historicalComparison?.repeatedIssues ?? []).join(', ')}
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: 'executive',
+        title: 'Executive summary',
+        body: (
+          <div className="mx-auto max-w-2xl text-emerald-50">
+            <p className="text-base leading-relaxed">
+              {data.executiveSummary?.summary as string}
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-emerald-200 uppercase">
+                  Successes
+                </p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {((data.executiveSummary?.successes as string[]) ?? []).map((s) => (
+                    <li key={s}>• {s}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold tracking-wide text-emerald-200 uppercase">
+                  Actions
+                </p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {(
+                    (data.executiveSummary?.recommendedActions as string[]) ?? []
+                  ).map((s) => (
+                    <li key={s}>• {s}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="mt-8 text-center">
+              <Link
+                to={`/events/${eventId}/agenda`}
+                className="inline-flex h-10 items-center rounded-control bg-emerald-400 px-4 text-sm font-semibold text-emerald-950"
+              >
+                Open leadership agenda
+              </Link>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'constellation',
+        title: 'Feedback Constellation',
+        body: (
+          <FeedbackConstellation
+            nodes={data.graph.nodes}
+            edges={data.graph.edges}
+            themes={data.graph.themes}
+            reducedMotion={reducedMotion || listMode}
+          />
+        ),
+      },
+    ]
+  }, [eventId, listMode, reducedMotion, wrappedQuery.data])
+
+  useEffect(() => {
+    if (listMode || reducedMotion) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        setIndex((i) => Math.min(i + 1, Math.max(slides.length - 1, 0)))
+      }
+      if (event.key === 'ArrowLeft') {
+        setIndex((i) => Math.max(i - 1, 0))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [listMode, reducedMotion, slides.length])
+
+  if (meQuery.isPending || wrappedQuery.isPending) {
+    return <FullPageMessage>Loading Wrapped…</FullPageMessage>
+  }
+
+  if (wrappedQuery.isError || !wrappedQuery.data) {
+    const unauthorized =
+      wrappedQuery.error instanceof ApiError && wrappedQuery.error.status === 403
+    return (
+      <FullPageMessage>
+        <ErrorState
+          title={unauthorized ? 'Unauthorized' : 'Wrapped unavailable'}
+          description={
+            unauthorized
+              ? 'Draft Wrapped is restricted to AC, President, and generators until published.'
+              : 'Generate and publish an Event Summary first.'
+          }
+        />
+        <div className="mt-4 text-center">
+          <Link to={`/events/${eventId}/summary`} className="text-sm underline">
+            Back to summary
+          </Link>
+        </div>
+      </FullPageMessage>
+    )
+  }
+
+  const slide = slides[index]
+
+  if (listMode || reducedMotion) {
+    return (
+      <div className="min-h-screen bg-[#062016] px-4 py-8 text-emerald-50">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-semibold text-white">
+              {wrappedQuery.data.event.name} Wrapped
+            </h1>
+            {!reducedMotion ? (
+              <button
+                type="button"
+                className="text-sm underline"
+                onClick={() => setListMode(false)}
+              >
+                Story view
+              </button>
+            ) : null}
+          </div>
+          <div className="space-y-10">
+            {slides.map((s) => (
+              <section key={s.id}>
+                <h2 className="mb-4 text-lg font-semibold text-white">{s.title}</h2>
+                {s.body}
+              </section>
+            ))}
+          </div>
+          <Link
+            to={`/events/${eventId}/summary`}
+            className="mt-10 inline-block text-sm text-emerald-200 underline"
+          >
+            Exit
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,#14532d_0%,#062016_55%,#03140d_100%)] text-emerald-50">
+      <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <header className="flex items-center justify-between px-4 py-4 sm:px-8">
+          <Link to={`/events/${eventId}/summary`} className="text-sm text-emerald-100/80">
+            Exit
+          </Link>
+          <p className="text-xs tracking-wide text-emerald-200/70">
+            {index + 1} / {slides.length}
+          </p>
+          <button
+            type="button"
+            className="text-sm text-emerald-100/80 underline"
+            onClick={() => setListMode(true)}
+          >
+            List view
+          </button>
+        </header>
+
+        <main className="flex flex-1 flex-col items-center justify-center px-4 py-8">
+          <p className="mb-6 text-xs font-semibold tracking-[0.2em] text-emerald-200/70 uppercase">
+            {slide?.title}
+          </p>
+          <div
+            key={slide?.id}
+            className="w-full max-w-5xl animate-[fadeRise_420ms_ease-out]"
+          >
+            {slide?.body}
+          </div>
+        </main>
+
+        <footer className="flex items-center justify-center gap-3 px-4 py-6">
+          <button
+            type="button"
+            className="h-10 rounded-control border border-white/20 px-4 text-sm disabled:opacity-40"
+            disabled={index === 0}
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            className="h-10 rounded-control bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:opacity-40"
+            disabled={index >= slides.length - 1}
+            onClick={() => setIndex((i) => Math.min(slides.length - 1, i + 1))}
+          >
+            Next
+          </button>
+        </footer>
+      </div>
+      <style>{`
+        @keyframes fadeRise {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}

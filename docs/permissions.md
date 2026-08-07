@@ -1,0 +1,129 @@
+# L2 Hub permissions
+
+Discord-inspired role hierarchy with granular permission keys, scoped access,
+deny-by-default resolution, and backend enforcement.
+
+Frontend checks are convenience only. Every API route must call
+`require_permission` / `has_permission`.
+
+## Role hierarchy
+
+| Role | Slug | Rank | Meaning |
+|------|------|------|---------|
+| AC | `ac` | 100 | Administrator. Unrestricted access. |
+| President | `president` | 100 | Second super-admin; same permission bundle as AC. |
+| ASBO | `asbo` | 80 | Broad operational access; no private/anonymous feedback; no grades.edit. |
+| Committee Head | `committee_head` | 50 | Scoped to committees they lead. |
+| Member | `member` | 10 | Own profile, assignments, submissions, grades. |
+
+There are no role aliases and no profile role enum. Protected system roles
+cannot be deleted. President and AC are both `is_superadmin` for assignment
+and committee access.
+
+## Scope model
+
+Permissions resolve with optional context:
+
+- **GLOBAL** — AC / President / ASBO operational grants
+- **COMMITTEE** — Committee Head assignments (`user_roles.committee_id`)
+- **EVENT** — reserved (`user_roles.event_id`)
+- **SELF** — own-resource keys (`grades.view_own`, `debrief.view_own`, …)
+
+`has_permission(user, key, committee_id=…, resource_owner_id=…)` returns true
+only when the key is allowed, not denied, and the scope matches.
+
+## Override effects
+
+`allow` / `deny` / `inherit`
+
+- Default is deny (missing key ⇒ denied).
+- Explicit **deny** overrides allow.
+- There is no hidden AC/President superuser bypass of explicit denies.
+
+## Feedback boundary
+
+Only AC and President receive:
+
+- `feedback.view_private`
+- `feedback.view_anonymous`
+- `feedback.manage`
+
+ASBO, Committee Head, and Member receive **403** from feedback endpoints.
+Responses never include author metadata.
+
+## Event Summary / Wrapped matrix
+
+| Capability | President | AC | ASBO | Committee Head | Member |
+|------------|-----------|----|------|----------------|--------|
+| `wrapped.request` | Yes | Yes | Yes | Own managed events | No |
+| `wrapped.approve` | Yes | Yes | No | No | No |
+| `wrapped.generate` | Yes | Yes | No | No | No |
+| `wrapped.publish` | Yes | Yes | No | No | No |
+| `wrapped.edit` | Yes | Yes | No | No | No |
+| `wrapped.view_published` | Yes | Yes | Yes | Yes | Yes |
+| `agenda.generate` | Yes | Yes | No | No | No |
+| `notifications.view_own` | Yes | Yes | Yes | Yes | Yes |
+| `grades.edit` | Yes | Yes | **No** | No | No |
+
+See [event-summary.md](./event-summary.md) for the full workflow.
+
+## Capability matrix
+
+| Capability | President | AC | ASBO | Committee Head | Member |
+|------------|-----------|----|------|----------------|--------|
+| View all events | Yes | Yes | Yes | Own committee events | Assigned events |
+| Start debrief | Yes | Yes | Yes | No (unless later granted) | No |
+| View all grades | Yes | Yes | Yes | No | No |
+| View own grades | Yes | Yes | Yes | Yes (own) | Yes |
+| Edit grades | Yes | Yes | No | No | No |
+| View private/anonymous feedback | Yes | Yes | No | No | No |
+| Manage users (Users page) | Yes | Yes | No by default | No | No |
+| View other committees | Yes | Yes | Yes | No | No |
+| Manage own committee tasks | Yes | Yes | Yes | Yes (own) | No |
+
+## Dashboard modules
+
+`GET /auth/dashboard` returns `{ roles, permissions, modules }` derived from
+effective permissions.
+
+Examples:
+
+- Member → `my_tasks`, `my_events`, `my_grades`, …
+- Committee Head → personal + committee modules
+- ASBO → operational modules, **no** `feedback_review`
+- AC / President → all modules including `feedback_review`, `user_management`, `system_settings`
+
+## Users page
+
+Route: `/admin/users` (API: `GET /admin/users`)
+
+- Requires `users.view` (AC / President by default).
+- Lists **real** profiles + role assignments + committee memberships.
+- Synthetic preview users are never stored in `profiles` and do not appear.
+
+## Seed accounts
+
+`seed_development_users()` creates:
+
+| Email | Role |
+|-------|------|
+| `ac@l2hub.local` | AC |
+| `president@l2hub.local` | President |
+| `asbo@l2hub.local` | ASBO |
+| `community.head@l2hub.local` | Member + Community Committee Head |
+| `spirit.head@l2hub.local` | Member + Spirit Committee Head |
+| `community.member@l2hub.local` | Community Member |
+| `spirit.member@l2hub.local` | Spirit Member |
+
+## Key code paths
+
+| Concern | Location |
+|---------|----------|
+| Permission keys | `backend/app/core/permission_keys.py` |
+| Role bundles | `backend/app/core/role_catalog.py` |
+| Resolver | `backend/app/services/authorization.py` |
+| Dashboard modules | `backend/app/services/dashboard.py` |
+| Audit log | `backend/app/services/audit.py` |
+| Seed | `backend/app/db/seed.py` |
+| SQL migration | `supabase/migrations/20260807000000_rbac_hierarchy.sql` |
+| Event Summary migration | `supabase/migrations/20260807010000_event_summaries.sql` |

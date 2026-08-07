@@ -104,7 +104,7 @@ describe('AuthProvider', () => {
       const user = userEvent.setup()
       mock.__setSession(makeSession())
       const { queryClient } = renderProbe()
-      queryClient.setQueryData(['auth', 'me'], { role: 'officer' })
+      queryClient.setQueryData(['auth', 'me'], { role: 'asbo' })
 
       await waitFor(() =>
         expect(screen.getByTestId('status')).toHaveTextContent('authenticated'),
@@ -152,7 +152,7 @@ describe('AuthProvider', () => {
       mock.__setSession(makeSession())
       mock.auth.signOut.mockRejectedValueOnce(new Error('offline'))
       const { queryClient } = renderProbe()
-      queryClient.setQueryData(['auth', 'me'], { role: 'officer' })
+      queryClient.setQueryData(['auth', 'me'], { role: 'asbo' })
 
       await waitFor(() =>
         expect(screen.getByTestId('status')).toHaveTextContent('authenticated'),
@@ -170,7 +170,7 @@ describe('AuthProvider', () => {
     // What happens when a refresh token can no longer be renewed.
     mock.__setSession(makeSession())
     const { queryClient } = renderProbe()
-    queryClient.setQueryData(['auth', 'me'], { role: 'officer' })
+    queryClient.setQueryData(['auth', 'me'], { role: 'asbo' })
 
     await waitFor(() =>
       expect(screen.getByTestId('status')).toHaveTextContent('authenticated'),

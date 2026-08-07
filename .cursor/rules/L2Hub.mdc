@@ -1,3 +1,270 @@
 ---
+description: Permanent engineering rules for the L2 Hub project
 alwaysApply: true
 ---
+
+# L2 Hub Project Rules
+
+## Project purpose
+
+L2 Hub is a student-government operations platform for Mission San Jose High School’s Leadership 2 class.
+
+The first launch product is a synchronized five-minute event debrief system for approximately 50 student leaders.
+
+The core Maze Day workflow is:
+
+1. An ASB officer or adviser starts a five-minute debrief session.
+2. Students rate the event and participating committees.
+3. Students enter exactly three strengths and three improvements.
+4. Students may request materials with purchasing links.
+5. Students may submit anonymous serious concerns.
+6. A projected dashboard displays each participant as:
+   - not started
+   - writing
+   - submitted
+   - absent
+7. A successful submission automatically creates a gradebook entry.
+8. The system generates an Event Wrapped summary.
+9. The system generates an editable meeting agenda.
+10. Historical meeting notes may later be retrieved through a local RAG system.
+
+Prioritize making this workflow reliable before adding extra features.
+
+# Required technology
+
+## Frontend
+
+Use:
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- TanStack Query
+- React Hook Form
+- Zod
+- Recharts
+- Lucide React
+- Native WebSocket API
+- Vitest
+- React Testing Library
+
+Do not use Next.js.
+
+## Backend
+
+Use:
+
+- Python 3.12
+- FastAPI
+- SQLAlchemy 2
+- Pydantic v2
+- Alembic
+- SQLite for local development
+- JWT authentication
+- WebSockets
+- Pytest
+- Ruff
+
+# Before changing code
+
+Before making any change:
+
+1. Inspect the relevant existing files.
+2. Explain briefly what is currently implemented.
+3. State which files will be changed and why.
+4. Preserve existing working functionality.
+5. Check the backend implementation before inventing frontend routes, fields, or enums.
+6. Make the smallest complete change necessary.
+7. Avoid changing unrelated files.
+
+Do not generate large amounts of code without first understanding the existing project.
+
+# Hard restrictions
+
+Never:
+
+- Use Next.js.
+- Commit `.env` files.
+- Commit passwords, access tokens, private keys, or real secret values.
+- Commit the local SQLite database.
+- Commit Python virtual environments.
+- Commit `node_modules`.
+- Trust the browser clock for session timing, lateness, or grading.
+- Allow more than one active debrief session for the same event.
+- Allow duplicate final submissions unless an adviser explicitly reopens the submission.
+- Expose the identity of an anonymous-feedback author.
+- Rely only on frontend controls for authorization.
+- Replace working API functionality with mock data.
+- Require a paid API for the MVP.
+- Leave critical functionality as unfinished TODO comments.
+- Claim that tests passed without actually running them.
+- claim that a feature works without verifying it.
+
+# Roles and authorization
+
+Support these protected system roles (see `docs/permissions.md`):
+
+- member (rank 10)
+- committee_head (rank 50)
+- asbo (rank 80)
+- ac (rank 100)
+
+Legacy aliases `student` / `officer` / `adviser` normalize to member / asbo / ac.
+
+Authorization is permission-key based with GLOBAL / COMMITTEE / EVENT / SELF
+scopes. Deny-by-default. Explicit deny overrides allow. Feedback
+(`feedback.view_private`, `feedback.view_anonymous`, `feedback.manage`) is
+AC-only and must return 403 for everyone else — never hide only in the UI.
+
+## Member permissions
+
+Members may:
+
+- View assigned events.
+- View their committees' shared information.
+- Create and update their own draft.
+- Submit their own debrief.
+- View their own gradebook entries.
+- View published Event Wrapped summaries they are allowed to see.
+
+Members may not:
+
+- Start or end sessions.
+- Reopen sessions.
+- Mark attendance.
+- Edit official agendas.
+- View anonymous-feedback authors.
+- Edit another student’s submission.
+- Open the global Users admin page.
+
+## ASBO permissions
+
+ASBO may run platform-wide operations (events, debriefs, grades, agendas,
+materials) but must not access private/anonymous feedback or AC-only admin
+settings.
+
+## Committee Head permissions
+
+Committee Heads are scoped to committees they lead. They may not view or edit
+grades, feedback, or other committees' private operational data.
+
+## AC permissions
+
+AC has unrestricted access, including feedback review, user/role management,
+and system settings.
+
+# Privacy rules
+
+Anonymous concerns must never expose:
+
+- Student name
+- Student email
+- Student ID
+- Author user ID
+- Submission ID when it could identify the author
+- Committee information that could identify the author
+- Hidden metadata revealing authorship
+
+Do not expose anonymous-author information in:
+
+- API responses
+- Browser network responses
+- Logs
+- Event Wrapped summaries
+- Agenda output
+- Data exports
+- Error messages
+
+The backend must construct a redacted response. Do not merely hide identifying fields in the frontend.
+
+# Server-authoritative timing
+
+The backend server is authoritative for:
+
+- session start time
+- session end time
+- submission time
+- completion duration
+- late-submission status
+- gradebook completion
+
+The frontend may calculate the visible countdown from the backend-provided `ends_at` timestamp.
+
+Do not create a separate browser-only five-minute session.
+
+Do not restart the timer after a browser refresh.
+
+# Development workflow for every feature
+
+For each small feature:
+
+1. Define the expected behavior.
+2. Identify important edge cases.
+3. Add or update unit tests when practical.
+4. Implement the smallest complete change.
+5. Run the targeted tests.
+6. Read the complete failure output.
+7. Fix the root cause.
+8. Run the targeted tests again.
+9. Run relevant linting and type checking.
+10. Verify no unrelated functionality broke.
+11. Summarize the files changed and checks run.
+
+Do not move on to the next feature while the current feature is failing.
+
+Do not bundle many unrelated features into one large untested change.
+
+# Unit testing requirements
+
+Add unit tests for meaningful:
+
+- validators
+- service functions
+- utilities
+- permission rules
+- state transitions
+- form schemas
+- timer calculations
+- API parsing
+- grading policies
+- theme extraction
+- anonymous redaction
+- agenda generation logic
+
+Tests should verify observable behavior rather than only checking that mocked functions were called.
+
+Include:
+
+- successful behavior
+- invalid input
+- boundary cases
+- permission failures
+- duplicate operations
+- privacy behavior
+
+# Integration testing requirements
+
+Add integration tests for boundaries between:
+
+- API routes and services
+- services and the database
+- final submissions and gradebook creation
+- sessions and participant statuses
+- submissions and Wrapped metrics
+- agenda generation and historical retrieval
+- frontend API functions and actual backend schemas
+- WebSocket messages and persisted event state
+
+Use a database transaction for final submission and gradebook creation. They must both succeed or both fail.
+
+# Backend verification
+
+After a targeted backend change, run the narrowest applicable test command.
+
+Examples:
+
+```bash
+pytest tests/test_submissions.py -q
+pytest tests/test_sessions.py -q

@@ -7,6 +7,7 @@ type AppShellProps = {
   name: string
   role: string
   children: ReactNode
+  permissions?: string[]
   /** Optional overrides for pages that need denser content padding. */
   contentClassName?: string
 }
@@ -21,15 +22,15 @@ export function AppShell({
   name,
   role,
   children,
+  permissions,
   contentClassName,
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-canvas">
-      <MobileNavigation name={name} role={role} />
+      <MobileNavigation name={name} role={role} permissions={permissions} />
 
-      {/* Fixed so long pages scroll under a stationary sidebar. */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:block">
-        <Sidebar name={name} role={role} />
+        <Sidebar name={name} role={role} permissions={permissions} />
       </div>
 
       <div className="lg:pl-64">

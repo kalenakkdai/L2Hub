@@ -13,6 +13,8 @@ export type NavItemDefinition = {
   label: string
   to: string
   icon: LucideIcon
+  /** When set, item is shown only if the caller holds this permission. */
+  permission?: string
 }
 
 export type NavSection = {
@@ -24,15 +26,18 @@ export type NavSection = {
 /**
  * Navigation is data, not markup, so the sidebar and the mobile drawer render
  * exactly the same destinations from one source.
- *
- * Only /dashboard, /grades, and /dev/health exist today; the rest are
- * placeholders for the phases that build them, and are marked as such in the UI.
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
     items: [
       { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
       { label: 'Grades', to: '/grades', icon: BookOpenCheck },
+      {
+        label: 'Users',
+        to: '/admin/users',
+        icon: Users,
+        permission: 'users.view',
+      },
     ],
   },
   {
@@ -54,5 +59,23 @@ export const NAV_SECTIONS: NavSection[] = [
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
   '/grades',
+  '/admin/users',
+  '/events',
+  '/debriefs',
   '/dev/health',
 ])
+
+export function filterNavSections(
+  sections: NavSection[],
+  permissions: string[] | undefined,
+): NavSection[] {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => {
+        if (!item.permission) return true
+        return permissions?.includes(item.permission) ?? false
+      }),
+    }))
+    .filter((section) => section.items.length > 0)
+}

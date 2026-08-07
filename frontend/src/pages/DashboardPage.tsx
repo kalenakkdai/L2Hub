@@ -69,7 +69,7 @@ export function DashboardPage() {
   const data = dashboardQuery.data
 
   return (
-    <AppShell name={name} role={me.role}>
+    <AppShell name={name} role={me.role} permissions={me.permissions}>
       {dashboardQuery.isPending ? (
         <DashboardSkeleton />
       ) : dashboardQuery.isError || !data ? (

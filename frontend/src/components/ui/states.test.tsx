@@ -45,7 +45,7 @@ describe('ErrorState', () => {
       <ErrorState
         variant="unauthorized"
         title="You do not have access"
-        description="Ask an adviser for access."
+        description="Ask an AC for access."
       />,
     )
 

@@ -58,7 +58,12 @@ export function GradesLayout() {
   const name = me.full_name ?? me.email
 
   return (
-    <AppShell name={name} role={me.role} contentClassName="lg:py-6">
+    <AppShell
+      name={name}
+      role={me.role}
+      permissions={me.permissions}
+      contentClassName="lg:py-6"
+    >
       <Outlet />
     </AppShell>
   )
