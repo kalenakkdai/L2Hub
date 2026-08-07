@@ -1,4 +1,12 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolved from this file rather than left relative, so `.env` is found the
+# same way whether uvicorn is started from backend/ or from the repo root.
+# A relative "*.env*" is looked up against the working directory, which meant
+# starting the server one directory up silently loaded no settings at all.
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseSettings):
@@ -9,7 +17,12 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
     database_url: str = "sqlite:///./l2hub.db"
-    cors_origins: str = "http://localhost:5173"
+    # Browsers match Origin by exact string, so every spelling of the Vite dev
+    # server is a separate entry: `localhost`, the IPv4 loopback, and the IPv6
+    # loopback literal. Vite binds to whichever stack `localhost` resolves to
+    # (IPv6 on macOS), so which one the browser reports depends on the URL the
+    # developer opened, not on configuration.
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://[::1]:5173"
 
     # Supabase project URL, e.g. https://<project-ref>.supabase.co
     supabase_url: str = ""
@@ -27,13 +40,19 @@ class Settings(BaseSettings):
     supabase_jwt_audience: str = "authenticated"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     @property
     def cors_origin_list(self) -> list[str]:
+        """Exact origins allowed to call the API from a browser.
+
+        Each entry must match the browser's `Origin` header character for
+        character — scheme, host as typed, and port. A near-miss is rejected
+        with `400 Disallowed CORS origin` at the preflight.
+        """
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     @property
