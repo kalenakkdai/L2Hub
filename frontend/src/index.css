@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+/* Restrained Grades tokens — feature-local, not a full design system */
+:root {
+  --grades-bg: #ffffff;
+  --grades-text: #0f172a;
+  --grades-muted: #64748b;
+  --grades-border: #e2e8f0;
+  --grades-sidebar: #0f172a;
+  --grades-success: #047857;
+  --grades-warning: #b45309;
+  --grades-danger: #b91c1c;
+}
