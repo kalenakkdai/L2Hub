@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { getDevCurrentUser } from '../auth/devAuth'
 
 /** Mirrors the backend's CurrentUser schema (backend/app/schemas/auth.py). */
 export type UserRole = 'student' | 'committee_head' | 'officer' | 'adviser'
@@ -12,6 +13,8 @@ export type CurrentUser = {
 }
 
 export function fetchCurrentUser(): Promise<CurrentUser> {
+  const devUser = getDevCurrentUser()
+  if (devUser) return Promise.resolve(devUser)
   return apiFetch<CurrentUser>('/auth/me')
 }
 

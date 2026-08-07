@@ -22,46 +22,39 @@ export function GradeTable({
   }
 
   return (
-    <div className="bg-white md:overflow-x-auto">
-      <table className="w-full min-w-0 border-collapse text-left md:min-w-[850px]">
+    <div className="overflow-hidden rounded-card border border-border-subtle bg-surface shadow-xs md:overflow-x-auto">
+      <table className="w-full min-w-0 border-collapse text-left md:min-w-[700px]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="hidden border-y border-slate-300 bg-white md:table-header-group">
+        <thead className="hidden border-b border-border-strong bg-surface-sunken md:table-header-group">
           <tr>
             <th
               scope="col"
-              className="w-[26%] px-1 py-2 text-[11px] font-semibold text-slate-700"
+              className="w-[40%] px-4 py-3 text-xs font-semibold text-ink-muted"
               aria-sort={sort === 'title' ? 'ascending' : 'none'}
             >
-              ↕ Name
+              Name
             </th>
             <th
               scope="col"
-              className="w-[15%] px-2 py-2 text-[11px] font-semibold text-slate-700"
-              aria-sort={sort === 'status' ? 'ascending' : 'none'}
-            >
-              ↕ Status
-            </th>
-            <th
-              scope="col"
-              className="w-[9%] px-2 py-2 text-[11px] font-semibold text-slate-700"
-              aria-sort={sort === 'score' ? 'descending' : 'none'}
-            >
-              Score
-            </th>
-            <th
-              scope="col"
-              className="w-[16%] px-2 py-2 text-[11px] font-semibold text-slate-700"
+              className="w-[20%] px-3 py-3 text-xs font-semibold text-ink-muted"
             >
               Released
             </th>
             <th
               scope="col"
-              className="w-[34%] px-2 py-2 text-right text-[11px] font-semibold text-slate-700"
+              className="w-[20%] px-3 py-3 text-xs font-semibold text-ink-muted"
               aria-sort={
                 sort === 'dueAt' || sort === 'default' ? 'ascending' : 'none'
               }
             >
-              Due ↕
+              Due
+            </th>
+            <th
+              scope="col"
+              className="w-[20%] px-4 py-3 text-right text-xs font-semibold text-ink-muted"
+              aria-sort={sort === 'score' ? 'descending' : 'none'}
+            >
+              Score
             </th>
           </tr>
         </thead>

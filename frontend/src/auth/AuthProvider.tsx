@@ -4,6 +4,12 @@ import type { Session } from '@supabase/supabase-js'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { AuthContext, type AuthStatus, type SignOutReason } from './authContext'
+import {
+  isDevAuthEnabled,
+  restoreDevSession,
+  signInWithDevCredentials,
+  signOutDevSession,
+} from './devAuth'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -13,6 +19,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true
+
+    if (isDevAuthEnabled()) {
+      const devSession = restoreDevSession()
+      setSession(devSession)
+      setStatus(devSession ? 'authenticated' : 'unauthenticated')
+      return () => {
+        active = false
+      }
+    }
 
     // Restore whatever the Supabase client persisted, so a page refresh does
     // not bounce a signed-in user to the login screen.
@@ -52,6 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (isDevAuthEnabled()) {
+      const devSession = signInWithDevCredentials(email, password)
+      setSession(devSession)
+      setStatus('authenticated')
+      setSessionExpired(false)
+      return
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     setSessionExpired(false)
@@ -60,6 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(
     async (reason: SignOutReason = 'manual') => {
       setSessionExpired(reason === 'expired')
+      if (isDevAuthEnabled()) {
+        signOutDevSession()
+        queryClient.clear()
+        setSession(null)
+        setStatus('unauthenticated')
+        return
+      }
+
       try {
         await supabase.auth.signOut()
       } catch {

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { cn } from '../ui/cn'
 import { MobileNavigation } from './MobileNavigation'
 import { Sidebar } from './Sidebar'
 
@@ -6,6 +7,8 @@ type AppShellProps = {
   name: string
   role: string
   children: ReactNode
+  /** Optional overrides for pages that need denser content padding. */
+  contentClassName?: string
 }
 
 /**
@@ -14,7 +17,12 @@ type AppShellProps = {
  *
  * Pages render only their content and never their own chrome.
  */
-export function AppShell({ name, role, children }: AppShellProps) {
+export function AppShell({
+  name,
+  role,
+  children,
+  contentClassName,
+}: AppShellProps) {
   return (
     <div className="min-h-screen bg-canvas">
       <MobileNavigation name={name} role={role} />
@@ -25,7 +33,12 @@ export function AppShell({ name, role, children }: AppShellProps) {
       </div>
 
       <div className="lg:pl-64">
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+        <main
+          className={cn(
+            'mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10',
+            contentClassName,
+          )}
+        >
           {children}
         </main>
       </div>

@@ -32,23 +32,19 @@ describe('GradesPage', () => {
     expect(screen.getAllByText('8 / 10').length).toBeGreaterThan(0)
   })
 
-  it('renders submitted/graded status with accessible text', async () => {
+  it('does not show assignment status in the grade list', async () => {
     renderWithGradebook(<GradesPage />)
-    expect((await screen.findAllByText('Graded')).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/Status: Graded/).length).toBeGreaterThan(0)
+    await screen.findAllByText('Maze Day - Debrief Submission')
+    expect(screen.queryByText('Status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Graded')).not.toBeInTheDocument()
   })
 
-  it('renders missing status correctly', async () => {
-    renderWithGradebook(<GradesPage />)
-    expect((await screen.findAllByText('Missing')).length).toBeGreaterThan(0)
-  })
-
-  it('renders excused assignment correctly', async () => {
+  it('renders excused assignment without a status label', async () => {
     renderWithGradebook(<GradesPage />)
     expect(
       (await screen.findAllByText('Rally Night Attendance')).length,
     ).toBeGreaterThan(0)
-    expect(screen.getAllByText('Excused').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Excused')).not.toBeInTheDocument()
   })
 
   it('renders null score as dash / points possible', async () => {
@@ -57,12 +53,12 @@ describe('GradesPage', () => {
     expect(formatScore(null, 10)).toBe('— / 10')
   })
 
-  it('renders late submission correctly', async () => {
+  it('renders a late assignment score', async () => {
     renderWithGradebook(<GradesPage />)
     expect(
       (await screen.findAllByText('Leadership Reflection')).length,
     ).toBeGreaterThan(0)
-    expect(screen.getAllByText('Late').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('8 / 10').length).toBeGreaterThan(0)
   })
 
   it('renders due date', async () => {
@@ -75,21 +71,6 @@ describe('GradesPage', () => {
     const lateDue = await screen.findAllByText(/Late due/)
     expect(lateDue.length).toBeGreaterThan(0)
     expect(lateDue.length).toBeLessThanOrEqual(2)
-  })
-
-  it('filters by missing status via URL-backed control', async () => {
-    const user = userEvent.setup()
-    renderWithGradebook(<GradesPage />)
-    await screen.findAllByText('Maze Day - Debrief Submission')
-    await user.click(screen.getByRole('tab', { name: 'Missing' }))
-    await waitFor(() => {
-      expect(
-        screen.getAllByText('Cabinet Meeting Response').length,
-      ).toBeGreaterThan(0)
-      expect(
-        screen.queryByText('Maze Day - Debrief Submission'),
-      ).not.toBeInTheDocument()
-    })
   })
 
   it('filters by search query', async () => {
@@ -190,14 +171,23 @@ describe('GradesPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('mobile layout preserves score and status visibility', async () => {
+  it('mobile layout preserves score visibility', async () => {
     renderWithGradebook(<GradesPage />)
     const headings = await screen.findAllByText('Maze Day - Debrief Submission')
     const mobileHeading = headings.find((el) => el.closest('td'))
     expect(mobileHeading).toBeTruthy()
     const mobileCell = mobileHeading!.closest('td')!
-    expect(within(mobileCell).getByText('Graded')).toBeInTheDocument()
     expect(within(mobileCell).getByText('10 / 10')).toBeInTheDocument()
+  })
+
+  it('renders a cumulative grade trend below the assignments', async () => {
+    renderWithGradebook(<GradesPage />)
+    const table = await screen.findByRole('table')
+    const trend = screen.getByRole('heading', { name: 'Grade trend' })
+    expect(
+      table.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.getByText('60%')).toBeInTheDocument()
   })
 })
 

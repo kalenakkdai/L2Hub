@@ -13,12 +13,8 @@ function Metric({
 }) {
   return (
     <div className="flex min-w-0 items-baseline gap-1.5">
-      <dt className="text-[11px] font-medium text-slate-500">
-        {label}
-      </dt>
-      <dd className="text-sm font-semibold tabular-nums text-slate-900">
-        {value}
-      </dd>
+      <dt className="text-[11px] font-medium text-ink-subtle">{label}</dt>
+      <dd className="text-sm font-semibold tabular-nums text-ink">{value}</dd>
     </div>
   )
 }
@@ -60,7 +56,7 @@ export function GradeSummary({ summary }: GradeSummaryProps) {
   return (
     <section
       aria-label="Grade summary"
-      className="border-y border-slate-200 bg-slate-50/70 px-3 py-2"
+      className="rounded-card border border-border-subtle bg-surface px-3 py-2 shadow-xs"
     >
       <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
         {items.map((item) => (

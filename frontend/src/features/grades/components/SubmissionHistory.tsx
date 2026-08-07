@@ -14,7 +14,7 @@ export function SubmissionHistory({
 }: SubmissionHistoryProps) {
   if (isLoading) {
     return (
-      <p className="text-sm text-slate-500" role="status">
+      <p className="text-sm text-ink-muted" role="status">
         Loading submission history…
       </p>
     )
@@ -22,7 +22,7 @@ export function SubmissionHistory({
 
   if (errorMessage) {
     return (
-      <p className="text-sm text-red-700" role="alert">
+      <p className="text-sm text-status-danger" role="alert">
         {errorMessage}
       </p>
     )
@@ -30,7 +30,7 @@ export function SubmissionHistory({
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-slate-500" role="status">
+      <p className="text-sm text-ink-muted" role="status">
         No submission history is available.
       </p>
     )
@@ -44,19 +44,19 @@ export function SubmissionHistory({
     <section aria-labelledby="submission-history-heading">
       <h2
         id="submission-history-heading"
-        className="text-[13px] font-semibold text-slate-900"
+        className="text-[13px] font-semibold text-ink"
       >
         Submission History
       </h2>
-      <ol className="mt-3 space-y-0 border-l border-slate-200">
+      <ol className="mt-3 space-y-0 border-l border-border-subtle">
         {ordered.map((item) => (
-          <li key={item.id} className="relative pl-4 py-2">
+          <li key={item.id} className="relative py-2 pl-4">
             <span
-              className="absolute -left-1 top-3 h-2 w-2 rounded-full bg-slate-400"
+              className="absolute top-3 -left-1 h-2 w-2 rounded-full bg-ink-subtle"
               aria-hidden="true"
             />
-            <p className="text-sm font-medium text-slate-900">{item.label}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-medium text-ink">{item.label}</p>
+            <p className="text-xs text-ink-subtle">
               {formatDateTime(item.occurredAt)}
               {item.description ? ` · ${item.description}` : ''}
             </p>

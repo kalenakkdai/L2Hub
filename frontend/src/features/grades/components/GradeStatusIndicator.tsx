@@ -4,16 +4,20 @@ import { statusLabel } from '../utils/status'
 
 const statusStyles: Record<
   GradeStatus,
-  { text: string; icon: 'check' | 'circle' | 'clock' | 'lock' | 'minus'; filled: boolean }
+  {
+    text: string
+    icon: 'check' | 'circle' | 'clock' | 'lock' | 'minus'
+    filled: boolean
+  }
 > = {
-  submitted: { text: 'text-emerald-700', icon: 'circle', filled: true },
-  graded: { text: 'text-emerald-700', icon: 'check', filled: true },
-  draft: { text: 'text-sky-700', icon: 'circle', filled: true },
-  not_started: { text: 'text-slate-500', icon: 'circle', filled: false },
-  late: { text: 'text-amber-700', icon: 'clock', filled: true },
-  missing: { text: 'text-red-700', icon: 'circle', filled: true },
-  excused: { text: 'text-slate-500', icon: 'minus', filled: true },
-  closed: { text: 'text-slate-500', icon: 'lock', filled: true },
+  submitted: { text: 'text-accent-700', icon: 'circle', filled: true },
+  graded: { text: 'text-accent-700', icon: 'check', filled: true },
+  draft: { text: 'text-status-info', icon: 'circle', filled: true },
+  not_started: { text: 'text-ink-subtle', icon: 'circle', filled: false },
+  late: { text: 'text-status-warning', icon: 'clock', filled: true },
+  missing: { text: 'text-status-danger', icon: 'circle', filled: true },
+  excused: { text: 'text-ink-subtle', icon: 'minus', filled: true },
+  closed: { text: 'text-ink-subtle', icon: 'lock', filled: true },
 }
 
 export interface GradeStatusIndicatorProps {

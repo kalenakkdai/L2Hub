@@ -8,8 +8,8 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
   if (value === null || value === undefined || value === '') return null
   return (
     <div className="mt-3 first:mt-0">
-      <dt className="text-[11px] font-semibold text-slate-500">{label}</dt>
-      <dd className="mt-0.5 text-[13px] text-slate-900">{value}</dd>
+      <dt className="text-[11px] font-semibold text-ink-subtle">{label}</dt>
+      <dd className="mt-0.5 text-[13px] text-ink">{value}</dd>
     </div>
   )
 }
@@ -25,16 +25,16 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
   return (
     <aside
       aria-label="Assignment summary"
-      className="border-slate-200 bg-slate-50 p-4 lg:h-full lg:border-l"
+      className="rounded-card border border-border-subtle bg-surface p-4 shadow-xs lg:h-full lg:rounded-none lg:border-0 lg:border-l lg:bg-surface-sunken lg:shadow-none"
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-slate-900">
+        <h2 className="text-[15px] font-semibold text-ink">
           {entry.event?.name ?? 'Assignment'}
         </h2>
         <GradeStatusIndicator status={entry.status} />
       </div>
 
-      <p className="mt-3 flex gap-2 rounded-sm bg-sky-100 px-3 py-2 text-[11px] leading-4 text-sky-950">
+      <p className="mt-3 flex gap-2 rounded-control bg-status-info-bg px-3 py-2 text-[11px] leading-4 text-status-info">
         <Info size={13} className="mt-px shrink-0" aria-hidden="true" />
         <span>
           Scores and completion are recorded by L2 Hub when your submission is
@@ -91,8 +91,8 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
       </dl>
 
       {criteria.length > 0 ? (
-        <div className="mt-4 border-t border-slate-200 pt-3">
-          <p className="text-[11px] font-semibold text-slate-500">
+        <div className="mt-4 border-t border-border-subtle pt-3">
+          <p className="text-[11px] font-semibold text-ink-subtle">
             Completion Checks
           </p>
           <ul className="mt-2 space-y-1">
@@ -104,19 +104,21 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
                 {item.passed === false ? (
                   <X
                     size={11}
-                    className="mt-0.5 shrink-0 text-red-700"
+                    className="mt-0.5 shrink-0 text-status-danger"
                     aria-hidden="true"
                   />
                 ) : (
                   <Check
                     size={11}
-                    className="mt-0.5 shrink-0 text-emerald-700"
+                    className="mt-0.5 shrink-0 text-accent-700"
                     aria-hidden="true"
                   />
                 )}
                 <span
                   className={
-                    item.passed === false ? 'text-red-800' : 'text-emerald-800'
+                    item.passed === false
+                      ? 'text-status-danger'
+                      : 'text-accent-700'
                   }
                 >
                   {item.label}

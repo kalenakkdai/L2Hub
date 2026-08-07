@@ -18,7 +18,7 @@ import {
 } from '../hooks/useGradebook'
 
 const barButton =
-  'rounded-sm border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 disabled:opacity-50'
+  'rounded-control border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-sunken disabled:opacity-50'
 
 export function GradeAssignmentPage() {
   const { assignmentId = '' } = useParams()
@@ -58,17 +58,15 @@ export function GradeAssignmentPage() {
 
   if (detailQuery.isPending) {
     return (
-      <main className="px-4 py-6 sm:px-6">
-        <p className="text-sm text-slate-500" role="status">
-          Loading assignment…
-        </p>
-      </main>
+      <p className="text-sm text-ink-muted" role="status">
+        Loading assignment…
+      </p>
     )
   }
 
   if (detailQuery.isError) {
     return (
-      <main className="px-4 py-6 sm:px-6">
+      <div>
         <GradesErrorState
           message={
             detailQuery.error instanceof Error
@@ -78,11 +76,11 @@ export function GradeAssignmentPage() {
           onRetry={() => void detailQuery.refetch()}
         />
         <p className="mt-4">
-          <Link to="/grades" className="text-sm font-medium text-sky-700 underline">
+          <Link to="/grades" className="text-sm font-medium text-accent-700 underline">
             Back to Grades
           </Link>
         </p>
-      </main>
+      </div>
     )
   }
 
@@ -90,24 +88,24 @@ export function GradeAssignmentPage() {
   const entry = detail.entry
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <div className="-mx-4 flex min-h-[70vh] flex-col sm:-mx-6 lg:-mx-10">
       <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 px-4 py-5 sm:px-6">
+        <div className="min-w-0 px-4 sm:px-6 lg:px-10">
           <p className="mb-3">
             <Link
               to="/grades"
-              className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+              className="text-xs font-medium text-ink-muted hover:text-ink hover:underline"
             >
               ← Grades
             </Link>
           </p>
 
-          <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
+          <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-3">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950">
+              <h1 className="text-title font-semibold text-ink">
                 {entry.assignmentTitle}
               </h1>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-subtle">
                 {[entry.event?.name, entry.assignmentType.replaceAll('_', ' ')]
                   .filter(Boolean)
                   .join(' · ')}
@@ -118,18 +116,17 @@ export function GradeAssignmentPage() {
             </div>
           </header>
 
-          {/* Rail collapses above content on smaller screens */}
           <div className="mt-4 lg:hidden">
             <AssignmentSummaryRail detail={detail} />
           </div>
 
           <section
             aria-labelledby="submission-heading"
-            className="mt-4 border border-slate-200"
+            className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface shadow-xs"
           >
             <h2
               id="submission-heading"
-              className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-semibold text-slate-900"
+              className="border-b border-border-subtle bg-surface-sunken px-3 py-2 text-[13px] font-semibold text-ink"
             >
               Submission
             </h2>
@@ -143,12 +140,12 @@ export function GradeAssignmentPage() {
           </section>
 
           {detail.feedback ? (
-            <div className="mt-4 border border-slate-200 px-3 py-3">
+            <div className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface px-3 py-3 shadow-xs">
               <CompletionCriteria feedback={detail.feedback} />
             </div>
           ) : null}
 
-          <div className="mt-4 border border-slate-200 px-3 py-3">
+          <div className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface px-3 py-3 shadow-xs">
             <SubmissionHistory
               items={historyQuery.data ?? []}
               isLoading={historyQuery.isPending}
@@ -157,12 +154,12 @@ export function GradeAssignmentPage() {
           </div>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden border-l border-border-subtle lg:block">
           <AssignmentSummaryRail detail={detail} />
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-6">
+      <div className="sticky bottom-0 mt-4 border-t border-border-subtle bg-surface px-4 py-2.5 sm:px-6 lg:px-10">
         <section
           aria-label="Assignment actions"
           className="flex flex-wrap items-center justify-end gap-2"
@@ -200,7 +197,7 @@ export function GradeAssignmentPage() {
           {canEdit ? (
             <span
               data-testid="edit-grade-control"
-              className="rounded-sm border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-600"
+              className="rounded-control border border-dashed border-border-strong px-3 py-1.5 text-xs text-ink-muted"
             >
               Edit Grade available
             </span>
@@ -213,13 +210,13 @@ export function GradeAssignmentPage() {
           {entry.canSubmit ? (
             <button
               type="button"
-              className="rounded-sm bg-slate-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+              className="rounded-control bg-accent-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-700"
             >
               {entry.status === 'draft' ? 'Continue Draft' : 'Submit'}
             </button>
           ) : null}
         </section>
       </div>
-    </main>
+    </div>
   )
 }

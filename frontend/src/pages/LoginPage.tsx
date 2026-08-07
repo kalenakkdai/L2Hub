@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { getDevCredentials } from '../auth/devAuth'
 import { FullPageMessage } from '../components/FullPageMessage'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -20,12 +21,15 @@ export function LoginPage() {
   const { status, sessionExpired, signIn, clearSessionExpired } = useAuth()
   const location = useLocation()
   const [formError, setFormError] = useState<string | null>(null)
+  const devCredentials = getDevCredentials()
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFields>({ defaultValues: { email: '', password: '' } })
+  } = useForm<LoginFields>({
+    defaultValues: { email: devCredentials?.email ?? '', password: '' },
+  })
 
   if (status === 'loading') {
     return <FullPageMessage>Loading…</FullPageMessage>
@@ -67,6 +71,11 @@ export function LoginPage() {
 
         <h1 className="mt-5 text-center text-display font-semibold text-ink">L2 Hub</h1>
         <p className="mt-1 text-center text-ink-muted">Sign in to continue.</p>
+        {devCredentials ? (
+          <p className="mt-2 text-center text-xs text-ink-subtle">
+            Local development account is enabled.
+          </p>
+        ) : null}
 
         {sessionExpired && (
           <p

@@ -18,30 +18,30 @@ export function CompletionCriteria({ feedback }: { feedback: GradeFeedback }) {
     <section aria-labelledby="completion-criteria-heading">
       <h2
         id="completion-criteria-heading"
-        className="text-[13px] font-semibold text-slate-900"
+        className="text-[13px] font-semibold text-ink"
       >
         {heading}
       </h2>
       {feedback.summary ? (
-        <p className="mt-1 text-xs text-slate-600">{feedback.summary}</p>
+        <p className="mt-1 text-xs text-ink-muted">{feedback.summary}</p>
       ) : null}
       {feedback.items && feedback.items.length > 0 ? (
         <ul className="mt-3 space-y-2">
           {feedback.items.map((item) => (
             <li
               key={item.id}
-              className="flex items-start gap-2 text-sm text-slate-800"
+              className="flex items-start gap-2 text-sm text-ink"
             >
               {item.passed === true ? (
                 <Check
                   size={16}
-                  className="mt-0.5 shrink-0 text-emerald-600"
+                  className="mt-0.5 shrink-0 text-accent-700"
                   aria-hidden="true"
                 />
               ) : item.passed === false ? (
                 <X
                   size={16}
-                  className="mt-0.5 shrink-0 text-red-600"
+                  className="mt-0.5 shrink-0 text-status-danger"
                   aria-hidden="true"
                 />
               ) : (
@@ -54,7 +54,7 @@ export function CompletionCriteria({ feedback }: { feedback: GradeFeedback }) {
                   ? ` (${item.pointsEarned} / ${item.pointsPossible})`
                   : ''}
                 {item.note ? (
-                  <span className="block text-slate-500">{item.note}</span>
+                  <span className="block text-ink-subtle">{item.note}</span>
                 ) : null}
               </span>
               <span className="sr-only">

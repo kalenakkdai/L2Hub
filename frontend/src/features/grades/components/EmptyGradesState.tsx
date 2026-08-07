@@ -8,11 +8,11 @@ export function EmptyGradesState({
   return (
     <div
       role="status"
-      className="rounded-md border border-dashed border-slate-300 bg-white px-4 py-10 text-center"
+      className="rounded-card border border-dashed border-border-strong bg-surface px-4 py-10 text-center"
     >
-      <p className="text-sm font-medium text-slate-800">{title}</p>
+      <p className="text-sm font-medium text-ink">{title}</p>
       {description ? (
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
+        <p className="mt-1 text-sm text-ink-muted">{description}</p>
       ) : null}
     </div>
   )
@@ -28,14 +28,14 @@ export function GradesErrorState({
   return (
     <div
       role="alert"
-      className="rounded-md border border-red-200 bg-red-50 px-4 py-6 text-center"
+      className="rounded-card border border-status-danger-bg bg-status-danger-bg px-4 py-6 text-center"
     >
-      <p className="text-sm font-medium text-red-800">{message}</p>
+      <p className="text-sm font-medium text-status-danger">{message}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-700"
+          className="mt-3 rounded-control bg-navy-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-navy-800"
         >
           Try again
         </button>
