@@ -2,25 +2,31 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from './cn'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'navy'
-type Size = 'sm' | 'md'
+type Variant = 'primary' | 'secondary' | 'light' | 'ghost' | 'icon'
+type Size = 'sm' | 'md' | 'lg'
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent-600 text-white hover:bg-accent-700',
   secondary:
-    'border border-border-strong bg-surface text-ink hover:bg-surface-sunken',
-  ghost: 'text-ink-muted hover:bg-status-neutral-bg hover:text-ink',
-  // For use on dark chrome, where the accent fill would be too heavy.
-  navy: 'bg-white/10 text-navy-ink hover:bg-white/15',
+    'border border-border-subtle bg-surface text-accent-600 hover:border-accent-600 hover:bg-accent-50',
+  /** For use on the near-black chrome, where an accent fill disappears. */
+  light: 'bg-white text-accent-600 hover:bg-accent-50',
+  ghost: 'text-ink-subtle hover:bg-surface-muted hover:text-ink',
+  icon: 'border border-border-subtle bg-surface text-ink-muted hover:border-accent-600 hover:text-accent-600',
 }
 
 const SIZES: Record<Size, string> = {
   sm: 'h-8 gap-1.5 px-3 text-label',
-  md: 'h-10 gap-2 px-4 text-sm',
+  md: 'h-9 gap-2 px-4 text-sm',
+  lg: 'h-11 gap-2.5 px-5 text-[15px]',
 }
 
 const BASE =
-  'inline-flex items-center justify-center rounded-control font-medium transition duration-150 ease-out-quick disabled:pointer-events-none disabled:opacity-60'
+  'inline-flex items-center justify-center rounded-control font-medium transition duration-[420ms] ease-out-quick hover:duration-[260ms] disabled:pointer-events-none disabled:opacity-60'
+
+/** Buttons lift very slightly and nudge their trailing arrow. That is all. */
+const MOTION =
+  'hover:scale-[1.015] hover:shadow-card-hover [&_svg]:transition-transform [&_svg]:duration-[260ms] hover:[&_svg:last-child]:translate-x-[3px]'
 
 type CommonProps = {
   variant?: Variant
@@ -37,13 +43,16 @@ export function Button({
   ...rest
 }: CommonProps & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button className={cn(BASE, VARIANTS[variant], SIZES[size], className)} {...rest}>
+    <button
+      className={cn(BASE, variant !== 'icon' && MOTION, VARIANTS[variant], SIZES[size], className)}
+      {...rest}
+    >
       {children}
     </button>
   )
 }
 
-/** Same visual treatment for navigation, so links and buttons never diverge. */
+/** Same treatment for navigation, so links and buttons never drift apart. */
 export function ButtonLink({
   to,
   variant = 'primary',
@@ -52,7 +61,10 @@ export function ButtonLink({
   children,
 }: CommonProps & { to: string }) {
   return (
-    <Link to={to} className={cn(BASE, VARIANTS[variant], SIZES[size], className)}>
+    <Link
+      to={to}
+      className={cn(BASE, MOTION, VARIANTS[variant], SIZES[size], className)}
+    >
       {children}
     </Link>
   )

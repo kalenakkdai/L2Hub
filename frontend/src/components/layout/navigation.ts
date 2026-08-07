@@ -1,13 +1,22 @@
 import {
+  BookOpen,
   BookOpenCheck,
   CalendarDays,
+  ClipboardCheck,
   ClipboardList,
   LayoutDashboard,
   MessagesSquare,
   Settings2,
   Users,
+  UsersRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+
+export type NavBadge =
+  /** A plain count, rendered in mono beside the label. */
+  | { kind: 'count'; value: number; tone?: 'accent' | 'muted' }
+  /** A pulsing marker for something happening right now. */
+  | { kind: 'live' }
 
 export type NavItemDefinition = {
   label: string
@@ -15,6 +24,7 @@ export type NavItemDefinition = {
   icon: LucideIcon
   /** When set, item is shown only if the caller holds this permission. */
   permission?: string
+  badge?: NavBadge
 }
 
 export type NavSection = {
@@ -26,14 +36,22 @@ export type NavSection = {
 /**
  * Navigation is data, not markup, so the sidebar and the mobile drawer render
  * exactly the same destinations from one source.
+ *
+ * Badge counts are placeholders until the endpoints that would supply them
+ * exist; they are presentational and carry no authorization meaning.
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
     items: [
       { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-      { label: 'Grades', to: '/grades', icon: BookOpenCheck },
       {
-        label: 'Users',
+        label: 'Grades',
+        to: '/grades',
+        icon: BookOpenCheck,
+        badge: { kind: 'count', value: 2, tone: 'accent' },
+      },
+      {
+        label: 'Campers',
         to: '/admin/users',
         icon: Users,
         permission: 'users.view',
@@ -43,22 +61,41 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Work',
     items: [
-      { label: 'My tasks', to: '/tasks', icon: ClipboardList },
-      { label: 'Committee', to: '/committee', icon: Users },
+      {
+        label: 'My tasks',
+        to: '/tasks',
+        icon: ClipboardList,
+        badge: { kind: 'count', value: 3, tone: 'accent' },
+      },
+      {
+        label: 'Committees',
+        to: '/committees',
+        icon: UsersRound,
+        badge: { kind: 'count', value: 12, tone: 'muted' },
+      },
       { label: 'Events', to: '/events', icon: CalendarDays },
-      { label: 'Event planning', to: '/event-planning', icon: ClipboardList },
-      { label: 'Debriefs', to: '/debriefs', icon: MessagesSquare },
+      { label: 'Event planning', to: '/event-planning', icon: ClipboardCheck },
+      {
+        label: 'Debriefs',
+        to: '/debriefs',
+        icon: MessagesSquare,
+        badge: { kind: 'live' },
+      },
     ],
   },
   {
     title: 'Leadership',
-    items: [{ label: 'Tools', to: '/tools', icon: Settings2 }],
+    items: [
+      { label: 'Tools', to: '/tools', icon: Settings2 },
+      { label: 'Resources', to: '/resources', icon: BookOpen },
+    ],
   },
 ]
 
 /** Routes that exist today. Anything else renders as "coming soon". */
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
+  '/committees',
   '/grades',
   '/admin/users',
   '/events',

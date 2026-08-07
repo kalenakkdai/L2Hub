@@ -19,6 +19,8 @@ import {
   MockEventPlanningDataProvider,
 } from './features/event-planning'
 import { DashboardPage } from './pages/DashboardPage'
+import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
+import { CommitteesPage } from './features/committees/CommitteesPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
 import {
@@ -78,6 +80,22 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <UsersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/committees"
+        element={
+          <RequireAuth>
+            <CommitteesPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/committees/:committeeId"
+        element={
+          <RequireAuth>
+            <CommitteeDetailPage />
           </RequireAuth>
         }
       />

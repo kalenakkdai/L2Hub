@@ -1,9 +1,31 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '../ui/cn'
-import { IMPLEMENTED_ROUTES, type NavItemDefinition } from './navigation'
+import { IMPLEMENTED_ROUTES, type NavBadge, type NavItemDefinition } from './navigation'
 
 const BASE =
-  'group relative flex items-center gap-3 rounded-control px-3 py-2 text-sm transition duration-150 ease-out-quick'
+  'group flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-sm transition duration-[420ms] ease-out-quick hover:duration-[260ms]'
+
+function Badge({ badge }: { badge: NavBadge }) {
+  if (badge.kind === 'live') {
+    return (
+      <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[9.5px] tracking-[0.1em] text-accent-400 uppercase">
+        <span aria-hidden="true" className="h-[5px] w-[5px] rounded-full bg-accent-400" />
+        Live
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={cn(
+        'ml-auto font-mono text-[11px]',
+        badge.tone === 'accent' ? 'text-accent-400' : 'text-navy-ink-subtle',
+      )}
+    >
+      {badge.value}
+    </span>
+  )
+}
 
 type NavItemProps = {
   item: NavItemDefinition
@@ -17,17 +39,14 @@ type NavItemProps = {
  * nothing in the navigation leads to a blank page.
  */
 export function NavItem({ item, onNavigate }: NavItemProps) {
-  const { icon: Icon, label, to } = item
+  const { icon: Icon, label, to, badge } = item
 
   if (!IMPLEMENTED_ROUTES.has(to)) {
     return (
-      <span
-        aria-disabled="true"
-        className={cn(BASE, 'cursor-default text-navy-ink-muted/60')}
-      >
-        <Icon aria-hidden="true" className="h-4.5 w-4.5 shrink-0" />
+      <span aria-disabled="true" className={cn(BASE, 'cursor-default text-navy-ink-subtle')}>
+        <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
         <span className="truncate">{label}</span>
-        <span className="ml-auto text-[0.6875rem] tracking-wide text-navy-ink-muted/60 uppercase">
+        <span className="ml-auto font-mono text-[9.5px] tracking-[0.1em] uppercase">
           Soon
         </span>
       </span>
@@ -41,25 +60,16 @@ export function NavItem({ item, onNavigate }: NavItemProps) {
       className={({ isActive }) =>
         cn(
           BASE,
+          // Active state is the one place the accent appears in the chrome.
           isActive
-            ? 'bg-navy-700 font-medium text-navy-ink'
-            : 'text-navy-ink-muted hover:bg-navy-800 hover:text-navy-ink',
+            ? 'bg-accent-600 font-medium text-navy-ink'
+            : 'text-navy-ink-muted hover:translate-x-0.5 hover:bg-white/8 hover:text-navy-ink',
         )
       }
     >
-      {({ isActive }) => (
-        <>
-          {/* The accent rail is the only saturated pixel in the chrome. */}
-          {isActive && (
-            <span
-              aria-hidden="true"
-              className="absolute top-1.5 bottom-1.5 -left-3 w-0.5 rounded-full bg-accent-400"
-            />
-          )}
-          <Icon aria-hidden="true" className="h-4.5 w-4.5 shrink-0" />
-          <span className="truncate">{label}</span>
-        </>
-      )}
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+      {badge && <Badge badge={badge} />}
     </NavLink>
   )
 }

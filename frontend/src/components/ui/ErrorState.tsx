@@ -1,5 +1,4 @@
 import { AlertTriangle, Lock } from 'lucide-react'
-import { Card } from './Card'
 import { Button } from './Button'
 
 type ErrorStateProps = {
@@ -20,18 +19,18 @@ export function ErrorState({
   const Icon = isUnauthorized ? Lock : AlertTriangle
 
   return (
-    <Card className="flex flex-col items-center px-6 py-10 text-center">
+    <div className="rounded-card border border-border-subtle bg-surface px-6 py-8 text-center shadow-card">
       <span
         className={
           isUnauthorized
-            ? 'flex h-10 w-10 items-center justify-center rounded-full bg-status-neutral-bg'
-            : 'flex h-10 w-10 items-center justify-center rounded-full bg-status-danger-bg'
+            ? 'inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted'
+            : 'inline-flex h-10 w-10 items-center justify-center rounded-full bg-status-danger-bg'
         }
       >
         <Icon
           aria-hidden="true"
           className={
-            isUnauthorized ? 'h-5 w-5 text-status-neutral' : 'h-5 w-5 text-status-danger'
+            isUnauthorized ? 'h-5 w-5 text-ink-subtle' : 'h-5 w-5 text-status-danger'
           }
         />
       </span>
@@ -39,8 +38,8 @@ export function ErrorState({
       {/* role=alert on the wrapper so the reason is announced along with the
        * heading — a title alone tells a screen reader user nothing useful. */}
       <div role="alert">
-        <p className="mt-3 font-medium text-ink">{title}</p>
-        <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
+        <p className="mt-3 font-semibold text-ink">{title}</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-subtle">{description}</p>
       </div>
 
       {onRetry && (
@@ -48,6 +47,6 @@ export function ErrorState({
           Try again
         </Button>
       )}
-    </Card>
+    </div>
   )
 }

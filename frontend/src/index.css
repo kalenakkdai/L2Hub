@@ -1,89 +1,120 @@
 @import "tailwindcss";
 
 /*
- * L2 Hub design tokens.
+ * L2 Hub design tokens — "The Quad".
  *
  * Everything visual is defined once here and consumed as ordinary Tailwind
  * utilities (bg-navy-900, text-ink-muted, rounded-card, shadow-card).
  * Components should not invent colours, radii, or shadows of their own.
  *
- * Contrast ratios noted below are against the surface each token is meant to
- * sit on, and all text pairs meet WCAG AA.
+ * Token NAMES are stable across redesigns; only their values move. That is
+ * what lets a palette change reach every feature without touching component
+ * code. Contrast ratios below are measured against the surface each token is
+ * meant to sit on, and every text pair meets WCAG AA.
  */
 @theme {
-  /* ---- Navigation chrome -------------------------------------------- */
-  --color-navy-950: #05090f;
-  --color-navy-900: #0a1220; /* sidebar background */
-  --color-navy-800: #111c2e; /* hover */
-  --color-navy-700: #1b2a42; /* active surface, dividers */
-  --color-navy-600: #273956;
-  --color-navy-ink: #e6eaf2; /* 15.1:1 on navy-900 */
-  --color-navy-ink-muted: #9aa6bc; /* 7.2:1 on navy-900 */
+  /* ---- Navigation chrome (near-black) --------------------------------- */
+  --color-navy-950: #050605;
+  --color-navy-900: #0b0d0c; /* sidebar, login panel */
+  --color-navy-800: #161a18; /* hover */
+  --color-navy-700: #232825; /* dividers, avatar wells */
+  --color-navy-600: #333937;
+  --color-navy-ink: #ffffff; /* 19.4:1 on navy-900 */
+  --color-navy-ink-muted: #b8bcba; /* 9.3:1 on navy-900 */
+  /* The comp used rgba(255,255,255,0.42) here, which lands at 3.6:1 and
+   * fails AA for the 11.5px text it carries. Lightened to clear 4.5:1. */
+  --color-navy-ink-subtle: #8a8f8d; /* 4.7:1 on navy-900 */
 
-  /* ---- Content surfaces ---------------------------------------------- */
-  --color-canvas: #f5f6f8;
+  /* ---- Content surfaces ----------------------------------------------- */
+  /* The content area is white in this system; cards separate by border
+   * rather than by sitting on a grey canvas. */
+  --color-canvas: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-sunken: #fafbfc;
-  --color-border-subtle: #e3e6eb;
-  --color-border-strong: #cfd4dc;
+  --color-surface-sunken: #fbfbfa; /* right rail, table headers */
+  --color-surface-muted: #f7f8f6; /* neutral chips, quiet tiles */
+  --color-shell: #e9ebe6; /* outermost page, behind the app frame */
 
-  /* ---- Ink ------------------------------------------------------------ */
-  --color-ink: #101828; /* 16.1:1 on white */
-  --color-ink-muted: #475467; /* 7.5:1 on white */
-  --color-ink-subtle: #667085; /* 5.3:1 on white */
+  /* ---- Borders --------------------------------------------------------- */
+  --color-border-subtle: #e4e6e2; /* card outlines */
+  --color-border-divider: #ededeb; /* rows within a card */
+  --color-border-strong: #d8dbd4; /* frame edges, hover */
+  --color-border-dotted: #c9cec9; /* the dotted-trail motif */
 
-  /* ---- Accent (green) -------------------------------------------------
-   * The only saturated colour on the page. Budget: active nav rail,
-   * primary actions, progress fill, focus rings, count badges. */
-  --color-accent-50: #ecfdf3;
-  --color-accent-100: #d1fadf;
-  --color-accent-400: #3dbf87; /* on navy — 6.4:1 on navy-900 */
-  --color-accent-600: #047857; /* fills with white text — 5.4:1 */
-  --color-accent-700: #036048; /* hover / text on white — 7.1:1 */
+  /* ---- Ink ------------------------------------------------------------- */
+  --color-ink: #0b0d0c; /* 19.4:1 on white */
+  --color-ink-muted: #3b403d; /* 10.3:1 on white */
+  --color-ink-subtle: #6b726e; /* 5.2:1 on white */
+  --color-ink-faint: #b7bdb8; /* 2.1:1 — decorative only, never body text */
 
-  /* ---- Status ---------------------------------------------------------
+  /* ---- Accent (deep forest) --------------------------------------------
+   * The only saturated colour in the system. Budget: active nav, primary
+   * actions, progress fills, focus rings, accent badges. Note 700 is
+   * *lighter* than 600 — this palette brightens on hover. */
+  --color-accent-50: #f1f6f2; /* tinted panels */
+  --color-accent-100: #e8f0ea; /* progress tracks, badge fills */
+  --color-accent-200: #cfdfd4; /* accent borders */
+  --color-accent-400: #9be3be; /* on dark chrome — 10.9:1 on navy-900 */
+  --color-accent-600: #12372a; /* fills with white text — 11.9:1 */
+  --color-accent-700: #1a4d38; /* hover, and accent text on white — 8.9:1 */
+
+  /* ---- Status ----------------------------------------------------------
    * No green here: "complete" uses the accent, so green never carries two
    * different meanings. */
-  --color-status-warning: #b54708;
-  --color-status-warning-bg: #fffaeb;
-  --color-status-danger: #b42318;
-  --color-status-danger-bg: #fef3f2;
+  --color-status-warning: #8a5a00;
+  --color-status-warning-bg: #fbf3e4;
+  --color-status-warning-border: #efdfbe;
+  --color-status-danger: #8c2f1e;
+  --color-status-danger-bg: #fbeeeb;
+  --color-status-danger-border: #f0d6cf;
   --color-status-info: #175cd3;
   --color-status-info-bg: #eff8ff;
-  --color-status-neutral: #344054;
-  --color-status-neutral-bg: #f2f4f7;
+  --color-status-info-border: #d1e9ff;
+  --color-status-neutral: #6b726e;
+  --color-status-neutral-bg: #f7f8f6;
+  --color-status-neutral-border: #e4e6e2;
+  --color-status-amber: #d99b12; /* live-participation dots */
 
-  /* ---- Grade bands ---------------------------------------------------- */
+  /* ---- Grade bands ------------------------------------------------------ */
   --color-grade-a-plus: #a7f3d0;
   --color-grade-a: #d1fadf;
   --color-grade-a-minus: #ecfdf3;
   --color-grade-bc: #fef0c7;
   --color-grade-below-c: #fee4e2;
 
-  /* ---- Shape ---------------------------------------------------------- */
-  --radius-control: 0.5rem;
-  --radius-card: 0.875rem;
+  /* ---- Shape ------------------------------------------------------------ */
+  --radius-control: 0.4375rem; /* 7px — buttons, inputs */
+  --radius-card: 0.5rem; /* 8px — cards, tables */
+  --radius-panel: 0.625rem; /* 10px — the event hero */
+  --radius-frame: 0.875rem; /* 14px — the app frame itself */
 
-  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
-  --shadow-card: 0 1px 3px rgb(16 24 40 / 0.08), 0 1px 2px rgb(16 24 40 / 0.04);
-  --shadow-card-hover: 0 4px 12px rgb(16 24 40 / 0.08);
-  --shadow-overlay: 0 20px 40px rgb(16 24 40 / 0.16);
+  --shadow-xs: 0 1px 2px rgb(11 13 12 / 0.05);
+  --shadow-card: 0 1px 2px rgb(11 13 12 / 0.05);
+  --shadow-card-hover: 0 16px 36px rgb(11 13 12 / 0.1);
+  --shadow-card-hover-dark: 0 18px 44px rgb(11 13 12 / 0.28);
+  --shadow-overlay: 0 20px 40px rgb(11 13 12 / 0.28);
 
-  /* ---- Typography ------------------------------------------------------ */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  /* ---- Typography -------------------------------------------------------- */
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --text-display: 2rem;
-  --text-display--line-height: 2.375rem;
-  --text-display--letter-spacing: -0.02em;
-  --text-title: 1.25rem;
-  --text-title--line-height: 1.75rem;
-  --text-title--letter-spacing: -0.01em;
+  --text-display: 2rem; /* page titles */
+  --text-display--line-height: 2.25rem;
+  --text-display--letter-spacing: -0.022em;
+  --text-hero: 2.125rem; /* the event hero headline */
+  --text-hero--line-height: 2.5rem;
+  --text-hero--letter-spacing: -0.025em;
+  --text-title: 1.1875rem; /* section headings */
+  --text-title--line-height: 1.625rem;
+  --text-title--letter-spacing: -0.012em;
   --text-label: 0.8125rem;
   --text-label--line-height: 1.125rem;
+  --text-micro: 0.71875rem; /* mono eyebrows */
+  --text-micro--line-height: 1rem;
 
-  /* ---- Motion ---------------------------------------------------------- */
+  /* ---- Motion ------------------------------------------------------------ */
   --ease-out-quick: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @layer base {
@@ -107,20 +138,138 @@
     border-radius: var(--radius-control);
   }
 
-  /* The accent is too dark to see against navy, so the chrome gets the
-   * lighter step. */
+  /* The accent is too dark to see against near-black chrome, so anything
+   * inside .on-navy gets the mint step instead. */
   .on-navy :focus-visible {
     outline-color: var(--color-accent-400);
   }
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
+@layer utilities {
+  /* The dotted trail: one motif, used under every section heading and as
+   * the connective tissue in the calendar rail and committee rows. */
+  .dotted-trail {
+    background: repeating-linear-gradient(
+      to right,
+      var(--color-border-dotted) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .dotted-trail-dark {
+    background: repeating-linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.28) 0 2px,
+      transparent 2px 7px
+    );
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion
+ *
+ * Four moments, and no more: content rises in on scroll, progress bars grow
+ * with a slight overshoot, a checkbox draws its tick, and a level-up throws
+ * one confetti burst. Everything else is a 2-3px hover nudge.
+ * ------------------------------------------------------------------------ */
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes growX {
+  0% {
+    transform: scaleX(0);
+  }
+  68% {
+    transform: scaleX(1.035);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes confettiFly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  }
+}
+
+.animate-rise-in {
+  animation: riseIn 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-grow-x {
+  transform-origin: left;
+  animation: growX 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Scroll reveal, driven by IntersectionObserver in useReveal(). */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 500ms var(--ease-out-quick),
+    transform 500ms var(--ease-out-quick);
+}
+
+[data-reveal][data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Confetti, appended imperatively on level-up. */
+.confetti-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.confetti-burst span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  animation: confettiFly 900ms var(--ease-out-quick) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .confetti-burst {
+    display: none;
   }
 }

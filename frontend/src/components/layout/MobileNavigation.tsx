@@ -9,6 +9,7 @@ import { Wordmark } from './Wordmark'
 type MobileNavigationProps = {
   name: string
   role: string
+  committee?: string | null
   permissions?: string[]
 }
 
@@ -19,6 +20,7 @@ type MobileNavigationProps = {
 export function MobileNavigation({
   name,
   role,
+  committee,
   permissions,
 }: MobileNavigationProps) {
   const [open, setOpen] = useState(false)
@@ -90,18 +92,18 @@ export function MobileNavigation({
               </button>
             </div>
 
-            <nav aria-label="Main" className="flex-1 overflow-y-auto px-6 pb-4">
+            <nav aria-label="Main" className="flex-1 overflow-y-auto px-2.5 pb-4">
               {sections.map((section, index) => (
                 <div
                   key={section.title ?? 'primary'}
-                  className={index > 0 ? 'mt-6' : undefined}
+                  className={index > 0 ? 'mt-3.5' : undefined}
                 >
                   {section.title && (
-                    <p className="mb-2 px-3 text-[0.6875rem] font-semibold tracking-wider text-navy-ink-muted/70 uppercase">
+                    <p className="px-2.5 pt-3.5 pb-1.5 text-[11.5px] font-semibold text-navy-ink-subtle">
                       {section.title}
                     </p>
                   )}
-                  <ul className="flex flex-col gap-0.5">
+                  <ul className="flex flex-col gap-px">
                     {section.items.map((item) => (
                       <li key={item.to}>
                         <NavItem item={item} onNavigate={() => setOpen(false)} />
@@ -112,8 +114,8 @@ export function MobileNavigation({
               ))}
             </nav>
 
-            <div className="border-t border-navy-700 px-6 py-4">
-              <UserMenu name={name} role={role} />
+            <div className="mx-4 border-t border-white/11 py-3.5">
+              <UserMenu name={name} role={role} committee={committee} />
             </div>
           </div>
         </div>

@@ -10,8 +10,8 @@ type CardProps = {
 }
 
 /**
- * The one white surface in the system: 1px border plus a whisper of shadow.
- * That pair does all the separating work, which is why nothing here needs a
+ * The one surface in the system: white, hairline border, barely-there shadow.
+ * Separation comes from the border, which is why nothing here needs a
  * gradient or a heavy drop shadow.
  */
 export function Card({ children, className, interactive = false, as = 'div' }: CardProps) {
@@ -22,7 +22,7 @@ export function Card({ children, className, interactive = false, as = 'div' }: C
       className={cn(
         'rounded-card border border-border-subtle bg-surface shadow-card',
         interactive &&
-          'transition duration-150 ease-out-quick hover:border-border-strong hover:shadow-card-hover',
+          'transition duration-[420ms] ease-out-quick hover:-translate-y-[3px] hover:border-accent-200 hover:shadow-card-hover hover:duration-[260ms]',
         className,
       )}
     >

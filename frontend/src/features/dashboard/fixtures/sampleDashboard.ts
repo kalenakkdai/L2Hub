@@ -3,18 +3,20 @@
  * ===========================================================================
  *
  * None of this is real. It exists so the dashboard can be designed and
- * reviewed before `GET /dashboard/modules` is built, and it will be deleted
+ * reviewed before the endpoint behind it is built, and it will be deleted
  * once that endpoint returns the same shape (see ../types.ts).
  *
- * Two things to keep in mind while this file exists:
+ * Three things to keep in mind while this file exists:
  *
  * 1. `committee` is NOT in the database. The profiles table has no committee
- *    column and /auth/me does not return one. Adding it is a Phase 3 schema
- *    decision, not something this fixture should be taken to have settled.
+ *    column and /auth/me does not return one. Adding it is a schema decision,
+ *    not something this fixture should be taken to have settled.
  *
- * 2. The module list is deliberately flat and unfiltered. The server decides
- *    which modules a member can see; the UI renders whatever it is handed and
- *    makes no authorization decisions of its own.
+ * 2. Points, levels, streaks, and prep checklists have no backing tables at
+ *    all. They are design concepts at this stage, nothing more.
+ *
+ * 3. Nothing here is filtered by role. The server decides what a camper may
+ *    see; the UI renders whatever it is handed.
  * ======================================================================== */
 
 import type { DashboardData } from '../types'
@@ -24,188 +26,199 @@ function hoursFromNow(hours: number): string {
   return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
 }
 
-export const SAMPLE_DASHBOARD: DashboardData = {
-  committee: 'Events Committee',
+function daysFromNow(days: number, hour = 9): string {
+  const date = new Date(Date.now() + days * 86_400_000)
+  date.setHours(hour, 0, 0, 0)
+  return date.toISOString()
+}
 
-  featured: {
-    kind: 'event',
-    title: 'Maze Day 2026 — Event Summary',
-    summary:
-      'Debrief complete. Request generation or open the live participant monitor.',
-    startsAt: hoursFromNow(-20),
-    location: 'Campus · Main Quad',
-    status: { label: 'Not Requested', tone: 'warning' },
-    actionLabel: 'Open event',
-    to: '/events/maze-day-2026/summary',
+export const SAMPLE_DASHBOARD: DashboardData = {
+  committee: 'Activities committee',
+  campsiteCount: 9,
+
+  stats: { points: 1240, level: 8, openCount: 3 },
+
+  nextEvent: {
+    id: 'maze-day',
+    title: 'Maze Day 2026',
+    startsAt: hoursFromNow(18.7),
+    window: '8:00 AM – 1:30 PM',
+    location: 'Main Quad & Gym',
+    assignment: {
+      title: 'Booth lead — Check-in table B',
+      detail: 'Report 7:15 AM, Gym entrance',
+    },
+    prep: [
+      { id: 'supplies', label: 'Pick up supplies from room 402', done: true },
+      { id: 'budget', label: 'Submit booth budget form', done: false },
+      { id: 'roster', label: 'Confirm table B roster', done: true },
+      { id: 'signage', label: 'Print check-in signage', done: false },
+    ],
+    to: '/events',
+  },
+
+  calendar: [
+    { date: daysFromNow(0), isToday: true },
+    { date: daysFromNow(1, 8), title: 'Maze Day 2026', detail: 'Debrief · 2:00 PM' },
+    { date: daysFromNow(4) },
+    {
+      date: daysFromNow(5, 15),
+      title: 'Activities committee sync',
+      detail: '3:30 PM · Room 402',
+    },
+    { date: daysFromNow(6) },
+    { date: daysFromNow(9, 10), title: 'Fall rally planning', detail: '10:00 AM' },
+    { date: daysFromNow(11, 15), title: 'Officer check-in', detail: '3:30 PM' },
+  ],
+
+  attention: [
+    {
+      id: 'maze-debrief',
+      title: 'Maze Day 2026 — Debrief Submission',
+      meta: 'Event debrief · due today 4:30 PM — 3 of 6 questions · 20 pts possible',
+      status: { label: 'Draft', tone: 'warning' },
+      urgency: 'high',
+      progress: { value: 3, max: 6 },
+      action: { label: 'Continue', to: '/grades', emphasis: 'primary' },
+    },
+    {
+      id: 'spring-rally',
+      title: 'Spring Rally — Material Checklist',
+      meta: 'Closed 2 days ago · 0 / 15 pts — ask an adviser to reopen',
+      status: { label: 'Missing', tone: 'danger' },
+      urgency: 'overdue',
+      action: { label: 'Request reopen', to: '/grades', emphasis: 'secondary' },
+    },
+    {
+      id: 'booth-budget',
+      title: 'Booth Budget — Committee Deliverable',
+      meta: 'Due tomorrow 11:59 PM · late accepted until Aug 10 — 10 pts possible',
+      status: { label: 'Not started', tone: 'neutral' },
+      urgency: 'normal',
+      action: { label: 'Open', to: '/grades', emphasis: 'secondary' },
+    },
+  ],
+
+  grades: {
+    completed: 14,
+    missing: 1,
+    open: 2,
+    pointsEarned: 268,
+    pointsPossible: 310,
+    rows: [
+      {
+        id: 'g1',
+        assignment: 'Maze Day 2026 — Debrief Submission',
+        event: 'Maze Day 2026',
+        status: { label: 'Draft', tone: 'warning' },
+        earned: null,
+        possible: 20,
+        band: null,
+      },
+      {
+        id: 'g2',
+        assignment: 'Winter Drive — Debrief Submission',
+        event: 'Winter Drive',
+        status: { label: 'Graded', tone: 'accent' },
+        earned: 20,
+        possible: 20,
+        band: 'a-plus',
+      },
+      {
+        id: 'g3',
+        assignment: 'Committee Sync — Meeting Response',
+        event: null,
+        status: { label: 'Submitted', tone: 'accent' },
+        earned: 8,
+        possible: 10,
+        band: 'bc',
+      },
+      {
+        id: 'g4',
+        assignment: 'Spring Rally — Material Checklist',
+        event: 'Spring Rally',
+        status: { label: 'Missing', tone: 'danger' },
+        earned: 0,
+        possible: 15,
+        band: 'below-c',
+      },
+    ],
   },
 
   progress: {
-    level: 4,
-    levelTitle: 'Contributor',
+    level: 8,
+    levelTitle: 'Section Lead',
     points: 1240,
-    pointsToNextLevel: 1500,
-    eventsAttended: 17,
-    eventsPossible: 21,
-    participationRate: 81,
+    pointsToNextLevel: 1400,
+    streakWeeks: 10,
+    tasksDone: 27,
+    participationRate: 96,
+    note: 'Ten weeks in a row. That is a whole quarter without missing a beat.',
   },
-
-  modules: [
-    {
-      id: 'tasks',
-      group: 'my_work',
-      title: 'My tasks',
-      description: 'Assignments across every committee you belong to.',
-      icon: 'ClipboardList',
-      to: '/tasks',
-      count: 3,
-      badge: { label: '1 overdue', tone: 'danger' },
-    },
-    {
-      id: 'submissions',
-      group: 'my_work',
-      title: 'Submissions',
-      description: 'Forms, reflections, and debrief responses you owe.',
-      icon: 'FileText',
-      to: '/submissions',
-      count: 2,
-    },
-    {
-      id: 'points',
-      group: 'my_work',
-      title: 'Points ledger',
-      description: 'Every point you have earned and where it came from.',
-      icon: 'Sparkles',
-      to: '/points',
-    },
-
-    {
-      id: 'roster',
-      group: 'committee',
-      title: 'Committee roster',
-      description: 'Who is on Events Committee and how to reach them.',
-      icon: 'Users',
-      to: '/committee',
-      count: 12,
-    },
-    {
-      id: 'agenda',
-      group: 'committee',
-      title: 'Agendas',
-      description: 'Meeting agendas and the notes that came out of them.',
-      icon: 'ListChecks',
-      to: '/committee/agendas',
-    },
-    {
-      id: 'concerns',
-      group: 'committee',
-      title: 'Anonymous concerns',
-      description: 'Raise something privately with an AC.',
-      icon: 'ShieldQuestion',
-      to: '/concerns',
-    },
-
-    {
-      id: 'upcoming',
-      group: 'events',
-      title: 'Upcoming events',
-      description: 'What is scheduled and who has committed to attending.',
-      icon: 'CalendarDays',
-      to: '/events',
-      count: 5,
-    },
-    {
-      id: 'debriefs',
-      group: 'events',
-      title: 'Debriefs',
-      description: 'Post-event reflections while the details are still fresh.',
-      icon: 'MessagesSquare',
-      to: '/debriefs',
-      badge: { label: '2 open', tone: 'info' },
-    },
-    {
-      id: 'attendance',
-      group: 'events',
-      title: 'Attendance',
-      description: 'Check in, check out, and see your lateness record.',
-      icon: 'UserCheck',
-      to: '/attendance',
-    },
-
-    {
-      id: 'gradebook',
-      group: 'leadership',
-      title: 'Gradebook',
-      description: 'Participation grades built from attendance and points.',
-      icon: 'GraduationCap',
-      to: '/tools/gradebook',
-    },
-    {
-      id: 'sessions',
-      group: 'leadership',
-      title: 'Session control',
-      description: 'Start, time, and close a live session.',
-      icon: 'Timer',
-      to: '/tools/sessions',
-      badge: { label: 'Live', tone: 'accent' },
-    },
-    {
-      id: 'wrapped',
-      group: 'leadership',
-      title: 'Wrapped',
-      description: 'Event Summary recaps for completed events.',
-      icon: 'BarChart3',
-      to: '/events/maze-day-2026/wrapped',
-      badge: { label: 'Maze Day', tone: 'info' },
-    },
-    {
-      id: 'live-debrief',
-      group: 'events',
-      title: 'Live debrief',
-      description: 'Watch participant bubbles during Maze Day debrief.',
-      icon: 'MessagesSquare',
-      to: '/events/maze-day-2026/live',
-      badge: { label: 'Monitor', tone: 'accent' },
-    },
-  ],
 
   activity: [
     {
       id: 'a1',
       kind: 'points',
-      description: 'Earned 25 points for running the Spring Formal vendor call.',
-      occurredAt: hoursFromNow(-3),
+      description: 'Submitted Maze Day feedback',
+      points: 20,
+      occurredAt: hoursFromNow(-2),
     },
     {
       id: 'a2',
       kind: 'submission',
-      description: 'Submitted the Winter Drive debrief.',
+      description: 'Activities committee notes published',
       occurredAt: hoursFromNow(-27),
     },
     {
       id: 'a3',
-      kind: 'event',
-      description: 'Checked in to Committee Sync — 4 minutes early.',
-      occurredAt: hoursFromNow(-52),
+      kind: 'committee',
+      description: 'Added to the Tech committee as committee lead',
+      occurredAt: hoursFromNow(-30),
     },
     {
       id: 'a4',
-      kind: 'level',
-      description: 'Reached Level 4 — Contributor.',
-      occurredAt: hoursFromNow(-96),
+      kind: 'event',
+      description: 'Maze Day moved to review',
+      occurredAt: hoursFromNow(-74),
     },
-    {
-      id: 'a5',
-      kind: 'committee',
-      description: 'Added to the Events Committee logistics group.',
-      occurredAt: hoursFromNow(-150),
-    },
+  ],
+
+  committeeSnapshot: {
+    name: 'Activities',
+    status: 'Maze Day 2026 · in review',
+    readinessPct: 68,
+    actionItemCount: 2,
+    to: '/committees/activities',
+  },
+
+  liveDebrief: {
+    title: 'Maze Day 2026',
+    session: '4:30 PM session',
+    submitted: 31,
+    writing: 9,
+    notStarted: 6,
+    absent: 2,
+    to: '/debriefs',
+  },
+
+  upcoming: [
+    { id: 'u1', startsAt: daysFromNow(1, 8), title: 'Maze Day 2026' },
+    { id: 'u2', startsAt: daysFromNow(1, 14), title: 'Maze Day debrief' },
+    { id: 'u3', startsAt: daysFromNow(5, 15), title: 'Activities committee sync' },
+    { id: 'u4', startsAt: daysFromNow(9, 10), title: 'Fall rally planning' },
   ],
 }
 
 /** Variants used to review the states the real endpoint can produce. */
 export const SAMPLE_DASHBOARD_EMPTY: DashboardData = {
   ...SAMPLE_DASHBOARD,
-  featured: null,
-  modules: [],
+  nextEvent: null,
+  calendar: [],
+  attention: [],
+  grades: { ...SAMPLE_DASHBOARD.grades, rows: [] },
   activity: [],
+  committeeSnapshot: null,
+  liveDebrief: null,
+  upcoming: [],
 }
