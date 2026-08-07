@@ -53,6 +53,13 @@
   --color-status-neutral: #344054;
   --color-status-neutral-bg: #f2f4f7;
 
+  /* ---- Grade bands ---------------------------------------------------- */
+  --color-grade-a-plus: #a7f3d0;
+  --color-grade-a: #d1fadf;
+  --color-grade-a-minus: #ecfdf3;
+  --color-grade-bc: #fef0c7;
+  --color-grade-below-c: #fee4e2;
+
   /* ---- Shape ---------------------------------------------------------- */
   --radius-control: 0.5rem;
   --radius-card: 0.875rem;

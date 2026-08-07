@@ -188,6 +188,14 @@ describe('GradesPage', () => {
       table.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     expect(screen.getByText('60%')).toBeInTheDocument()
+    const colorKey = screen.getByRole('list', {
+      name: 'Grade range color key',
+    })
+    expect(within(colorKey).getByText('A+')).toBeInTheDocument()
+    expect(within(colorKey).getByText('A')).toBeInTheDocument()
+    expect(within(colorKey).getByText('A−')).toBeInTheDocument()
+    expect(within(colorKey).getByText('B–C')).toBeInTheDocument()
+    expect(within(colorKey).getByText('Below C')).toBeInTheDocument()
   })
 })
 
