@@ -1,0 +1,8 @@
+# Without this, whether `app` counts as a first-party import depends on the
+# directory ruff is invoked from, so `ruff check .` and `ruff check backend`
+# disagree about import order. Pin it.
+
+line-length = 100
+
+[lint.isort]
+known-first-party = ["app"]

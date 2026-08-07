@@ -13,5 +13,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    restoreMocks: true,
+    // The Supabase mock is created once per module, so call history would
+    // otherwise carry across tests in the same file.
+    clearMocks: true,
   },
 })

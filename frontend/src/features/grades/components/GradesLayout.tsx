@@ -44,7 +44,7 @@ export function GradesLayout() {
         </div>
 
         <nav className="flex gap-1 px-2 py-2 md:flex-col md:py-0">
-          <NavLink to="/" className={navLinkClass} end>
+          <NavLink to="/dashboard" className={navLinkClass}>
             <House size={14} aria-hidden="true" />
             Dashboard
           </NavLink>

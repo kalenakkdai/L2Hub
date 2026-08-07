@@ -1,0 +1,14 @@
+# Supabase project configuration.
+#
+# This file is safe to commit: it holds no secrets. Project-specific values
+# (project ref, database password, API keys) live in .env files that are
+# gitignored, or in the Supabase dashboard.
+#
+# Migrations in supabase/migrations/ are applied manually via the Supabase
+# SQL Editor for this project. See docs/setup.md.
+
+project_id = "l2hub"
+
+[db]
+# Matches the Postgres major version Supabase runs.
+major_version = 15
