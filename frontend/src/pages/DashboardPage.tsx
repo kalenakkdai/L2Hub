@@ -1,17 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { fetchCurrentUser, roleLabel } from '../api/auth'
+import { LayoutGrid, Inbox } from 'lucide-react'
+import { fetchCurrentUser } from '../api/auth'
 import { ApiError, SessionExpiredError } from '../api/client'
-import { useAuth } from '../auth/useAuth'
 import { useSignOutOnExpiry } from '../auth/useSignOutOnExpiry'
+import { AppShell } from '../components/layout/AppShell'
+import { EmptyState } from '../components/ui/EmptyState'
+import { ErrorState } from '../components/ui/ErrorState'
+import { SectionHeading } from '../components/ui/SectionHeading'
+import { ActivityFeed } from '../features/dashboard/ActivityFeed'
+import { DashboardSkeleton } from '../features/dashboard/DashboardSkeleton'
+import { FeaturedEventCard } from '../features/dashboard/FeaturedEventCard'
+import { ModuleGroup } from '../features/dashboard/ModuleGroup'
+import { GROUP_ORDER } from '../features/dashboard/moduleGroups'
+import { PageHeader } from '../features/dashboard/PageHeader'
+import { ProgressCard } from '../features/dashboard/ProgressCard'
+import { useDashboard } from '../features/dashboard/useDashboard'
+import { FullPageMessage } from '../components/FullPageMessage'
 
-/**
- * Minimal authenticated landing page: who you are, and a way out.
- * The role-aware dashboard is a later phase.
- */
 export function DashboardPage() {
-  const { signOut } = useAuth()
-
+  // Logout lives in the shell's UserMenu, not on the page itself.
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: fetchCurrentUser,
@@ -24,60 +31,107 @@ export function DashboardPage() {
     },
   })
 
+  const dashboardQuery = useDashboard()
+
   // A dead session signs the user out; RequireAuth then sends them to /login.
   useSignOutOnExpiry(meQuery.error)
 
+  if (meQuery.isPending) {
+    return <FullPageMessage>Loading your profile…</FullPageMessage>
+  }
+
+  // On the way out after an expiry — no error UI, just the redirect.
+  if (meQuery.error instanceof SessionExpiredError) {
+    return <FullPageMessage>Signing you out…</FullPageMessage>
+  }
+
+  if (meQuery.isError) {
+    const forbidden = meQuery.error instanceof ApiError && meQuery.error.status === 403
+
+    return (
+      <FullPageMessage>
+        <ErrorState
+          variant={forbidden ? 'unauthorized' : 'error'}
+          title={forbidden ? 'You do not have access' : 'Could not load your profile'}
+          description={
+            meQuery.error instanceof Error
+              ? meQuery.error.message
+              : 'Something went wrong. Please try again.'
+          }
+          onRetry={forbidden ? undefined : () => void meQuery.refetch()}
+        />
+      </FullPageMessage>
+    )
+  }
+
+  const me = meQuery.data
+  const name = me.full_name ?? me.email
+  const data = dashboardQuery.data
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto flex max-w-xl flex-col gap-6 px-6 py-16">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">L2 Hub</h1>
-            <p className="mt-1 text-slate-600">Your account</p>
+    <AppShell name={name} role={me.role}>
+      {dashboardQuery.isPending ? (
+        <DashboardSkeleton />
+      ) : dashboardQuery.isError || !data ? (
+        <div className="flex flex-col gap-8">
+          <PageHeader name={name} role={me.role} committee={null} />
+          <ErrorState
+            title="Could not load your dashboard"
+            description="Your account loaded, but the dashboard contents did not."
+            onRetry={() => void dashboardQuery.refetch()}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8">
+          <PageHeader name={name} role={me.role} committee={data.committee} />
+
+          {/* Hero row: the featured item and progress sit side by side on wide
+              screens so the first screen feels complete without scrolling. */}
+          <div className="grid gap-4 xl:grid-cols-3">
+            <div className="xl:col-span-2">
+              {data.featured ? (
+                <FeaturedEventCard item={data.featured} />
+              ) : (
+                <EmptyState
+                  icon={Inbox}
+                  title="Nothing scheduled"
+                  description="When an event or debrief needs you, it will appear here."
+                />
+              )}
+            </div>
+            <ProgressCard progress={data.progress} />
           </div>
 
-          <button
-            type="button"
-            onClick={() => void signOut('manual')}
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-100"
-          >
-            Log out
-          </button>
-        </header>
-
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          {meQuery.isPending && <p className="text-slate-500">Loading your profile…</p>}
-
-          {meQuery.isError && !(meQuery.error instanceof SessionExpiredError) && (
-            <p role="alert" className="text-red-600">
-              Could not load your profile:{' '}
-              {meQuery.error instanceof Error ? meQuery.error.message : 'Unknown error'}
-            </p>
+          {data.modules.length === 0 ? (
+            <EmptyState
+              icon={LayoutGrid}
+              title="No modules yet"
+              description="Modules appear here as your organization turns them on."
+            />
+          ) : (
+            GROUP_ORDER.map((group) => (
+              <ModuleGroup
+                key={group}
+                group={group}
+                modules={data.modules.filter((module) => module.group === group)}
+              />
+            ))
           )}
 
-          {meQuery.isSuccess && (
-            <dl className="flex flex-col gap-3">
-              <div>
-                <dt className="text-sm text-slate-500">Name</dt>
-                <dd className="text-lg font-medium">
-                  {meQuery.data.full_name ?? meQuery.data.email}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-slate-500">Role</dt>
-                <dd className="text-lg font-medium">{roleLabel(meQuery.data.role)}</dd>
-              </div>
-            </dl>
-          )}
-        </section>
-
-        <Link
-          to="/dev/health"
-          className="text-sm text-slate-500 underline hover:text-slate-700"
-        >
-          Backend health
-        </Link>
-      </div>
-    </main>
+          <section aria-labelledby="recent-activity">
+            <SectionHeading id="recent-activity">Recent activity</SectionHeading>
+            {data.activity.length === 0 ? (
+              <EmptyState
+                icon={Inbox}
+                title="No activity yet"
+                description="Points, check-ins, and submissions will show up here."
+              />
+            ) : (
+              <ActivityFeed items={data.activity} />
+            )}
+          </section>
+        </div>
+      )}
+    </AppShell>
   )
 }

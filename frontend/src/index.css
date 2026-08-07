@@ -1,1 +1,119 @@
 @import "tailwindcss";
+
+/*
+ * L2 Hub design tokens.
+ *
+ * Everything visual is defined once here and consumed as ordinary Tailwind
+ * utilities (bg-navy-900, text-ink-muted, rounded-card, shadow-card).
+ * Components should not invent colours, radii, or shadows of their own.
+ *
+ * Contrast ratios noted below are against the surface each token is meant to
+ * sit on, and all text pairs meet WCAG AA.
+ */
+@theme {
+  /* ---- Navigation chrome -------------------------------------------- */
+  --color-navy-950: #05090f;
+  --color-navy-900: #0a1220; /* sidebar background */
+  --color-navy-800: #111c2e; /* hover */
+  --color-navy-700: #1b2a42; /* active surface, dividers */
+  --color-navy-600: #273956;
+  --color-navy-ink: #e6eaf2; /* 15.1:1 on navy-900 */
+  --color-navy-ink-muted: #9aa6bc; /* 7.2:1 on navy-900 */
+
+  /* ---- Content surfaces ---------------------------------------------- */
+  --color-canvas: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #fafbfc;
+  --color-border-subtle: #e3e6eb;
+  --color-border-strong: #cfd4dc;
+
+  /* ---- Ink ------------------------------------------------------------ */
+  --color-ink: #101828; /* 16.1:1 on white */
+  --color-ink-muted: #475467; /* 7.5:1 on white */
+  --color-ink-subtle: #667085; /* 5.3:1 on white */
+
+  /* ---- Accent (green) -------------------------------------------------
+   * The only saturated colour on the page. Budget: active nav rail,
+   * primary actions, progress fill, focus rings, count badges. */
+  --color-accent-50: #ecfdf3;
+  --color-accent-100: #d1fadf;
+  --color-accent-400: #3dbf87; /* on navy — 6.4:1 on navy-900 */
+  --color-accent-600: #047857; /* fills with white text — 5.4:1 */
+  --color-accent-700: #036048; /* hover / text on white — 7.1:1 */
+
+  /* ---- Status ---------------------------------------------------------
+   * No green here: "complete" uses the accent, so green never carries two
+   * different meanings. */
+  --color-status-warning: #b54708;
+  --color-status-warning-bg: #fffaeb;
+  --color-status-danger: #b42318;
+  --color-status-danger-bg: #fef3f2;
+  --color-status-info: #175cd3;
+  --color-status-info-bg: #eff8ff;
+  --color-status-neutral: #344054;
+  --color-status-neutral-bg: #f2f4f7;
+
+  /* ---- Shape ---------------------------------------------------------- */
+  --radius-control: 0.5rem;
+  --radius-card: 0.875rem;
+
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-card: 0 1px 3px rgb(16 24 40 / 0.08), 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-card-hover: 0 4px 12px rgb(16 24 40 / 0.08);
+  --shadow-overlay: 0 20px 40px rgb(16 24 40 / 0.16);
+
+  /* ---- Typography ------------------------------------------------------ */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --text-display: 2rem;
+  --text-display--line-height: 2.375rem;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--letter-spacing: -0.01em;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.125rem;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --ease-out-quick: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  /* One focus treatment everywhere. :focus-visible keeps it off mouse
+   * clicks but guarantees it for keyboard users. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+  }
+
+  /* The accent is too dark to see against navy, so the chrome gets the
+   * lighter step. */
+  .on-navy :focus-visible {
+    outline-color: var(--color-accent-400);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

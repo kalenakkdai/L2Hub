@@ -3,6 +3,11 @@ import { useForm } from 'react-hook-form'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { FullPageMessage } from '../components/FullPageMessage'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+
+const FIELD =
+  'rounded-control border border-border-strong bg-surface px-3 py-2 text-ink placeholder:text-ink-subtle aria-invalid:border-status-danger'
 
 type LoginFields = {
   email: string
@@ -49,71 +54,76 @@ export function LoginPage() {
   })
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto flex max-w-sm flex-col gap-6 px-6 py-20">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">L2 Hub</h1>
-          <p className="mt-1 text-slate-600">Sign in to continue.</p>
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-12">
+      <div className="w-full max-w-sm">
+        <div className="flex justify-center">
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 items-center justify-center rounded-card bg-navy-900 text-base font-bold text-white"
+          >
+            L2
+          </span>
         </div>
+
+        <h1 className="mt-5 text-center text-display font-semibold text-ink">L2 Hub</h1>
+        <p className="mt-1 text-center text-ink-muted">Sign in to continue.</p>
 
         {sessionExpired && (
           <p
             role="status"
-            className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+            className="mt-6 rounded-control border border-status-warning-bg bg-status-warning-bg p-3 text-sm text-status-warning"
           >
             Your session expired. Please sign in again.
           </p>
         )}
 
-        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2"
-              aria-invalid={errors.email ? 'true' : undefined}
-              {...register('email', { required: 'Email is required.' })}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
+        <Card className="mt-6 p-6">
+          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-medium text-ink">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                className={FIELD}
+                aria-invalid={errors.email ? 'true' : undefined}
+                {...register('email', { required: 'Email is required.' })}
+              />
+              {errors.email && (
+                <p className="text-sm text-status-danger">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-medium text-ink">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                className={FIELD}
+                aria-invalid={errors.password ? 'true' : undefined}
+                {...register('password', { required: 'Password is required.' })}
+              />
+              {errors.password && (
+                <p className="text-sm text-status-danger">{errors.password.message}</p>
+              )}
+            </div>
+
+            {formError && (
+              <p role="alert" className="text-sm text-status-danger">
+                {formError}
+              </p>
             )}
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2"
-              aria-invalid={errors.password ? 'true' : undefined}
-              {...register('password', { required: 'Password is required.' })}
-            />
-            {errors.password && (
-              <p className="text-sm text-red-600">{errors.password.message}</p>
-            )}
-          </div>
-
-          {formError && (
-            <p role="alert" className="text-sm text-red-600">
-              {formError}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-md bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-60"
-          >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+            <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        </Card>
       </div>
     </main>
   )

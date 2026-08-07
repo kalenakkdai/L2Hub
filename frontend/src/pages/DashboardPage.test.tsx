@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { makeSession, type SupabaseMock } from '../test/supabaseMock'
 import { renderWithProviders } from '../test/renderWithProviders'
@@ -40,13 +40,21 @@ describe('DashboardPage', () => {
     vi.restoreAllMocks()
   })
 
+  // The role appears twice by design: in the greeting badge inside <main>,
+  // and again in the sidebar's user menu outside it. Scope to <main> so the
+  // assertion is about the greeting specifically.
+  const inPage = () => within(screen.getByRole('main'))
+
   it('shows the name and role from /auth/me', async () => {
     mockApi(profile())
 
     renderWithProviders(<DashboardPage />)
 
+    // Wait for the shell before scoping: the loading screen is a <main> too.
     expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
-    expect(screen.getByText('Officer')).toBeInTheDocument()
+    // Greeting uses the first name; the sidebar carries the full name.
+    expect(inPage().getByText(/Ada/)).toBeInTheDocument()
+    expect(inPage().getByText('Officer')).toBeInTheDocument()
   })
 
   it('requests /auth/me with the bearer token', async () => {
@@ -71,7 +79,8 @@ describe('DashboardPage', () => {
 
     renderWithProviders(<DashboardPage />)
 
-    expect(await screen.findByText(label)).toBeInTheDocument()
+    await screen.findByText('Ada Lovelace')
+    expect(inPage().getByText(label)).toBeInTheDocument()
   })
 
   it('falls back to the email when no name is set', async () => {
