@@ -1,7 +1,12 @@
 from fastapi import APIRouter
 
 from app.api.deps import CurrentProfile, DbSession
-from app.schemas.auth import CurrentUser, DashboardOut, RoleAssignmentOut
+from app.schemas.auth import (
+    CommitteeMembershipOut,
+    CurrentUser,
+    DashboardOut,
+    RoleAssignmentOut,
+)
 from app.services import authorization as authz
 from app.services.dashboard import dashboard_payload
 
@@ -21,6 +26,15 @@ def read_current_user(profile: CurrentProfile, db: DbSession) -> CurrentUser:
         created_at=profile.created_at,
         roles=[RoleAssignmentOut(**role) for role in ctx.roles],
         permissions=sorted(ctx.permissions),
+        committees=[
+            CommitteeMembershipOut(
+                id=membership.committee.id,
+                name=membership.committee.name,
+                is_head=membership.is_head,
+            )
+            for membership in profile.committee_memberships
+            if membership.committee is not None
+        ],
     )
 
 

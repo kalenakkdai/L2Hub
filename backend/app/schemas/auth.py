@@ -18,6 +18,16 @@ class RoleAssignmentOut(BaseModel):
     committee_name: str | None = None
 
 
+class CommitteeMembershipOut(BaseModel):
+    """A committee the caller belongs to, regardless of any scoped role."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    is_head: bool = False
+
+
 class CurrentUser(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -29,6 +39,10 @@ class CurrentUser(BaseModel):
     created_at: datetime
     roles: list[RoleAssignmentOut] = Field(default_factory=list)
     permissions: list[str] = Field(default_factory=list)
+    # Membership is not the same as a committee-scoped role: a camper can sit
+    # on a committee without holding a role there, and the settings page has
+    # to show those too.
+    committees: list[CommitteeMembershipOut] = Field(default_factory=list)
 
 
 class DashboardModuleOut(BaseModel):
