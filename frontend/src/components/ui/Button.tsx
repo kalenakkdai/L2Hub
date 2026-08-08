@@ -26,9 +26,19 @@ const SIZES: Record<Size, string> = {
 const BASE =
   'inline-flex items-center justify-center rounded-control font-medium transition duration-[420ms] ease-out-quick hover:duration-[260ms] disabled:pointer-events-none disabled:opacity-60'
 
-/** Buttons lift very slightly and nudge their trailing arrow. That is all. */
+/**
+ * Buttons lift very slightly, nudge their trailing arrow, and give under the
+ * press. That is all.
+ *
+ * The lift and the press live in `.motion-lift` in index.css rather than as
+ * `hover:scale-*` utilities. Tailwind compiles those to the separate `scale`
+ * property while the reduce-motion rules say `transform: none`, which does
+ * not override it — so a camper who switched motion off still got a moving
+ * button. Keeping the motion and its suppression in one place keeps both on
+ * the same property.
+ */
 const MOTION =
-  'hover:scale-[1.015] hover:shadow-card-hover [&_svg]:transition-transform [&_svg]:duration-[260ms] hover:[&_svg:last-child]:translate-x-[3px]'
+  'motion-lift [&_svg]:transition-transform [&_svg]:duration-[260ms] hover:[&_svg:last-child]:translate-x-[3px]'
 
 type CommonProps = {
   variant?: Variant

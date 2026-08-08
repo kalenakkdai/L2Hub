@@ -338,6 +338,20 @@
     scroll-behavior: auto !important;
   }
 
+  /* Zeroing the duration only makes a transform instant, not absent. The
+   * button lift and press still jumped without this.
+   *
+   * `scale`, `translate` and `rotate` are listed alongside `transform`
+   * because Tailwind v4 compiles its utilities to those individual
+   * properties: `hover:scale-[1.015]` emits `scale: 1.015`, which
+   * `transform: none` does not override. Suppressing only `transform` was
+   * therefore a no-op, and the hover lift kept moving for anyone who had
+   * asked it not to. */
+  *:hover,
+  *:active {
+    transform: none !important;
+  }
+
   [data-reveal] {
     opacity: 1;
     transform: none;
@@ -364,8 +378,58 @@
   scroll-behavior: auto !important;
 }
 
-:root[data-reduce-motion='true'] *:hover {
+/* :active as well as :hover — on a touch screen there is no hover, so the
+ * press was the only movement left for someone who had asked the app to stop
+ * moving.
+ *
+ * And `scale`/`translate`/`rotate` as well as `transform`: Tailwind v4 emits
+ * `scale: 1.015` for `hover:scale-[1.015]`, which `transform: none` does not
+ * override, so this rule had been suppressing nothing at all. */
+:root[data-reduce-motion='true'] *:hover,
+:root[data-reduce-motion='true'] *:active {
   transform: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Button motion
+ *
+ * Owned here rather than expressed as `hover:scale-*` utilities, because the
+ * two have to be written in the same property to cancel each other.
+ *
+ * Tailwind v4 compiles `hover:scale-[1.015]` to `scale: 1.015` — the separate
+ * transform property, not `transform`. The reduce-motion rules above say
+ * `transform: none`, which does not override it, and the build's minifier
+ * folds any `scale: 1 !important` override back into `transform` as well. So
+ * the suppression above had never actually stopped a button moving.
+ *
+ * Defining the motion and its suppression together keeps both on `scale`, so
+ * the later rule wins the ordinary way and no !important is needed.
+ * ------------------------------------------------------------------------ */
+.motion-lift:hover {
+  scale: 1.015;
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Faster than the hover transition: a press should feel immediate, and the
+ * 420ms used for hover reads as lag. Hover does not exist on a touch screen,
+ * so this is the only acknowledgement a tap gets. */
+.motion-lift:active {
+  scale: 0.97;
+  transition-duration: 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-lift:hover,
+  .motion-lift:active {
+    scale: 1;
+    box-shadow: none;
+  }
+}
+
+:root[data-reduce-motion='true'] .motion-lift:hover,
+:root[data-reduce-motion='true'] .motion-lift:active {
+  scale: 1;
+  box-shadow: none;
 }
 
 :root[data-reduce-motion='true'] [data-reveal] {

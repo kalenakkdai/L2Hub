@@ -90,3 +90,32 @@ describe('SkeletonCard', () => {
     expect(container).not.toHaveTextContent(/\w/)
   })
 })
+
+describe('button motion', () => {
+  it('carries the press-and-lift class rather than scale utilities', async () => {
+    const { Button } = await import('./Button')
+    render(<Button>Verify</Button>)
+
+    const button = screen.getByRole('button', { name: 'Verify' })
+
+    // The motion lives in index.css, where it can be written in the same
+    // property its reduce-motion suppression uses. Tailwind's hover:scale-*
+    // compiles to `scale`, while the suppression says `transform: none`, so
+    // the two never met and a button kept moving for someone who had asked
+    // it to stop.
+    expect(button.className).toContain('motion-lift')
+    expect(button.className).not.toMatch(/hover:scale-/)
+    expect(button.className).not.toMatch(/active:scale-/)
+  })
+
+  it('leaves the icon variant still', async () => {
+    const { Button } = await import('./Button')
+    render(
+      <Button variant="icon" aria-label="Close">
+        x
+      </Button>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Close' }).className).not.toContain('motion-lift')
+  })
+})
