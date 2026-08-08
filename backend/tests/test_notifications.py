@@ -233,3 +233,53 @@ class TestMarkRead:
         # Someone else's id must match nothing, not raise and not succeed.
         assert notifications.mark_read(db_session, mine.id, note.id) == 0
         assert notifications.unread_count(db_session, theirs.id) == 1
+
+
+class TestSourcedEventTypes:
+    """Every offered switch must have an emitter behind it.
+
+    The settings grid once showed all eight schema event types. Seven had no
+    code path that could raise them, so those switches recorded a choice and
+    changed nothing. These tests fail if the two lists drift apart again.
+    """
+
+    def test_sourced_types_are_real_event_types(self) -> None:
+        assert notifications.SOURCED_EVENT_TYPES <= set(notifications.EVENT_TYPES)
+
+    def test_every_sourced_type_has_an_emitter(self) -> None:
+        """A switch the grid offers must be reachable from some notification."""
+        routed = set(notifications.TYPE_TO_EVENT_TYPE.values())
+        unreachable = notifications.SOURCED_EVENT_TYPES - routed
+        assert not unreachable, (
+            f"offered in the settings grid but nothing maps to it: {sorted(unreachable)}"
+        )
+
+    def test_emitted_types_are_gated_by_a_sourced_switch(self) -> None:
+        """The reverse: anything actually emitted must be switchable.
+
+        Scans the source for the `type=` argument of every deliver() call
+        rather than trusting the mapping table, so a new emitter that forgot
+        its preference row is caught here instead of in production.
+        """
+        import re
+        from pathlib import Path
+
+        service_dir = Path(notifications.__file__).parent
+        emitted: set[str] = set()
+        for path in service_dir.rglob("*.py"):
+            if path.name == "notifications.py":
+                continue
+            for match in re.finditer(r'type="([a-z]+\.[a-z_]+)"', path.read_text()):
+                emitted.add(match.group(1))
+
+        assert emitted, "found no emitters to check — has the call shape changed?"
+
+        for notification_type in sorted(emitted):
+            event_type = notifications.TYPE_TO_EVENT_TYPE.get(notification_type)
+            assert event_type is not None, (
+                f"{notification_type} is emitted but has no preference mapping"
+            )
+            assert event_type in notifications.SOURCED_EVENT_TYPES, (
+                f"{notification_type} is emitted but {event_type} is not offered "
+                "in the settings grid, so a camper cannot switch it off"
+            )
