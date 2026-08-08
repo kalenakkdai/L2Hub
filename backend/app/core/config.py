@@ -6,7 +6,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # same way whether uvicorn is started from backend/ or from the repo root.
 # A relative "*.env*" is looked up against the working directory, which meant
 # starting the server one directory up silently loaded no settings at all.
-ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = BACKEND_ROOT / ".env"
+
+# `.env.local` points at the local Supabase stack and `.env` at the shared
+# cloud project, so which target you are on is decided by whether the file
+# exists rather than by an environment variable someone has to remember to
+# set. This is the same rule Vite applies on the frontend, so both halves of
+# the app switch together.
+#
+# Order matters: pydantic-settings reads these left to right and later files
+# win, so `.env.local` overrides `.env` key by key. That means `.env.local`
+# only has to carry what actually differs.
+ENV_FILE_LOCAL = BACKEND_ROOT / ".env.local"
 
 
 class Settings(BaseSettings):
@@ -47,7 +59,7 @@ class Settings(BaseSettings):
     storage_local_root: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
+        env_file=(ENV_FILE, ENV_FILE_LOCAL),
         env_file_encoding="utf-8",
         extra="ignore",
     )

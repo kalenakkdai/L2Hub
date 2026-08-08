@@ -41,16 +41,37 @@ TINY_PNG = base64.b64decode(
 
 
 def load_env() -> tuple[str, str]:
-    env = {}
-    for line in (ROOT / "frontend" / ".env").read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, value = line.split("=", 1)
-            env[key.strip()] = value.strip().strip('"').strip("'")
+    """Reads `.env`, then `.env.local` over the top of it if it exists.
+
+    Same rule as Vite and as app/core/config.py, so this script follows
+    whichever database the app is currently pointed at rather than needing to
+    be told separately.
+    """
+    env: dict[str, str] = {}
+    for name in (".env", ".env.local"):
+        path = ROOT / "frontend" / name
+        if not path.exists():
+            continue
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                env[key.strip()] = value.strip().strip('"').strip("'")
+
+    missing = [
+        k for k in ("VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY") if not env.get(k)
+    ]
+    if missing:
+        raise SystemExit(f"frontend/.env is missing {', '.join(missing)}")
+
     return env["VITE_SUPABASE_URL"], env["VITE_SUPABASE_PUBLISHABLE_KEY"]
 
 
 URL, KEY = load_env()
+
+#: Whether we are pointed at a throwaway database. The local stack is safe to
+#: write to freely; the shared project is another developer's data.
+IS_LOCAL = "127.0.0.1" in URL or "localhost" in URL
 
 
 def call(
