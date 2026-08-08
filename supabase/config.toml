@@ -57,7 +57,12 @@ shadow_port = 54320
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 15
+#
+# Both databases report 17.6 — checked with `scripts/schema_parity.py`, which
+# prints each server's version before diffing. This said 15 for a while, which
+# was simply wrong: nothing broke because the CLI does not downgrade an
+# already-initialised local database, so the stale value was never noticed.
+major_version = 17
 
 [db.pooler]
 enabled = false
