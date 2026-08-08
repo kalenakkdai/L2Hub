@@ -68,7 +68,23 @@ export function SettingsLayout({
   return (
     <div className="flex flex-col gap-6 md:flex-row md:gap-10">
       <div className="md:w-60 md:shrink-0">
-        <div className="md:sticky md:top-24">
+        {/* Two separate things keep this column level with the first card.
+
+            `pt-[25px]` matches where a SettingsCard puts its heading: the card
+            is `border` + `p-5 sm:p-6`, so its <h2> starts 25px below the card
+            top at md and above (1px border + 24px padding). Without it the
+            title sat a full card-padding above the content it introduces.
+
+            The sticky offset has to stay at or below the column's natural
+            distance from the top of the viewport, or sticky clamps the column
+            *downwards* on an unscrolled page and the title drops below the
+            card heading. AppShell's <main> is `py-7`, so that distance is
+            28px at lg and above, where the navigation is a fixed left sidebar
+            and nothing overlaps the content. Below lg the navigation is a
+            60px `sticky top-0` bar instead, so the column has to clear it —
+            68px leaves a little air and is still under the 88px it naturally
+            sits at there (60px bar + 28px padding). */}
+        <div className="md:sticky md:top-[68px] md:pt-[25px] lg:top-7">
           {/* px-3 matches the section links below, so the whole column shares
               one left edge. */}
           <h1 className="px-3 text-title font-semibold text-ink">{title}</h1>
