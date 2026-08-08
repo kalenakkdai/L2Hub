@@ -62,10 +62,8 @@ export function LoginPage() {
 
       <div className="flex items-center justify-center bg-surface-sunken px-4 py-12 sm:px-14">
         <div className="animate-rise-in w-full max-w-[392px] [animation-delay:120ms]">
-          <h1 className="text-[28px] font-bold tracking-[-0.022em] text-ink">Welcome back</h1>
-          <p className="mt-1.5 text-[14.5px] text-ink-subtle">
-            Sign in with your school account to continue.
-          </p>
+          <h1 className="text-[28px] font-bold tracking-[-0.022em] text-ink">Welcome back!</h1>
+          <p className="mt-1.5 text-[14.5px] text-ink-subtle">Sign in to continue.</p>
           {sessionExpired && (
           <p
             role="status"
