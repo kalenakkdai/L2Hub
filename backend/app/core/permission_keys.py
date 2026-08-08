@@ -106,6 +106,10 @@ PLANNING_ENABLE: Final = "planning.enable"
 SETTINGS_VIEW: Final = "settings.view"
 SETTINGS_EDIT: Final = "settings.edit"
 
+# class officers platform
+CLASS_OFFICERS_VIEW: Final = "class_officers.view"
+CLASS_OFFICERS_MANAGE: Final = "class_officers.manage"
+
 # admin
 ADMIN_SETTINGS: Final = "admin.settings"
 ADMIN_AUDIT: Final = "admin.audit"
@@ -174,6 +178,12 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
     (PLANNING_CREATE, "Create event planning requests", "planning"),
     (PLANNING_ASSIGN, "Assign committees or members to plans", "planning"),
     (PLANNING_ENABLE, "Enable event planning before assignees accept", "planning"),
+    (CLASS_OFFICERS_VIEW, "View the Class Officers platform", "class_officers"),
+    (
+        CLASS_OFFICERS_MANAGE,
+        "Edit Class Officers fundraiser and homecoming plans",
+        "class_officers",
+    ),
     (NOTIFICATIONS_VIEW_OWN, "View own notifications", "notifications"),
     (SETTINGS_VIEW, "View Campsite settings", "admin"),
     (SETTINGS_EDIT, "Edit Campsite settings", "admin"),

@@ -8,6 +8,7 @@ import {
   MessagesSquare,
   Settings2,
   SlidersHorizontal,
+  Sparkles,
   UserCog,
   Users,
   UsersRound,
@@ -93,6 +94,12 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Leadership',
     items: [
+      {
+        label: 'Class Officers',
+        to: '/class-officers',
+        icon: Sparkles,
+        permission: 'class_officers.view',
+      },
       { label: 'Tools', to: '/tools', icon: Settings2 },
       { label: 'Resources', to: '/resources', icon: BookOpen },
       // Hidden from campers entirely. Advisers see it and get a read-only
@@ -121,6 +128,9 @@ export const IMPLEMENTED_ROUTES = new Set([
   '/admin/users',
   '/events',
   '/event-planning',
+  '/class-officers',
+  '/class-officers/fundraiser',
+  '/class-officers/homecoming',
   '/debriefs',
   '/dev/health',
 ])

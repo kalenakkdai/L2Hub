@@ -1,7 +1,7 @@
 """Canonical role hierarchy helpers.
 
 New authorization code should use ``app.services.authorization`` and
-permission keys. These helpers validate only the five normalized role slugs.
+permission keys. These helpers validate only the normalized role slugs.
 """
 
 from typing import Final
@@ -9,6 +9,8 @@ from typing import Final
 from app.core.role_catalog import (
     ROLE_AC,
     ROLE_ASBO,
+    ROLE_CLASS_ADVISOR,
+    ROLE_CLASS_OFFICER,
     ROLE_COMMITTEE_HEAD,
     ROLE_MEMBER,
     ROLE_PRESIDENT,
@@ -20,6 +22,8 @@ UserRole = str
 
 ROLE_ORDER: Final[tuple[str, ...]] = (
     ROLE_MEMBER,
+    ROLE_CLASS_ADVISOR,
+    ROLE_CLASS_OFFICER,
     ROLE_COMMITTEE_HEAD,
     ROLE_ASBO,
     ROLE_AC,
@@ -27,6 +31,8 @@ ROLE_ORDER: Final[tuple[str, ...]] = (
 )
 
 MEMBER: Final = ROLE_MEMBER
+CLASS_ADVISOR: Final = ROLE_CLASS_ADVISOR
+CLASS_OFFICER: Final = ROLE_CLASS_OFFICER
 COMMITTEE_HEAD: Final = ROLE_COMMITTEE_HEAD
 ASBO: Final = ROLE_ASBO
 AC: Final = ROLE_AC

@@ -37,6 +37,12 @@ SEED_USER_IDS = {
     "spirit_head": uuid.UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd"),
     "community_member": uuid.UUID("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"),
     "spirit_member": uuid.UUID("ffffffff-ffff-4fff-8fff-ffffffffffff"),
+    "senior_advisor_1": uuid.UUID("a1111111-a111-4111-8111-111111111111"),
+    "senior_advisor_2": uuid.UUID("a2222222-a222-4222-8222-222222222222"),
+    "junior_advisor_1": uuid.UUID("a3333333-a333-4333-8333-333333333333"),
+    "junior_advisor_2": uuid.UUID("a4444444-a444-4444-8444-444444444444"),
+    "senior_class_officer": uuid.UUID("b1111111-b111-4111-8111-111111111111"),
+    "junior_class_officer": uuid.UUID("b2222222-b222-4222-8222-222222222222"),
 }
 
 
@@ -313,6 +319,42 @@ def seed_development_users(db: Session) -> dict[str, Profile]:
         email="spirit.member@l2hub.local",
         full_name="Sam Ortiz",
     )
+    senior_advisor_1 = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["senior_advisor_1"],
+        email="senior.advisor1@l2hub.local",
+        full_name="Pat Rivera",
+    )
+    senior_advisor_2 = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["senior_advisor_2"],
+        email="senior.advisor2@l2hub.local",
+        full_name="Casey Ng",
+    )
+    junior_advisor_1 = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["junior_advisor_1"],
+        email="junior.advisor1@l2hub.local",
+        full_name="Morgan Ellis",
+    )
+    junior_advisor_2 = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["junior_advisor_2"],
+        email="junior.advisor2@l2hub.local",
+        full_name="Jamie Soto",
+    )
+    senior_class_officer = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["senior_class_officer"],
+        email="sco@l2hub.local",
+        full_name="Alex Kim",
+    )
+    junior_class_officer = _ensure_user(
+        db,
+        user_id=SEED_USER_IDS["junior_class_officer"],
+        email="jco@l2hub.local",
+        full_name="Jamie Park",
+    )
 
     # Supabase's signup trigger assigns Member to every account. Local seed
     # users mirror that baseline before receiving elevated roles.
@@ -324,12 +366,26 @@ def seed_development_users(db: Session) -> dict[str, Profile]:
         spirit_head,
         community_member,
         spirit_member,
+        senior_class_officer,
+        junior_class_officer,
     ):
         _assign_role(db, user=user, role=roles["member"])
+
+    # Class advisors intentionally do not receive the Member baseline — their
+    # only job on the platform is watching Class Officers progress.
+    for advisor in (
+        senior_advisor_1,
+        senior_advisor_2,
+        junior_advisor_1,
+        junior_advisor_2,
+    ):
+        _assign_role(db, user=advisor, role=roles["class_advisor"])
 
     _assign_role(db, user=ac, role=roles["ac"])
     _assign_role(db, user=president, role=roles["president"])
     _assign_role(db, user=asbo, role=roles["asbo"])
+    _assign_role(db, user=senior_class_officer, role=roles["class_officer"])
+    _assign_role(db, user=junior_class_officer, role=roles["class_officer"])
 
     _assign_role(
         db,
@@ -366,6 +422,12 @@ def seed_development_users(db: Session) -> dict[str, Profile]:
         "spirit_head": spirit_head,
         "community_member": community_member,
         "spirit_member": spirit_member,
+        "senior_advisor_1": senior_advisor_1,
+        "senior_advisor_2": senior_advisor_2,
+        "junior_advisor_1": junior_advisor_1,
+        "junior_advisor_2": junior_advisor_2,
+        "senior_class_officer": senior_class_officer,
+        "junior_class_officer": junior_class_officer,
     }
 
 

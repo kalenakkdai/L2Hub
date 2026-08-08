@@ -8,7 +8,15 @@ from app.api import deps
 from app.core import permissions
 from app.db.session import get_db
 
-ALL_ROLES = ("member", "committee_head", "asbo", "ac", "president")
+ALL_ROLES = (
+    "member",
+    "class_advisor",
+    "class_officer",
+    "committee_head",
+    "asbo",
+    "ac",
+    "president",
+)
 
 
 def test_all_system_roles_are_defined():
@@ -18,7 +26,9 @@ def test_all_system_roles_are_defined():
 def test_roles_are_ordered_least_to_most_privileged():
     ranks = [permissions.rank(role) for role in ALL_ROLES]
     assert ranks == sorted(ranks)
-    assert permissions.rank("member") < permissions.rank("committee_head")
+    assert permissions.rank("member") < permissions.rank("class_advisor")
+    assert permissions.rank("class_advisor") < permissions.rank("class_officer")
+    assert permissions.rank("class_officer") < permissions.rank("committee_head")
     assert permissions.rank("committee_head") < permissions.rank("asbo")
     assert permissions.rank("asbo") < permissions.rank("ac")
     assert permissions.rank("president") == permissions.rank("ac")

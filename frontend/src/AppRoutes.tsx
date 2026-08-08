@@ -18,6 +18,14 @@ import {
   MockEventPlanningAuthProvider,
   MockEventPlanningDataProvider,
 } from './features/event-planning'
+import {
+  ClassOfficersLayout,
+  ClassOfficersOverviewPage,
+  ClassOfficersProvider,
+  FundraiserPage,
+  HomecomingPage,
+  MockClassOfficersDataProvider,
+} from './features/class-officers'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
 import { CommitteesPage } from './features/committees/CommitteesPage'
@@ -60,6 +68,8 @@ const eventPlanningAuthProvider = new MockEventPlanningAuthProvider([
   'feedback.view_anonymous',
   'knowledge.view',
 ])
+
+const classOfficersDataProvider = new MockClassOfficersDataProvider()
 
 /**
  * The route table, separated from App so tests can mount it inside a
@@ -161,6 +171,20 @@ export function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/class-officers"
+        element={
+          <RequireAuth>
+            <ClassOfficersProvider dataProvider={classOfficersDataProvider}>
+              <ClassOfficersLayout />
+            </ClassOfficersProvider>
+          </RequireAuth>
+        }
+      >
+        <Route index element={<ClassOfficersOverviewPage />} />
+        <Route path="fundraiser" element={<FundraiserPage />} />
+        <Route path="homecoming" element={<HomecomingPage />} />
+      </Route>
       <Route
         path="/events/:eventId/summary"
         element={
