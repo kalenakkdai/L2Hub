@@ -76,6 +76,7 @@ export function StudentGradebookPage() {
         ) : (
           <GradeTable
             entries={overview.entries}
+            categories={overview.categories}
             caption={`Assignments for ${student.name}`}
           />
         )}

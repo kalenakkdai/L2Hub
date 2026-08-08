@@ -50,6 +50,32 @@ export interface GradeCommitteeRef {
   name: string
 }
 
+export type GradebookTab = 'missing' | 'completed' | 'upcoming'
+
+/**
+ * Anonymized class distribution for one assignment.
+ * Never includes student names or ids — only aggregate stats / percents.
+ */
+export interface GradeDistributionBucket {
+  label: string
+  count: number
+  minPercent: number
+  maxPercent: number
+}
+
+export interface GradeDistribution {
+  /** Optional provider-authored mean percentage (0–100). */
+  mean?: number | null
+  /** Optional provider-authored median percentage (0–100). */
+  median?: number | null
+  scoredCount?: number
+  /** Anonymized score percentages used when mean/median/buckets are omitted. */
+  scorePercents?: number[]
+  buckets?: GradeDistributionBucket[]
+  /** Viewer's own percentage, when the provider chooses to expose it. */
+  yourPercent?: number | null
+}
+
 export interface GradebookEntry {
   id: string
   assignmentId: string
@@ -70,6 +96,35 @@ export interface GradebookEntry {
   canSubmit?: boolean
   canResubmit?: boolean
   acceptingLateSubmissions?: boolean
+  /** Class distribution when the provider has released anonymized stats. */
+  distribution?: GradeDistribution | null
+  /** Canvas-style assignment group / category. */
+  categoryId?: string | null
+}
+
+/**
+ * Assignment group weights, Canvas-style.
+ * Within a category grades are points/possible; categories combine by weight.
+ */
+export interface GradeCategory {
+  id: string
+  name: string
+  /** Share of the final grade, e.g. 40 for 40%. Ideally sums to 100. */
+  weightPercent: number
+}
+
+export interface CategoryGradeSummary {
+  categoryId: string
+  name: string
+  weightPercent: number
+  earnedPoints: number
+  possiblePoints: number
+  /** Category percent from its own point total; null if nothing countable yet. */
+  percent: number | null
+  /** Contribution toward the renormalized weighted final. */
+  weightedContribution: number | null
+  assignmentCount: number
+  scoredCount: number
 }
 
 export interface GradebookSummary {
@@ -79,11 +134,16 @@ export interface GradebookSummary {
   earnedPoints?: number
   possiblePoints?: number
   completionPercent?: number
+  /** Canvas-style weighted total (0–100). */
+  weightedPercent?: number
+  categoryBreakdown?: CategoryGradeSummary[]
 }
 
 export interface GradebookOverview {
   entries: GradebookEntry[]
   summary: GradebookSummary
+  /** Assignment groups for weighted grading. Empty/omitted = points-only. */
+  categories?: GradeCategory[]
   student?: {
     id: string
     name: string
@@ -92,7 +152,7 @@ export interface GradebookOverview {
 }
 
 export interface GradebookFilters {
-  status?: GradeStatus | 'all' | 'open' | 'upcoming'
+  status?: GradeStatus | 'all' | 'open' | 'upcoming' | 'completed' | 'missing'
   eventId?: string
   assignmentType?: AssignmentType
   committeeId?: string
@@ -112,6 +172,49 @@ export interface GradeFeedback {
   summary?: string | null
   items?: GradeFeedbackItem[]
   kind?: 'completion_criteria' | 'requirements' | 'submission_checks' | 'officer_feedback' | 'adviser_feedback'
+}
+
+/** Manual parts are scored by an assigner; on_time is computed from due/submit times. */
+export type RubricCriterionKind = 'manual' | 'on_time'
+
+export interface RubricCriterion {
+  id: string
+  label: string
+  description?: string | null
+  pointsPossible: number
+  kind: RubricCriterionKind
+  /**
+   * Percent of the assignment total deducted per calendar day late.
+   * Only used when kind === 'on_time'. Default policy is 10.
+   */
+  latePenaltyPercentPerDay?: number
+  /** Default criteria (like On time) cannot be removed from an assignment. */
+  isDefault?: boolean
+}
+
+export interface AssignmentRubric {
+  criteria: RubricCriterion[]
+}
+
+export interface RubricCriterionScore {
+  criterionId: string
+  /** Null means not yet scored. */
+  pointsEarned: number | null
+  note?: string | null
+  lateDays?: number | null
+  autoApplied?: boolean
+}
+
+export interface RubricEvaluation {
+  scores: RubricCriterionScore[]
+  /** Sum of manual criterion points earned (null if any required part unscored). */
+  contentEarned: number | null
+  contentPossible: number
+  lateDays: number
+  latePenaltyPoints: number
+  /** Final points after the automatic on-time deduction. */
+  earnedPoints: number | null
+  possiblePoints: number
 }
 
 export interface MaterialRequest {
@@ -178,6 +281,10 @@ export interface GradeAssignmentDetail {
   entry: GradebookEntry
   submission: GradeSubmission | null
   feedback: GradeFeedback | null
+  /** Rubric definition — always includes the default On time criterion. */
+  rubric: AssignmentRubric
+  /** Graded / auto-computed breakdown; null when nothing has been scored yet. */
+  rubricEvaluation: RubricEvaluation | null
   student?: {
     id: string
     name: string
@@ -219,6 +326,8 @@ export interface GradeUpdateInput {
   score?: number | null
   status?: GradeStatus
   feedbackSummary?: string | null
+  /** Assigner scores for manual rubric parts. On-time is never client-authored. */
+  rubricScores?: RubricCriterionScore[]
 }
 
 export type GradebookSortField =
@@ -229,3 +338,13 @@ export type GradebookSortField =
   | 'status'
   | 'score'
   | 'default'
+
+/** A saved Canvas-style what-if / theoretical grade scenario. */
+export interface TheoreticalGradeScenario {
+  id: string
+  name: string
+  /** entry.id → hypothetical points earned. */
+  scores: Record<string, number>
+  weightedPercent: number | null
+  savedAt: string
+}

@@ -46,6 +46,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'My tasks', to: '/tasks', icon: ClipboardList },
       { label: 'Committee', to: '/committee', icon: Users },
       { label: 'Events', to: '/events', icon: CalendarDays },
+      { label: 'Event planning', to: '/event-planning', icon: ClipboardList },
       { label: 'Debriefs', to: '/debriefs', icon: MessagesSquare },
     ],
   },
@@ -61,6 +62,7 @@ export const IMPLEMENTED_ROUTES = new Set([
   '/grades',
   '/admin/users',
   '/events',
+  '/event-planning',
   '/debriefs',
   '/dev/health',
 ])

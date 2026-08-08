@@ -92,6 +92,12 @@ KNOWLEDGE_VIEW: Final = "knowledge.view"
 KNOWLEDGE_UPLOAD: Final = "knowledge.upload"
 KNOWLEDGE_MANAGE: Final = "knowledge.manage"
 
+# event planning
+PLANNING_VIEW: Final = "planning.view"
+PLANNING_CREATE: Final = "planning.create"
+PLANNING_ASSIGN: Final = "planning.assign"
+PLANNING_ENABLE: Final = "planning.enable"
+
 # admin
 ADMIN_SETTINGS: Final = "admin.settings"
 ADMIN_AUDIT: Final = "admin.audit"
@@ -155,6 +161,10 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
     (KNOWLEDGE_VIEW, "View knowledge documents", "knowledge"),
     (KNOWLEDGE_UPLOAD, "Upload knowledge documents", "knowledge"),
     (KNOWLEDGE_MANAGE, "Manage knowledge documents", "knowledge"),
+    (PLANNING_VIEW, "View event planning boards", "planning"),
+    (PLANNING_CREATE, "Create event planning requests", "planning"),
+    (PLANNING_ASSIGN, "Assign committees or members to plans", "planning"),
+    (PLANNING_ENABLE, "Enable event planning before assignees accept", "planning"),
     (NOTIFICATIONS_VIEW_OWN, "View own notifications", "notifications"),
     (ADMIN_SETTINGS, "Configure platform settings", "admin"),
     (ADMIN_AUDIT, "View audit logs", "admin"),

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AssignmentRubricPanel } from '../components/AssignmentRubricPanel'
 import { AssignmentSummaryRail } from '../components/AssignmentSummaryRail'
 import { CompletionCriteria } from '../components/CompletionCriteria'
 import { GradeStatusIndicator } from '../components/GradeStatusIndicator'
@@ -16,6 +17,7 @@ import {
   useGradebookPermissions,
   useSubmissionHistory,
 } from '../hooks/useGradebook'
+import type { RubricCriterionScore } from '../types'
 
 const barButton =
   'rounded-control border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-sunken disabled:opacity-50'
@@ -53,6 +55,24 @@ export function GradeAssignmentPage() {
       const studentId = detailQuery.data?.student?.id
       if (!studentId) throw new Error('Student id unavailable')
       return commands.reopenSubmission(assignmentId, studentId)
+    },
+  })
+
+  const rubricMutation = useMutation({
+    mutationFn: async (scores: RubricCriterionScore[]) => {
+      if (!commands?.updateGrade) throw new Error('Rubric grading unavailable')
+      const entryId = detailQuery.data?.entry.id
+      if (!entryId) throw new Error('Grade entry unavailable')
+      return commands.updateGrade(entryId, {
+        rubricScores: scores,
+        status: 'graded',
+      })
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: gradebookKeys.assignment(assignmentId),
+      })
+      await queryClient.invalidateQueries({ queryKey: ['gradebook', 'me'] })
     },
   })
 
@@ -139,6 +159,24 @@ export function GradeAssignmentPage() {
             </div>
           </section>
 
+          <div className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface px-3 py-3 shadow-xs">
+            <AssignmentRubricPanel
+              rubric={detail.rubric}
+              evaluation={detail.rubricEvaluation}
+              dueAt={entry.dueAt}
+              submittedAt={
+                detail.submission?.submittedAt ?? entry.submittedAt
+              }
+              editable={canEdit}
+              busy={rubricMutation.isPending}
+              onSave={
+                canEdit
+                  ? (scores) => rubricMutation.mutate(scores)
+                  : undefined
+              }
+            />
+          </div>
+
           {detail.feedback ? (
             <div className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface px-3 py-3 shadow-xs">
               <CompletionCriteria feedback={detail.feedback} />
@@ -199,7 +237,7 @@ export function GradeAssignmentPage() {
               data-testid="edit-grade-control"
               className="rounded-control border border-dashed border-border-strong px-3 py-1.5 text-xs text-ink-muted"
             >
-              Edit Grade available
+              Edit rubric parts above
             </span>
           ) : null}
           {entry.canResubmit ? (

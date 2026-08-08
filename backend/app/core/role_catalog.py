@@ -38,6 +38,10 @@ MEMBER_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.COMMITTEES_VIEW,
         pk.WRAPPED_VIEW_PUBLISHED,
         pk.NOTIFICATIONS_VIEW_OWN,
+        pk.PLANNING_VIEW,
+        pk.PLANNING_CREATE,
+        pk.PLANNING_ASSIGN,
+        pk.KNOWLEDGE_VIEW,
     }
 )
 
@@ -63,7 +67,8 @@ COMMITTEE_HEAD_PERMISSIONS: Final[frozenset[str]] = frozenset(
     }
 )
 
-# Platform-wide ops. No feedback, no grades.edit, no approve/publish/generate.
+# Platform-wide ops. No feedback, no grades.edit, no approve/publish/generate,
+# and no planning.enable (AC/Mr. Jan gate only).
 ASBO_DENIED: Final[frozenset[str]] = frozenset(
     {
         *pk.FEEDBACK_PERMISSIONS,
@@ -82,6 +87,7 @@ ASBO_DENIED: Final[frozenset[str]] = frozenset(
         pk.AGENDA_GENERATE,
         pk.AGENDA_FINALIZE,
         pk.AGENDA_EDIT_ALL,
+        pk.PLANNING_ENABLE,
     }
 )
 

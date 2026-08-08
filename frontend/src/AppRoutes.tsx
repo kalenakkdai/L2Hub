@@ -11,6 +11,13 @@ import {
   LiveBubblesPage,
   WrappedPage,
 } from './features/event-summary'
+import {
+  EventPlanDetailPage,
+  EventPlanningPage,
+  EventPlanningProvider,
+  MockEventPlanningAuthProvider,
+  MockEventPlanningDataProvider,
+} from './features/event-planning'
 import { DashboardPage } from './pages/DashboardPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
@@ -37,6 +44,16 @@ const gradebookAuthProvider = new MockGradebookAuthProvider([
   'gradebook.edit',
   'gradebook.mark_excused',
   'debrief.reopen',
+])
+
+const eventPlanningDataProvider = new MockEventPlanningDataProvider()
+const eventPlanningAuthProvider = new MockEventPlanningAuthProvider([
+  'planning.view',
+  'planning.create',
+  'planning.assign',
+  'planning.enable',
+  'feedback.view_anonymous',
+  'knowledge.view',
 ])
 
 /**
@@ -77,6 +94,32 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <DebriefsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/event-planning"
+        element={
+          <RequireAuth>
+            <EventPlanningProvider
+              dataProvider={eventPlanningDataProvider}
+              authProvider={eventPlanningAuthProvider}
+            >
+              <EventPlanningPage />
+            </EventPlanningProvider>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/event-planning/:planId"
+        element={
+          <RequireAuth>
+            <EventPlanningProvider
+              dataProvider={eventPlanningDataProvider}
+              authProvider={eventPlanningAuthProvider}
+            >
+              <EventPlanDetailPage />
+            </EventPlanningProvider>
           </RequireAuth>
         }
       />

@@ -4,6 +4,7 @@ import type {
   GradebookDataProvider,
 } from './contracts'
 import type {
+  AssignmentRubric,
   EventDebriefSubmissionContent,
   EventGradebook,
   GradeAssignmentDetail,
@@ -11,12 +12,20 @@ import type {
   GradebookFilters,
   GradebookOverview,
   GradebookPermission,
+  GradeCategory,
   GradeFeedback,
   GradeSubmission,
   GradeUpdateInput,
+  RubricCriterion,
+  RubricCriterionScore,
   StudentGradebook,
   SubmissionHistoryItem,
 } from '../types'
+import {
+  ensureDefaultRubric,
+  evaluateRubric,
+} from '../utils/rubric'
+import { withWeightedSummary } from '../utils/weights'
 
 const ISO = {
   opened: '2026-08-10T15:00:00.000Z',
@@ -31,6 +40,22 @@ const ISO = {
   reflectionSubmitted: '2026-08-14T07:16:00.000Z',
 }
 
+/** Anonymized class percents for demos — never paired with student identities. */
+const MAZE_DISTRIBUTION_PERCENTS = [
+  100, 100, 100, 100, 100, 100, 100, 100, 90, 90, 90, 80, 80, 70, 60, 50,
+]
+const REFLECTION_DISTRIBUTION_PERCENTS = [
+  100, 90, 90, 80, 80, 80, 70, 70, 60, 50, 40,
+]
+
+/** Canvas-style assignment groups — weights sum to 100. */
+const DEFAULT_CATEGORIES: GradeCategory[] = [
+  { id: 'cat-debriefs', name: 'Event debriefs', weightPercent: 40 },
+  { id: 'cat-reflections', name: 'Reflections', weightPercent: 25 },
+  { id: 'cat-deliverables', name: 'Deliverables', weightPercent: 20 },
+  { id: 'cat-participation', name: 'Participation', weightPercent: 15 },
+]
+
 function buildEntries(): GradebookEntry[] {
   return [
     {
@@ -43,6 +68,7 @@ function buildEntries(): GradebookEntry[] {
       status: 'graded',
       score: 10,
       pointsPossible: 10,
+      categoryId: 'cat-debriefs',
       availableAt: ISO.opened,
       dueAt: ISO.due,
       lateDueAt: ISO.lateDue,
@@ -52,6 +78,10 @@ function buildEntries(): GradebookEntry[] {
       canSubmit: false,
       canResubmit: false,
       acceptingLateSubmissions: true,
+      distribution: {
+        scorePercents: MAZE_DISTRIBUTION_PERCENTS,
+        yourPercent: 100,
+      },
     },
     {
       id: 'entry-spring-materials',
@@ -62,6 +92,7 @@ function buildEntries(): GradebookEntry[] {
       status: 'not_started',
       score: null,
       pointsPossible: 10,
+      categoryId: 'cat-deliverables',
       availableAt: ISO.opened,
       dueAt: ISO.springDue,
       submittedAt: null,
@@ -76,8 +107,9 @@ function buildEntries(): GradebookEntry[] {
       assignmentType: 'reflection',
       event: { id: 'evt-weekly', name: 'Weekly Leadership' },
       status: 'late',
-      score: 8,
+      score: 7,
       pointsPossible: 10,
+      categoryId: 'cat-reflections',
       availableAt: ISO.opened,
       dueAt: ISO.reflectionDue,
       submittedAt: ISO.reflectionSubmitted,
@@ -85,6 +117,10 @@ function buildEntries(): GradebookEntry[] {
       isLate: true,
       canSubmit: false,
       canResubmit: false,
+      distribution: {
+        scorePercents: REFLECTION_DISTRIBUTION_PERCENTS,
+        yourPercent: 80,
+      },
     },
     {
       id: 'entry-missing',
@@ -95,10 +131,15 @@ function buildEntries(): GradebookEntry[] {
       status: 'missing',
       score: 0,
       pointsPossible: 10,
+      categoryId: 'cat-participation',
       dueAt: '2026-08-01T06:59:00.000Z',
       submittedAt: null,
       isLate: true,
       canSubmit: false,
+      distribution: {
+        scorePercents: [100, 100, 90, 90, 80, 70, 60, 0, 0, 0],
+        yourPercent: 0,
+      },
     },
     {
       id: 'entry-excused',
@@ -109,6 +150,7 @@ function buildEntries(): GradebookEntry[] {
       status: 'excused',
       score: null,
       pointsPossible: 5,
+      categoryId: 'cat-participation',
       dueAt: '2026-07-20T06:59:00.000Z',
       submittedAt: null,
     },
@@ -122,6 +164,7 @@ function buildEntries(): GradebookEntry[] {
       status: 'draft',
       score: null,
       pointsPossible: 15,
+      categoryId: 'cat-deliverables',
       dueAt: '2026-08-20T06:59:00.000Z',
       canSubmit: true,
     },
@@ -184,6 +227,82 @@ const feedback: GradeFeedback = {
     { id: 'c4', label: 'Three improvements completed', passed: true },
     { id: 'c5', label: 'Submitted within session', passed: true, pointsEarned: 10, pointsPossible: 10 },
   ],
+}
+
+function debriefRubric(): AssignmentRubric {
+  return ensureDefaultRubric([
+    {
+      id: 'ratings',
+      label: 'Event & committee ratings',
+      description: 'Overall and committee ratings are complete.',
+      pointsPossible: 4,
+      kind: 'manual',
+    },
+    {
+      id: 'strengths-improvements',
+      label: 'Strengths & improvements',
+      description: 'Exactly three strengths and three improvements.',
+      pointsPossible: 4,
+      kind: 'manual',
+    },
+    {
+      id: 'materials',
+      label: 'Materials / notes',
+      description: 'Optional materials requests are clear when present.',
+      pointsPossible: 2,
+      kind: 'manual',
+    },
+  ])
+}
+
+function reflectionRubric(): AssignmentRubric {
+  return ensureDefaultRubric([
+    {
+      id: 'depth',
+      label: 'Reflection depth',
+      pointsPossible: 6,
+      kind: 'manual',
+    },
+    {
+      id: 'clarity',
+      label: 'Clarity',
+      pointsPossible: 4,
+      kind: 'manual',
+    },
+  ])
+}
+
+function genericRubric(pointsPossible: number): AssignmentRubric {
+  const content: RubricCriterion = {
+    id: 'content',
+    label: 'Assignment content',
+    pointsPossible,
+    kind: 'manual',
+  }
+  return ensureDefaultRubric([content])
+}
+
+function rubricFor(assignmentId: string, pointsPossible: number): AssignmentRubric {
+  if (assignmentId === 'asg-maze-debrief') return debriefRubric()
+  if (assignmentId === 'asg-reflection') return reflectionRubric()
+  return genericRubric(pointsPossible > 0 ? pointsPossible : 10)
+}
+
+function defaultScoresFor(assignmentId: string): RubricCriterionScore[] {
+  if (assignmentId === 'asg-maze-debrief') {
+    return [
+      { criterionId: 'ratings', pointsEarned: 4 },
+      { criterionId: 'strengths-improvements', pointsEarned: 4 },
+      { criterionId: 'materials', pointsEarned: 2 },
+    ]
+  }
+  if (assignmentId === 'asg-reflection') {
+    return [
+      { criterionId: 'depth', pointsEarned: 5 },
+      { criterionId: 'clarity', pointsEarned: 3 },
+    ]
+  }
+  return []
 }
 
 function matchesStatusFilter(
@@ -259,14 +378,18 @@ function summarize(entries: GradebookEntry[]) {
       ? Math.round((earnedPoints / possiblePoints) * 1000) / 10
       : undefined
 
-  return {
-    completed,
-    missing,
-    open,
-    earnedPoints,
-    possiblePoints,
-    completionPercent,
-  }
+  return withWeightedSummary(
+    {
+      completed,
+      missing,
+      open,
+      earnedPoints,
+      possiblePoints,
+      completionPercent,
+    },
+    DEFAULT_CATEGORIES,
+    entries,
+  )
 }
 
 function historyFor(assignmentId: string): SubmissionHistoryItem[] {
@@ -382,11 +505,18 @@ export type MockGradebookOptions = {
  */
 export class MockGradebookDataProvider implements GradebookDataProvider {
   private entries: GradebookEntry[]
+  private rubricScoresByEntryId: Map<string, RubricCriterionScore[]>
   private failOnGetMyGradebook: boolean
   private failMessage: string
 
   constructor(options: MockGradebookOptions = {}) {
     this.entries = options.entries ?? buildEntries()
+    this.rubricScoresByEntryId = new Map(
+      this.entries.map((entry) => [
+        entry.id,
+        defaultScoresFor(entry.assignmentId),
+      ]),
+    )
     this.failOnGetMyGradebook = options.failOnGetMyGradebook ?? false
     this.failMessage = options.failMessage ?? 'Mock gradebook unavailable'
   }
@@ -398,6 +528,7 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
     const entries = filterEntries(this.entries, filters)
     return {
       entries,
+      categories: DEFAULT_CATEGORIES,
       summary: summarize(this.entries),
       student: {
         id: 'stu-kalena',
@@ -412,16 +543,41 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
     if (!entry) {
       throw new Error('Assignment not found')
     }
+
+    const rubric = rubricFor(
+      assignmentId,
+      entry.pointsPossible ?? 10,
+    )
+    const submission = submissionFor(assignmentId)
+    const scores = this.rubricScoresByEntryId.get(entry.id) ?? []
+    const rubricEvaluation = evaluateRubric({
+      rubric,
+      scores,
+      dueAt: entry.dueAt,
+      submittedAt: submission?.submittedAt ?? entry.submittedAt,
+    })
+
     return {
       entry,
-      submission: submissionFor(assignmentId),
+      submission,
       feedback: assignmentId === 'asg-maze-debrief' ? feedback : null,
+      rubric,
+      rubricEvaluation,
       student: {
         id: 'stu-kalena',
         name: 'Kalena Dai',
         committee: { id: 'com-events', name: 'Events Committee' },
       },
     }
+  }
+
+  /** Test / command helper: persist assigner rubric scores for an entry. */
+  setRubricScores(entryId: string, scores: RubricCriterionScore[]): void {
+    this.rubricScoresByEntryId.set(entryId, scores)
+  }
+
+  getEntryById(entryId: string): GradebookEntry | undefined {
+    return this.entries.find((entry) => entry.id === entryId)
   }
 
   async getSubmissionHistory(
@@ -506,6 +662,12 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
   /** Test helper: replace dataset without changing page code. */
   setEntries(entries: GradebookEntry[]): void {
     this.entries = entries
+    this.rubricScoresByEntryId = new Map(
+      entries.map((entry) => [
+        entry.id,
+        defaultScoresFor(entry.assignmentId),
+      ]),
+    )
   }
 }
 
@@ -520,9 +682,21 @@ export class MockGradebookCommandProvider implements GradebookCommandProvider {
     entryId: string,
     input: GradeUpdateInput,
   ): Promise<GradebookEntry> {
-    const overview = await this.data.getMyGradebook()
-    const entry = overview.entries.find((e) => e.id === entryId)
+    const entry = this.data.getEntryById(entryId)
     if (!entry) throw new Error('Grade entry not found')
+
+    if (input.rubricScores) {
+      this.data.setRubricScores(entryId, input.rubricScores)
+      const detail = await this.data.getAssignment(entry.assignmentId)
+      if (
+        detail.rubricEvaluation &&
+        typeof detail.rubricEvaluation.earnedPoints === 'number'
+      ) {
+        entry.score = detail.rubricEvaluation.earnedPoints
+        entry.status = 'graded'
+      }
+    }
+
     if (typeof input.score === 'number') entry.score = input.score
     if (input.status) entry.status = input.status
     return entry

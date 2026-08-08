@@ -3,6 +3,7 @@ import { Check, Info, X } from 'lucide-react'
 import type { GradeAssignmentDetail } from '../types'
 import { GradeStatusIndicator } from './GradeStatusIndicator'
 import { formatDateTimeLong, formatScore } from '../utils/format'
+import { ensureDefaultRubric } from '../utils/rubric'
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   if (value === null || value === undefined || value === '') return null
@@ -19,8 +20,10 @@ export interface AssignmentSummaryRailProps {
 }
 
 export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
-  const { entry, submission, student, feedback } = detail
+  const { entry, submission, student, feedback, rubric, rubricEvaluation } =
+    detail
   const criteria = feedback?.items ?? []
+  const rubricCriteria = ensureDefaultRubric(rubric.criteria).criteria
 
   return (
     <aside
@@ -38,7 +41,7 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
         <Info size={13} className="mt-px shrink-0" aria-hidden="true" />
         <span>
           Scores and completion are recorded by L2 Hub when your submission is
-          received.
+          received. On-time deductions use the server submission time.
         </span>
       </p>
 
@@ -55,8 +58,17 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
         />
         <Field
           label="Score"
-          value={formatScore(entry.score, entry.pointsPossible)}
+          value={formatScore(
+            rubricEvaluation?.earnedPoints ?? entry.score,
+            rubricEvaluation?.possiblePoints ?? entry.pointsPossible,
+          )}
         />
+        {rubricEvaluation && rubricEvaluation.latePenaltyPoints > 0 ? (
+          <Field
+            label="Late penalty"
+            value={`−${rubricEvaluation.latePenaltyPoints} pts (${rubricEvaluation.lateDays} day${rubricEvaluation.lateDays === 1 ? '' : 's'})`}
+          />
+        ) : null}
         <Field
           label="Submitted"
           value={
@@ -89,6 +101,38 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
           value={submission?.attempt ? String(submission.attempt) : null}
         />
       </dl>
+
+      <div className="mt-4 border-t border-border-subtle pt-3">
+        <p className="text-[11px] font-semibold text-ink-subtle">Rubric parts</p>
+        <ul className="mt-2 space-y-1.5">
+          {rubricCriteria.map((criterion) => {
+            const scored = rubricEvaluation?.scores.find(
+              (score) => score.criterionId === criterion.id,
+            )
+            return (
+              <li
+                key={criterion.id}
+                className="flex items-start justify-between gap-2 text-[11px] leading-4"
+              >
+                <span className="text-ink">
+                  {criterion.label}
+                  {criterion.kind === 'on_time' ? ' (auto)' : ''}
+                </span>
+                <span className="shrink-0 tabular-nums text-ink-muted">
+                  {criterion.kind === 'on_time'
+                    ? scored?.pointsEarned
+                      ? `${scored.pointsEarned}`
+                      : '—'
+                    : formatScore(
+                        scored?.pointsEarned ?? null,
+                        criterion.pointsPossible,
+                      )}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
 
       {criteria.length > 0 ? (
         <div className="mt-4 border-t border-border-subtle pt-3">

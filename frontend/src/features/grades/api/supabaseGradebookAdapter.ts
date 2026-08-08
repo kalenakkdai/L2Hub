@@ -179,6 +179,21 @@ export class SupabaseGradebookDataProvider implements GradebookDataProvider {
       entry,
       submission,
       feedback: null,
+      rubric: {
+        criteria: [
+          {
+            id: 'criterion-on-time',
+            label: 'On time',
+            description:
+              '10% of the assignment total is deducted automatically for each calendar day late.',
+            pointsPossible: 0,
+            kind: 'on_time',
+            latePenaltyPercentPerDay: 10,
+            isDefault: true,
+          },
+        ],
+      },
+      rubricEvaluation: null,
       student: null,
     }
   }
