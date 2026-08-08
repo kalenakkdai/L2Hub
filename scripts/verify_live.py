@@ -11,10 +11,13 @@ Usage:
     python3 scripts/verify_live.py settings       # profile + preference writes
     python3 scripts/verify_live.py avatars        # storage bucket rules
     python3 scripts/verify_live.py notifications  # notifications read path
+    python3 scripts/verify_live.py gating         # preference -> emitter -> row
     python3 scripts/verify_live.py all
 
-`notifications` needs the FastAPI backend running; the rest talk to Supabase
-directly.
+`notifications` and `gating` need the FastAPI backend running; the rest talk
+to Supabase directly. `gating` additionally writes and deletes events and
+preferences, so it only runs against local Supabase and skips itself
+otherwise.
 
 Everything it writes, it removes. The project is shared with another
 developer, so leaving test rows behind is not acceptable.
@@ -269,33 +272,34 @@ def check_avatars(report: Report) -> None:
     print("  (cleaned up)")
 
 
+def backend_base_url() -> str:
+    for name in (".env", ".env.local"):
+        path = ROOT / "frontend" / name
+        if not path.exists():
+            continue
+        for line in path.read_text().splitlines():
+            if line.startswith("VITE_API_BASE_URL="):
+                return line.split("=", 1)[1].strip()
+    return ""
+
+
 def check_notifications(report: Report) -> None:
     """The notifications read path, against the real backend and database.
 
     Covers listing, the unread count, mark-all-read, and that an id belonging
     to nobody changes nothing.
 
-    NOT covered: that a preference actually suppresses a row. Proving that
-    needs a real emitter to fire — requesting a Wrapped as the seeded ASBO
-    account — with the preference off and then on, and the resulting rows
-    cleaned out of a database shared with another developer. Until that exists,
-    the gating rules are only proven by the unit tests in
-    backend/tests/test_notifications.py, which is not the same claim.
-
     Drives the real backend, so the FastAPI server must be running on
     VITE_API_BASE_URL.
     """
     import urllib.parse
 
-    api = ""
-    for line in (ROOT / "frontend" / ".env").read_text().splitlines():
-        if line.startswith("VITE_API_BASE_URL="):
-            api = line.split("=", 1)[1].strip()
+    api = backend_base_url()
     if not api:
         report.check("backend base URL configured", False, "VITE_API_BASE_URL missing")
         return
 
-    admin_token, admin_id = sign_in("ac@l2hub.local")
+    admin_token, _admin_id = sign_in("ac@l2hub.local")
 
     def backend(path: str, method: str = "GET", body: dict | None = None, token: str | None = None):
         request = urllib.request.Request(urllib.parse.urljoin(api, path), method=method)
@@ -328,11 +332,185 @@ def check_notifications(report: Report) -> None:
                  status == 200 and payload.get("markedRead") == 0)
 
 
+def check_gating(report: Report) -> None:
+    """Preference -> emitter -> row written, or not.
+
+    The rules in app/services/notifications.py are unit tested, but a unit
+    test cannot show that the preference the settings grid writes is the row
+    `deliver` reads, or that the emitter passes a type that maps to it. Those
+    are three separate pieces of naming that have to agree, and they did not:
+    wrapped.* used to resolve to the `event_created` preference.
+
+    So this fires the real emitter — an ASBO requesting a Wrapped, which
+    notifies the superadmins — and inspects what landed.
+
+    LOCAL ONLY. It creates an event, requests summaries against it, and
+    rewrites the superadmins' preferences and quiet hours. That is fine on a
+    throwaway database and not fine on one shared with another developer.
+    """
+    import urllib.parse
+
+    print("\nNotification gating, from preference to row")
+
+    if not IS_LOCAL:
+        print("  (skipped: needs a throwaway database — point .env.local at local Supabase)")
+        return
+
+    api = backend_base_url()
+    if not api:
+        report.check("backend base URL configured", False, "VITE_API_BASE_URL missing")
+        return
+
+    db_url = None
+    for line in (ROOT / "backend" / ".env.local").read_text().splitlines():
+        if line.startswith("SUPABASE_DB_URL="):
+            db_url = line.split("=", 1)[1].strip()
+    if not db_url:
+        report.check("local database URL configured", False, "backend/.env.local")
+        return
+
+    try:
+        import psycopg
+    except ImportError:
+        report.check("psycopg available", False, "pip install psycopg")
+        return
+
+    asbo_token, _ = sign_in("asbo@l2hub.local")
+
+    def request_wrapped(slug: str) -> int:
+        request = urllib.request.Request(
+            urllib.parse.urljoin(api, f"/events/{slug}/summary/request"), method="POST")
+        request.add_header("Authorization", f"Bearer {asbo_token}")
+        request.add_header("Content-Type", "application/json")
+        try:
+            with urllib.request.urlopen(request, json.dumps({"note": "verify"}).encode()) as r:
+                return r.status
+        except urllib.error.HTTPError as error:
+            return error.code
+        except urllib.error.URLError:
+            return 0
+
+    slug = "verify-gating-event"
+
+    with psycopg.connect(db_url, connect_timeout=20, autocommit=True) as conn:
+        cur = conn.cursor()
+
+        def sql(query: str, *args):
+            cur.execute(query, args)
+            return cur.fetchall() if cur.description else []
+
+        def cleanup() -> None:
+            sql("delete from public.events where slug = %s", slug)
+            sql(
+                "delete from public.notification_preferences where profile_id in"
+                " (select p.id from public.profiles p where p.email in"
+                " ('ac@l2hub.local','president@l2hub.local'))"
+            )
+            sql(
+                "update public.profiles set notifications_paused = false,"
+                " quiet_hours_start = null, quiet_hours_end = null"
+                " where email in ('ac@l2hub.local','president@l2hub.local')"
+            )
+
+        def reset_event() -> None:
+            """Back to requestable: no summary, no prior request, no notices."""
+            sql("delete from public.event_summary_requests where event_id in"
+                " (select id from public.events where slug = %s)", slug)
+            sql("delete from public.event_summaries where event_id in"
+                " (select id from public.events where slug = %s)", slug)
+            sql("delete from public.notifications where type = 'wrapped.request'")
+
+        def unread_for(email: str) -> int:
+            rows = sql(
+                "select count(*) from public.notifications n"
+                " join public.profiles p on p.id = n.recipient_user_id"
+                " where p.email = %s and n.type = 'wrapped.request'", email)
+            return int(rows[0][0])
+
+        def set_pref(email: str, enabled: bool) -> None:
+            sql(
+                "insert into public.notification_preferences"
+                " (profile_id, event_type, channel, enabled)"
+                " select p.id, 'wrapped_activity', 'in_app', %s from public.profiles p"
+                " where p.email = %s"
+                " on conflict (profile_id, event_type, channel)"
+                " do update set enabled = excluded.enabled", enabled, email)
+
+        try:
+            cleanup()
+            sql(
+                "insert into public.events (name, slug, year, status)"
+                " values ('Verify Gating', %s, 2026, 'complete')", slug)
+
+            # --- one camper off, one on, same notification -------------------
+            # Stronger than switching everything off: it shows the gate reads
+            # each recipient's own row rather than a global flag.
+            set_pref("ac@l2hub.local", False)
+            set_pref("president@l2hub.local", True)
+            reset_event()
+
+            code = request_wrapped(slug)
+            report.check("emitter fired", code == 200, f"HTTP {code}")
+            report.check("suppressed for the camper who switched it off",
+                         unread_for("ac@l2hub.local") == 0)
+            report.check("delivered to the camper who left it on",
+                         unread_for("president@l2hub.local") == 1)
+
+            # --- switching it back on restores delivery ----------------------
+            set_pref("ac@l2hub.local", True)
+            reset_event()
+
+            request_wrapped(slug)
+            report.check("delivered once switched back on",
+                         unread_for("ac@l2hub.local") == 1)
+
+            # --- the master pause outranks the per-type switch ---------------
+            sql("update public.profiles set notifications_paused = true"
+                " where email = 'ac@l2hub.local'")
+            reset_event()
+
+            request_wrapped(slug)
+            report.check("suppressed by the master pause",
+                         unread_for("ac@l2hub.local") == 0)
+            report.check("the pause is per camper, not global",
+                         unread_for("president@l2hub.local") == 1)
+
+            sql("update public.profiles set notifications_paused = false"
+                " where email = 'ac@l2hub.local'")
+
+            # --- quiet hours -------------------------------------------------
+            # A window that certainly contains now, expressed the way the
+            # settings page writes it.
+            sql("update public.profiles set quiet_hours_start = (now() - interval '1 hour')::time,"
+                " quiet_hours_end = (now() + interval '1 hour')::time"
+                " where email = 'ac@l2hub.local'")
+            reset_event()
+
+            request_wrapped(slug)
+            report.check("suppressed inside quiet hours",
+                         unread_for("ac@l2hub.local") == 0)
+
+            # And a window that certainly does not contain now.
+            sql("update public.profiles set quiet_hours_start = (now() + interval '2 hours')::time,"
+                " quiet_hours_end = (now() + interval '3 hours')::time"
+                " where email = 'ac@l2hub.local'")
+            reset_event()
+
+            request_wrapped(slug)
+            report.check("delivered outside quiet hours",
+                         unread_for("ac@l2hub.local") == 1)
+        finally:
+            reset_event()
+            cleanup()
+            print("  (cleaned up)")
+
+
 CHECKS = {
     "escalation": check_escalation,
     "settings": check_settings,
     "avatars": check_avatars,
     "notifications": check_notifications,
+    "gating": check_gating,
 }
 
 
