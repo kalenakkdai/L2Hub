@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes_auth import router as auth_router
+from app.api.routes_campsite import router as campsite_router
 from app.api.routes_committees import router as committees_router
 from app.api.routes_events import router as events_router
 from app.api.routes_feedback import router as feedback_router
@@ -21,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(campsite_router)
 app.include_router(grades_router)
 app.include_router(feedback_router)
 app.include_router(committees_router)
