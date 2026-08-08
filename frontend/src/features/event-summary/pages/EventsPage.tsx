@@ -347,6 +347,16 @@ export function EventsPage() {
             </EventBlock>
           </div>
         ) : null}
+
+        {/*
+          Scroll clearance for the campsite, which is pinned to the viewport
+          rather than scrolled with the page. Its ground layer is a 960×300
+          SVG stretched to the backdrop width, so it stands width/3.2 tall:
+          the full viewport below lg, minus the 16rem sidebar above it.
+          Reserving that height lets the page scroll far enough to uncover the
+          forest and tents instead of ending on top of them.
+        */}
+        <div aria-hidden="true" className="h-[31.25vw] lg:h-[calc(31.25vw_-_5rem)]" />
       </div>
     </AppShell>
   )
