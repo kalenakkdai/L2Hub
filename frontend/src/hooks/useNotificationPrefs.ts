@@ -32,7 +32,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   event_created: 'New event created',
   event_starting: 'Event starting',
   // The column value keeps the spec's name; the label uses this project's word.
-  crew_announcement: 'Crew announcement',
+  crew_announcement: 'Committee announcement',
   points_awarded: 'Points awarded',
   level_up: 'Level up',
 }

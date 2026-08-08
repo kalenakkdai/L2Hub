@@ -66,7 +66,7 @@ describe('DashboardPage', () => {
 
   it.each([
     ['member', 'Member'],
-    ['committee_head', 'Crew Head'],
+    ['committee_head', 'Committee Head'],
     ['asbo', 'ASBO'],
     ['ac', 'AC'],
     ['president', 'President'],

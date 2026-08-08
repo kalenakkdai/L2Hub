@@ -222,7 +222,7 @@ const feedback: GradeFeedback = {
   summary: 'Completion grading for debrief requirements.',
   items: [
     { id: 'c1', label: 'Overall rating completed', passed: true },
-    { id: 'c2', label: 'Crew ratings completed', passed: true },
+    { id: 'c2', label: 'Committee ratings completed', passed: true },
     { id: 'c3', label: 'Three strengths completed', passed: true },
     { id: 'c4', label: 'Three improvements completed', passed: true },
     { id: 'c5', label: 'Submitted within session', passed: true, pointsEarned: 10, pointsPossible: 10 },
@@ -233,8 +233,8 @@ function debriefRubric(): AssignmentRubric {
   return ensureDefaultRubric([
     {
       id: 'ratings',
-      label: 'Event & crew ratings',
-      description: 'Overall and crew ratings are complete.',
+      label: 'Event & committee ratings',
+      description: 'Overall and committee ratings are complete.',
       pointsPossible: 4,
       kind: 'manual',
     },

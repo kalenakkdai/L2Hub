@@ -19,7 +19,7 @@ function halfWidth(tent: Tent): number {
 }
 
 function rosterOf(count: number): string[] {
-  return Array.from({ length: count }, (_, i) => `Crew ${i + 1}`)
+  return Array.from({ length: count }, (_, i) => `Committee ${i + 1}`)
 }
 
 describe('mulberry32', () => {
@@ -93,7 +93,7 @@ describe('splitTentRows', () => {
     expect(splitTentRows(1)).toEqual({ front: 0, back: 1 })
   })
 
-  it('accounts for every crew', () => {
+  it('accounts for every committee', () => {
     for (let count = 0; count <= 40; count += 1) {
       const { front, back } = splitTentRows(count)
       expect(front + back).toBe(count)
@@ -104,9 +104,9 @@ describe('splitTentRows', () => {
 })
 
 describe('shortCommitteeLabel', () => {
-  it('drops a redundant Crew suffix', () => {
+  it('drops a redundant Committee suffix', () => {
     expect(shortCommitteeLabel('Community Committee')).toBe('Community')
-    expect(shortCommitteeLabel('Spirit crew')).toBe('Spirit')
+    expect(shortCommitteeLabel('Spirit committee')).toBe('Spirit')
   })
 
   it('leaves short names untouched', () => {
@@ -129,7 +129,7 @@ describe('tentColor', () => {
 })
 
 describe('campsiteTents', () => {
-  it('pitches one tent per crew, in roster order', () => {
+  it('pitches one tent per committee, in roster order', () => {
     const tents = campsiteTents(L2_COMMITTEES)
     expect(tents).toHaveLength(L2_COMMITTEES.length)
     expect(tents.map((tent) => tent.name).sort()).toEqual(
@@ -137,7 +137,7 @@ describe('campsiteTents', () => {
     )
   })
 
-  it('ignores blank crew names', () => {
+  it('ignores blank committee names', () => {
     expect(campsiteTents([])).toEqual([])
     expect(campsiteTents(['   ', ''])).toEqual([])
     expect(campsiteTents(['Spirit', ' '])).toHaveLength(1)

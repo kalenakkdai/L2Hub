@@ -104,7 +104,7 @@ export function ProfileSection({
           <div className="flex items-center gap-3">
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-100 text-[13px] font-semibold text-accent-ink"
+              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-100 text-[13px] font-semibold text-accent-600"
             >
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -127,7 +127,7 @@ export function ProfileSection({
       </div>
 
       <div className="mt-5 border-t border-border-divider pt-4">
-        <p className="text-[13px] font-medium text-ink">Roles and crews</p>
+        <p className="text-[13px] font-medium text-ink">Roles and committees</p>
         <p className="mt-1 text-[12.5px] text-ink-subtle">
           Only officers can change these. Ask an ASBO officer or your adviser if something
           is wrong.
@@ -139,7 +139,7 @@ export function ProfileSection({
             <dd className="mt-0.5 text-sm text-ink">{roleLabel(account.role)}</dd>
           </div>
           <div>
-            <dt className="text-[12.5px] text-ink-subtle">Crews</dt>
+            <dt className="text-[12.5px] text-ink-subtle">Committees</dt>
             <dd className="mt-0.5 text-sm text-ink">
               {committees.length > 0 ? committees.join(', ') : 'None yet'}
             </dd>

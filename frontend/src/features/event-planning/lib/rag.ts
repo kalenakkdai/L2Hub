@@ -160,7 +160,7 @@ export function buildPlanningOutline(
         title: 'Roles & owners',
         bullets: [
           'Name a lead and backup for each major zone',
-          'Assign by crew first, then fill gaps with individuals',
+          'Assign by committee first, then fill gaps with individuals',
         ],
       },
       {

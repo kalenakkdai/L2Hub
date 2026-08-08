@@ -243,9 +243,9 @@ function layoutRow(
   }))
 }
 
-/** Drops a redundant "Committee"/"Crew" suffix and keeps labels tent-sized. */
+/** Drops the redundant "Committee" suffix and keeps labels tent-sized. */
 export function shortCommitteeLabel(name: string, maxLength = 13): string {
-  const trimmed = name.trim().replace(/\s+(committee|crew)$/i, '')
+  const trimmed = name.trim().replace(/\s+committee$/i, '')
   if (trimmed.length <= maxLength) return trimmed
   return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`
 }

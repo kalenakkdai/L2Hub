@@ -70,7 +70,7 @@ export const NAV_SECTIONS: NavSection[] = [
         badge: { kind: 'count', value: 3, tone: 'accent' },
       },
       {
-        label: 'Crews',
+        label: 'Committees',
         to: '/committees',
         icon: UsersRound,
         badge: { kind: 'count', value: 12, tone: 'muted' },

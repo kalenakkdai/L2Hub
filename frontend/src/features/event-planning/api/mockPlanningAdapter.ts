@@ -306,13 +306,13 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
   private buildAssignment(input: AssignToPlanInput): PlanAssignment {
     if (input.targetType === 'committee') {
       const committee = COMMITTEES.find((item) => item.id === input.committeeId)
-      if (!committee) throw new Error('Crew not found')
+      if (!committee) throw new Error('Committee not found')
       return {
         id: `asg-${crypto.randomUUID().slice(0, 8)}`,
         targetType: 'committee',
         committeeId: committee.id,
         committeeName: committee.name,
-        roleLabel: input.roleLabel.trim() || 'Crew support',
+        roleLabel: input.roleLabel.trim() || 'Committee support',
         status: 'invited',
       }
     }

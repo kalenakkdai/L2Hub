@@ -41,10 +41,10 @@ describe('CommitteesPage', () => {
     mockProfile()
   })
 
-  it('lists every crew with its head and camper count', async () => {
+  it('lists every committee with its head and camper count', async () => {
     renderWithProviders(<CommitteesPage />)
 
-    expect(await screen.findByRole('heading', { name: 'Crews' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Committees' })).toBeInTheDocument()
 
     // Scope to <main>: the sidebar's nav entries are list items too.
     const rows = within(screen.getByRole('main')).getAllByRole('listitem')
@@ -53,24 +53,24 @@ describe('CommitteesPage', () => {
     expect(screen.getByText('14 campers')).toBeInTheDocument()
   })
 
-  it('says so when a crew has no head yet', async () => {
+  it('says so when a committee has no head yet', async () => {
     renderWithProviders(<CommitteesPage />)
-    await screen.findByRole('heading', { name: 'Crews' })
+    await screen.findByRole('heading', { name: 'Committees' })
 
-    expect(screen.getByText('No crew head yet')).toBeInTheDocument()
+    expect(screen.getByText('No committee head yet')).toBeInTheDocument()
   })
 
-  it('marks the crews the camper belongs to', async () => {
+  it('marks the committees the camper belongs to', async () => {
     renderWithProviders(<CommitteesPage />)
-    await screen.findByRole('heading', { name: 'Crews' })
+    await screen.findByRole('heading', { name: 'Committees' })
 
     const mine = SAMPLE_COMMITTEES.filter((committee) => committee.isMine)
-    expect(screen.getAllByText('You are in this crew')).toHaveLength(mine.length)
+    expect(screen.getAllByText('You are in this committee')).toHaveLength(mine.length)
   })
 
   it('links each row to its detail page', async () => {
     renderWithProviders(<CommitteesPage />)
-    await screen.findByRole('heading', { name: 'Crews' })
+    await screen.findByRole('heading', { name: 'Committees' })
 
     expect(screen.getByRole('link', { name: /Activities/ })).toHaveAttribute(
       'href',
@@ -109,13 +109,13 @@ describe('CommitteeDetailPage', () => {
     expect(screen.getByText(detail.events[0].title)).toBeInTheDocument()
   })
 
-  it('names the crew head in the roster', async () => {
+  it('names the committee head in the roster', async () => {
     renderDetail('activities')
     await screen.findByRole('heading', { name: 'Activities', level: 1 })
 
-    // The header subline also says "Crew head <name>", so scope to the roster.
+    // The header subline also says "Committee head <name>", so scope to the roster.
     const roster = screen.getByRole('region', { name: 'Campers' })
-    expect(within(roster).getByText(/Crew head/)).toBeInTheDocument()
+    expect(within(roster).getByText(/Committee head/)).toBeInTheDocument()
   })
 
   it('reports how many campers are not listed', async () => {
@@ -130,29 +130,29 @@ describe('CommitteeDetailPage', () => {
     renderDetail('tech')
     await screen.findByRole('heading', { name: 'Tech', level: 1 })
 
-    expect(screen.getByText('That is the whole crew.')).toBeInTheDocument()
+    expect(screen.getByText('That is the whole committee.')).toBeInTheDocument()
   })
 
-  it('shows empty states for a crew with no tasks or events', async () => {
+  it('shows empty states for a committee with no tasks or events', async () => {
     renderDetail('elections')
     await screen.findByRole('heading', { name: 'Elections', level: 1 })
 
     expect(
-      screen.getByText('Tasks assigned to this crew will land here.'),
+      screen.getByText('Tasks assigned to this committee will land here.'),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('This crew has no events on the calendar.'),
+      screen.getByText('This committee has no events on the calendar.'),
     ).toBeInTheDocument()
   })
 
-  it('reports an unknown crew rather than rendering an empty page', async () => {
+  it('reports an unknown committee rather than rendering an empty page', async () => {
     renderDetail('not-a-committee')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('No such crew')
+    expect(await screen.findByRole('alert')).toHaveTextContent('No such committee')
   })
 })
 
-describe('crew fixture', () => {
+describe('committee fixture', () => {
   it('puts the head first and never duplicates a camper', () => {
     for (const committee of SAMPLE_COMMITTEES) {
       const detail = sampleCommitteeDetail(committee.id)!

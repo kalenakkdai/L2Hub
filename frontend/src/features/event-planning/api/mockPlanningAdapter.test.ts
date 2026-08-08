@@ -34,7 +34,7 @@ describe('MockEventPlanningDataProvider', () => {
     expect(updated.status).toBe('active')
   })
 
-  it('assigns by crew or individual', async () => {
+  it('assigns by committee or individual', async () => {
     const data = new MockEventPlanningDataProvider()
     const created = await data.createPlan({
       title: 'Spirit lunch games',

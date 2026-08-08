@@ -231,7 +231,7 @@ describe('DangerZone', () => {
           {
             id: 'leave',
             label: 'Leave this Campsite',
-            description: 'Removes you from every crew.',
+            description: 'Removes you from every committee.',
             buttonLabel: 'Leave',
             confirmTitle: 'Leave the Campsite?',
             confirmDescription: 'You will lose access.',
