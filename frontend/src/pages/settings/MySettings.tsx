@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/layout/AppShell'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { Skeleton } from '../../components/ui/Skeleton'
@@ -11,7 +12,8 @@ import { NotificationsGrid } from '../../components/settings/NotificationsGrid'
 import { ProfileSection } from '../../components/settings/ProfileSection'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useProfile } from '../../hooks/useProfile'
-import { applyAppearance } from '../../lib/appearance'
+import { leaveCampsite } from '../../api/campsite'
+import { useAuth } from '../../auth/useAuth'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'profile', label: 'Profile' },
@@ -24,21 +26,10 @@ const SECTIONS: SettingsSection[] = [
 
 export function MySettings() {
   const me = useCurrentUser()
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
+  const [leaveError, setLeaveError] = useState<string | null>(null)
   const { profile, isPending, isError, refetch, save, saveNow, status } = useProfile()
-
-  // Appearance is applied from the saved profile rather than from local state,
-  // so an optimistic toggle takes effect immediately and a rollback undoes it.
-  useEffect(() => {
-    if (!profile) return
-    applyAppearance(
-      {
-        theme: profile.theme,
-        reduceMotion: profile.reduce_motion,
-        compactDensity: profile.compact_density,
-      },
-      document.documentElement,
-    )
-  }, [profile])
 
   if (me.shell) return me.shell
   const { profile: account, name, committee } = me
@@ -119,18 +110,35 @@ export function MySettings() {
                   id: 'leave-campsite',
                   label: 'Leave this Campsite',
                   description:
-                    'Removes you from every committee and revokes your roles. An officer has to add you back.',
+                    'Removes you from every crew and revokes your roles. An officer has to add you back.',
                   buttonLabel: 'Leave Campsite',
                   confirmTitle: 'Leave the L2 Campsite?',
                   confirmDescription:
-                    'You will lose access to grades, debriefs, and committee work. This is not wired up yet — it needs an endpoint that can revoke roles safely.',
-                  disabled: true,
-                  disabledReason:
-                    'Leaving needs a server endpoint that revokes roles; it is not built yet.',
-                  onConfirm: () => {},
+                    'You will lose access to grades, debriefs, and crew work. Your submissions and grades stay on record.',
+                  onConfirm: async () => {
+                    setLeaveError(null)
+                    try {
+                      await leaveCampsite()
+                      // Nothing is left to authorise, so end the session.
+                      await signOut('manual')
+                      navigate('/login', { replace: true })
+                    } catch (error) {
+                      setLeaveError(
+                        error instanceof Error
+                          ? error.message
+                          : 'Could not leave the Campsite.',
+                      )
+                    }
+                  },
                 },
               ]}
-            />
+            >
+              {leaveError && (
+                <p role="alert" className="mt-3 text-sm text-status-danger">
+                  {leaveError}
+                </p>
+              )}
+            </DangerZone>
           </>
         )}
       </SettingsLayout>

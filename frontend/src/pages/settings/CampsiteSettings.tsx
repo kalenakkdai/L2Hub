@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/layout/AppShell'
 import { ErrorState } from '../../components/ui/ErrorState'
@@ -12,6 +13,8 @@ import {
 } from '../../components/settings/primitives'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useCampsiteSettings, type PointsConfig } from '../../hooks/useCampsiteSettings'
+import { TransferAdminDialog } from '../../components/settings/TransferAdminDialog'
+import { breakCamp } from '../../api/campsite'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'identity', label: 'Identity' },
@@ -25,7 +28,7 @@ const MODULE_LABELS: Record<string, string> = {
   grades: 'Grades',
   events: 'Events',
   debriefs: 'Debriefs',
-  committees: 'Committees',
+  committees: 'Crews',
   wrapped: 'Wrapped',
 }
 
@@ -44,6 +47,9 @@ export function CampsiteSettings() {
 
   const { settings, isPending, isError, refetch, save, saveNow, status } =
     useCampsiteSettings(canEdit)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [dangerError, setDangerError] = useState<string | null>(null)
 
   if (me.shell) return me.shell
   const { profile: account, name, committee } = me
@@ -204,8 +210,8 @@ export function CampsiteSettings() {
 
               <p className="mt-4 border-t border-border-divider pt-4 text-[12.5px] text-ink-subtle">
                 Committee management and role assignment live on the{' '}
-                <Link to="/committees" className="text-accent-600 underline-offset-2 hover:underline">
-                  Committees
+                <Link to="/committees" className="text-accent-ink underline-offset-2 hover:underline">
+                  Crews
                 </Link>{' '}
                 page, where the roster and its permissions are already handled.
               </p>
@@ -314,10 +320,13 @@ export function CampsiteSettings() {
                   buttonLabel: 'Transfer',
                   confirmTitle: 'Transfer administration?',
                   confirmDescription:
-                    'Not wired up yet — it needs an endpoint that assigns the new administrator before removing you, so the Campsite is never left without one.',
-                  disabled: true,
-                  disabledReason: 'Needs a server endpoint that reassigns roles atomically.',
-                  onConfirm: () => {},
+                    'You will choose who receives it on the next screen. They are assigned before you are removed, so the Campsite is never left without an administrator.',
+                  disabled: !canEdit,
+                  disabledReason: 'Only an AC or President can transfer administration.',
+                  onConfirm: () => {
+                    setDangerError(null)
+                    setTransferOpen(true)
+                  },
                 },
                 {
                   id: 'break-camp',
@@ -328,12 +337,47 @@ export function CampsiteSettings() {
                   confirmText: settings.name,
                   confirmTitle: `Break Camp for ${settings.name}?`,
                   confirmDescription:
-                    'Every camper loses access immediately. Not wired up yet — archiving needs a server endpoint so it can be audited and reversed.',
+                    'Every camper loses the ability to change anything. Records are archived rather than deleted, and can be restored from the database.',
                   disabled: !canEdit,
                   disabledReason: 'Only an AC or President can break camp.',
-                  onConfirm: () => {},
+                  onConfirm: async () => {
+                    setDangerError(null)
+                    try {
+                      await breakCamp(settings.name)
+                      setNotice('This Campsite is archived. Everything is now read-only.')
+                      void refetch()
+                    } catch (error) {
+                      setDangerError(
+                        error instanceof Error
+                          ? error.message
+                          : 'Could not archive the Campsite.',
+                      )
+                    }
+                  },
                 },
               ]}
+            >
+              {notice && (
+                <p role="status" className="mt-3 text-sm text-accent-ink">
+                  {notice}
+                </p>
+              )}
+              {dangerError && (
+                <p role="alert" className="mt-3 text-sm text-status-danger">
+                  {dangerError}
+                </p>
+              )}
+            </DangerZone>
+
+            <TransferAdminDialog
+              open={transferOpen}
+              currentUserId={account.id}
+              onClose={() => setTransferOpen(false)}
+              onTransferred={(recipientName) => {
+                setTransferOpen(false)
+                setNotice(`Administration transferred to ${recipientName}.`)
+                void refetch()
+              }}
             />
           </>
         )}
