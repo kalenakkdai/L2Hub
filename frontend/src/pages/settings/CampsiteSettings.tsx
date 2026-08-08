@@ -28,7 +28,7 @@ const MODULE_LABELS: Record<string, string> = {
   grades: 'Grades',
   events: 'Events',
   debriefs: 'Debriefs',
-  committees: 'Crews',
+  committees: 'Committees',
   wrapped: 'Wrapped',
 }
 
@@ -166,7 +166,7 @@ export function CampsiteSettings() {
                 <Field
                   label="Accent colour"
                   htmlFor="campsite-accent"
-                  hint="Applied across the Campsite."
+                  hint="Applied across the Campsite. A colour too pale to carry white button text is ignored."
                 >
                   <input
                     id="campsite-accent"
@@ -211,7 +211,7 @@ export function CampsiteSettings() {
               <p className="mt-4 border-t border-border-divider pt-4 text-[12.5px] text-ink-subtle">
                 Committee management and role assignment live on the{' '}
                 <Link to="/committees" className="text-accent-ink underline-offset-2 hover:underline">
-                  Crews
+                  Committees
                 </Link>{' '}
                 page, where the roster and its permissions are already handled.
               </p>

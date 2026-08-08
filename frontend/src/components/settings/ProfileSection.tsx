@@ -17,6 +17,26 @@ type ProfileSectionProps = {
 const GRADE_YEARS = [9, 10, 11, 12]
 
 /**
+ * Offered pronouns.
+ *
+ * A closed list keeps the roster tidy and spares people typing this out, but
+ * a fixed list that omits someone is worse than no list, so "Prefer not to
+ * say" and a free-text "Other" are both here. A stored value that is not in
+ * the list still shows, rather than silently resetting to blank.
+ */
+const PRONOUN_OPTIONS = [
+  'she/her',
+  'he/him',
+  'they/them',
+  'she/they',
+  'he/they',
+  'any pronouns',
+  'Prefer not to say',
+] as const
+
+const OTHER = '__other__'
+
+/**
  * Name, pronouns, grade, avatar. Roles and committees are shown but not
  * editable — changing them is an officer action, and saying so here saves
  * someone hunting for a control that was never going to be there.
@@ -31,16 +51,23 @@ export function ProfileSection({
   // Text inputs stay local while typing and commit on blur; the debounce in
   // useProfile handles the write. Everything else commits immediately.
   const [displayName, setDisplayName] = useState(profile.display_name ?? '')
-  const [pronouns, setPronouns] = useState(profile.pronouns ?? '')
+
+  // A value already stored that is not one of the offered options keeps the
+  // free-text field open rather than being dropped on the floor.
+  const stored = profile.pronouns ?? ''
+  const isPreset = stored === '' || PRONOUN_OPTIONS.includes(stored as never)
+  const [customOpen, setCustomOpen] = useState(!isPreset)
+  const [customPronouns, setCustomPronouns] = useState(isPreset ? '' : stored)
 
   useEffect(() => {
     setDisplayName(profile.display_name ?? '')
-    setPronouns(profile.pronouns ?? '')
-  }, [profile.display_name, profile.pronouns])
+  }, [profile.display_name])
 
-  const committees = (account.roles ?? [])
-    .map((role) => role.committee_name)
-    .filter((name): name is string => Boolean(name))
+  // Membership, not committee-scoped roles: a camper can sit on a committee
+  // without holding a role there, and both belong in this list.
+  const committees = (account.committees ?? []).map((membership) =>
+    membership.is_head ? `${membership.name} (head)` : membership.name,
+  )
 
   return (
     <SettingsCard
@@ -68,16 +95,44 @@ export function ProfileSection({
         </Field>
 
         <Field label="Pronouns" htmlFor="pronouns" hint="Optional. Shown next to your name.">
-          <input
+          <select
             id="pronouns"
-            value={pronouns}
-            onChange={(event) => setPronouns(event.target.value)}
-            onBlur={() => {
-              save({ pronouns: pronouns.trim() || null })
+            value={customOpen ? OTHER : stored}
+            onChange={(event) => {
+              const value = event.target.value
+              if (value === OTHER) {
+                setCustomOpen(true)
+                return
+              }
+              setCustomOpen(false)
+              setCustomPronouns('')
+              save({ pronouns: value || null })
               saveNow()
             }}
             className={FIELD_CLASS}
-          />
+          >
+            <option value="">Not set</option>
+            {PRONOUN_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+            <option value={OTHER}>Something else…</option>
+          </select>
+
+          {customOpen && (
+            <input
+              aria-label="Your pronouns"
+              placeholder="Type your pronouns"
+              value={customPronouns}
+              onChange={(event) => setCustomPronouns(event.target.value)}
+              onBlur={() => {
+                save({ pronouns: customPronouns.trim() || null })
+                saveNow()
+              }}
+              className={`${FIELD_CLASS} mt-2`}
+            />
+          )}
         </Field>
 
         <Field label="Grade" htmlFor="grade-year">
