@@ -17,7 +17,7 @@ export function CommitteesPage() {
   const header = (
     <header className="sticky top-0 z-10 border-b border-border-divider bg-surface px-4 pt-6 pb-5 sm:px-6 lg:px-10">
       <p className="mb-1.5 text-[13px] text-ink-subtle">L2 Campsite · 28 campers</p>
-      <h1 className="text-display font-bold text-ink">Committees</h1>
+      <h1 className="text-display font-bold text-ink">Crews</h1>
     </header>
   )
 
@@ -30,20 +30,20 @@ export function CommitteesPage() {
       header={header}
     >
       <p className="mb-5 max-w-[70ch] text-sm text-ink-subtle">
-        Twelve committees run the L2 Campsite. Everyone can see all of them; you can only
-        be assigned tasks inside the committees you belong to.
+        Twelve crews run the L2 Campsite. Everyone can see all of them; you can only
+        be assigned tasks inside the crews you belong to.
       </p>
 
       {committees.isPending && (
         <p className="flex items-center gap-2.5 py-10 text-sm text-ink-subtle">
           <Loader aria-hidden="true" className="h-4 w-4 animate-spin" />
-          Rounding up your committees…
+          Rounding up your crews…
         </p>
       )}
 
       {committees.isError && (
         <ErrorState
-          title="Could not load committees"
+          title="Could not load crews"
           description="The list did not come back. Try again in a moment."
           onRetry={() => void committees.refetch()}
         />
@@ -52,8 +52,8 @@ export function CommitteesPage() {
       {committees.isSuccess && (
         <div className="overflow-hidden rounded-card border border-border-subtle bg-surface">
           <div className="flex items-center gap-3.5 border-b border-border-divider bg-surface-sunken px-5 py-2.5 text-[11.5px] font-semibold tracking-[0.04em] text-ink-subtle uppercase">
-            <span className="flex-1">Committee</span>
-            <span className="hidden w-[170px] sm:block">Committee head</span>
+            <span className="flex-1">Crew</span>
+            <span className="hidden w-[170px] sm:block">Crew head</span>
             <span className="w-[110px] text-right">Campers</span>
           </div>
 
@@ -66,12 +66,12 @@ export function CommitteesPage() {
                 >
                   <span className="font-semibold">{committee.name}</span>
                   {committee.isMine && (
-                    <StatusBadge tone="accent">You are in this committee</StatusBadge>
+                    <StatusBadge tone="accent">You are in this crew</StatusBadge>
                   )}
                   {/* The trail fills the gap, tying the name to its figures. */}
                   <span aria-hidden="true" className="dotted-trail hidden h-px flex-1 sm:block" />
                   <span className="hidden w-[170px] text-[13.5px] text-ink-muted sm:block">
-                    {committee.head ?? 'No committee head yet'}
+                    {committee.head ?? 'No crew head yet'}
                   </span>
                   <span className="ml-auto w-[110px] text-right font-mono text-[13px] text-ink-subtle sm:ml-0">
                     {committee.camperCount} campers

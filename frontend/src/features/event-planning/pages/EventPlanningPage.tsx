@@ -49,7 +49,7 @@ export function EventPlanningPage() {
       <header className="mb-5 border-b border-border-subtle pb-4">
         <h1 className="text-display font-semibold text-ink">Event planning</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Anyone can start a plan and assign committees or individuals. Mr. Jan
+          Anyone can start a plan and assign crews or individuals. Mr. Jan
           must enable a plan before people can accept their assignments.
         </p>
       </header>

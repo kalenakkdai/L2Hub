@@ -4,7 +4,7 @@ import { Campsite } from './Campsite'
 import { L2_COMMITTEES } from '../lib/campsite'
 
 describe('Campsite', () => {
-  it('pitches a labelled tent for every committee', () => {
+  it('pitches a labelled tent for every crew', () => {
     const { container } = render(
       <Campsite committees={['Community', 'Publicity', 'Rally Committee']} />,
     )

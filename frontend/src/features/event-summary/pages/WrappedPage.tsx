@@ -88,7 +88,7 @@ export function WrappedPage() {
       },
       {
         id: 'committees',
-        title: 'Committee rankings',
+        title: 'Crew rankings',
         body: (
           <ul className="mx-auto max-w-md space-y-3">
             {(w.committeeRankings ?? []).map(
@@ -222,7 +222,7 @@ export function WrappedPage() {
       },
       {
         id: 'breakdown',
-        title: 'Committee breakdown',
+        title: 'Crew breakdown',
         body: (
           <div className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-2">
             {(w.committeeBreakdown ?? []).map(

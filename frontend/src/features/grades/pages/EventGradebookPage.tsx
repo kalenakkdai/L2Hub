@@ -114,7 +114,7 @@ export function EventGradebookPage() {
                   Student
                 </th>
                 <th className="px-3 py-2 text-xs font-semibold uppercase text-ink-subtle">
-                  Committee
+                  Crew
                 </th>
                 <th className="px-3 py-2 text-xs font-semibold uppercase text-ink-subtle">
                   Status

@@ -94,7 +94,7 @@ const TASKS: Record<string, CommitteeDetail['tasks']> = {
 const EVENTS: Record<string, CommitteeDetail['events']> = {
   activities: [
     { id: 'e1', startsAt: daysFromNow(1, 8), title: 'Maze Day 2026', detail: 'Main Quad' },
-    { id: 'e2', startsAt: daysFromNow(5, 15), title: 'Activities committee sync', detail: 'Room 402' },
+    { id: 'e2', startsAt: daysFromNow(5, 15), title: 'Activities crew sync', detail: 'Room 402' },
   ],
   tech: [{ id: 'e3', startsAt: daysFromNow(1, 7), title: 'Maze Day 2026 — AV setup', detail: 'Gym' }],
   publicity: [

@@ -124,7 +124,7 @@ export function EventRecapPanel({ eventRef }: { eventRef: string }) {
       {recap.committeeRankings.length > 0 ? (
         <div className={CARD}>
           <p className="text-[11px] font-medium tracking-wide text-navy-ink-muted uppercase">
-            Committee ratings
+            Crew ratings
           </p>
           <ul className="mt-2 space-y-1">
             {recap.committeeRankings.map((committee) => (

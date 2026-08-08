@@ -23,7 +23,7 @@ const NODES = [
   },
   {
     id: 'committee_cooperation',
-    label: 'Committee Cooperation',
+    label: 'Crew Cooperation',
     mentions: 11,
     kind: 'strength',
   },

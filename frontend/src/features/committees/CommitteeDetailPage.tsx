@@ -33,14 +33,14 @@ function Roster({ committee }: { committee: CommitteeDetail }) {
           >
             <span
               aria-hidden="true"
-              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md border border-accent-200 bg-accent-50 text-[11.5px] font-semibold text-accent-600"
+              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md border border-accent-200 bg-accent-50 text-[11.5px] font-semibold text-accent-ink"
             >
               {initials(member.name)}
             </span>
             <span className="text-sm font-medium text-ink">{member.name}</span>
             <span className="ml-auto text-right text-[13px] text-ink-subtle">
               {member.position ? `${member.position} · ` : ''}
-              {member.isHead ? 'Committee head' : 'Camper'}
+              {member.isHead ? 'Crew head' : 'Camper'}
             </span>
           </li>
         ))}
@@ -49,7 +49,7 @@ function Roster({ committee }: { committee: CommitteeDetail }) {
       <p className="px-5 py-3 text-[13px] text-ink-subtle">
         {committee.remainingCount > 0
           ? `and ${committee.remainingCount} more campers`
-          : 'That is the whole committee.'}
+          : 'That is the whole crew.'}
       </p>
     </div>
   )
@@ -72,18 +72,18 @@ export function CommitteeDetailPage() {
         className="mb-2 inline-flex items-center gap-1.5 text-[13px] text-ink-subtle transition hover:text-ink"
       >
         <ChevronLeft aria-hidden="true" className="h-3.5 w-3.5" />
-        All committees
+        All crews
       </Link>
 
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
         <div className="min-w-0">
           <h1 className="text-display font-bold text-ink">
-            {data ? data.name : query.isPending ? 'Loading…' : 'Committee'}
+            {data ? data.name : query.isPending ? 'Loading…' : 'Crew'}
           </h1>
           {data && (
             <p className="mt-1.5 text-[13.5px] text-ink-subtle">
               {data.camperCount} campers ·{' '}
-              {data.head ? `Committee head ${data.head}` : 'No committee head yet'} ·{' '}
+              {data.head ? `Crew head ${data.head}` : 'No crew head yet'} ·{' '}
               {data.email}
             </p>
           )}
@@ -91,7 +91,7 @@ export function CommitteeDetailPage() {
 
         {data && (
           <ButtonLink to={`mailto:${data.email}`} size="sm">
-            Message committee
+            Message crew
             <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
           </ButtonLink>
         )}
@@ -109,7 +109,7 @@ export function CommitteeDetailPage() {
     >
       {query.isPending && (
         <div role="status" aria-busy="true" className="flex flex-col gap-4">
-          <span className="sr-only">Loading committee…</span>
+          <span className="sr-only">Loading crew…</span>
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-48 w-full rounded-card" />
         </div>
@@ -117,16 +117,16 @@ export function CommitteeDetailPage() {
 
       {query.isError && (
         <ErrorState
-          title="Could not load this committee"
-          description="The committee did not come back. Try again in a moment."
+          title="Could not load this crew"
+          description="The crew did not come back. Try again in a moment."
           onRetry={() => void query.refetch()}
         />
       )}
 
       {query.isSuccess && !data && (
         <ErrorState
-          title="No such committee"
-          description="This committee does not exist, or it has been renamed."
+          title="No such crew"
+          description="This crew does not exist, or it has been renamed."
         />
       )}
 
@@ -136,11 +136,11 @@ export function CommitteeDetailPage() {
             <Roster committee={data} />
           </Section>
 
-          <Section title="Committee tasks" revealIndex={1}>
+          <Section title="Crew tasks" revealIndex={1}>
             {data.tasks.length === 0 ? (
               <EmptyState
                 title="Nothing set up here yet"
-                description="Tasks assigned to this committee will land here."
+                description="Tasks assigned to this crew will land here."
               />
             ) : (
               <ul className="flex flex-col gap-2">
@@ -166,7 +166,7 @@ export function CommitteeDetailPage() {
             {data.events.length === 0 ? (
               <EmptyState
                 title="Nothing set up here yet"
-                description="This committee has no events on the calendar."
+                description="This crew has no events on the calendar."
               />
             ) : (
               <ul className="overflow-hidden rounded-card border border-border-subtle bg-surface">

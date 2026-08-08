@@ -8,7 +8,7 @@ export const FIELD =
 const PITCH: { icon: LucideIcon; text: string }[] = [
   { icon: MessagesSquare, text: 'Five-minute event debriefs, submitted together' },
   { icon: BookOpenCheck, text: 'Grades that follow from what you actually did' },
-  { icon: UsersRound, text: 'Committees, rosters, and assignments that stay straight' },
+  { icon: UsersRound, text: 'Crews, rosters, and assignments that stay straight' },
 ]
 
 /**
@@ -35,7 +35,7 @@ export function AuthPitch() {
           Every club gets a Campsite.
         </h2>
         <p className="mt-4 text-[16.5px] leading-relaxed text-navy-ink-muted text-pretty">
-          A Campsite is one club&rsquo;s hub on the Quad — its campers, its committees, its
+          A Campsite is one club&rsquo;s hub on the Quad — its campers, its crews, its
           events, and its work in one place.
         </p>
 

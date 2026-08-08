@@ -35,7 +35,7 @@ function CommitteeCard({ snapshot }: { snapshot: CommitteeSnapshot }) {
         value={snapshot.readinessPct}
         max={100}
         delayMs={400}
-        label={`${snapshot.name} committee readiness`}
+        label={`${snapshot.name} crew readiness`}
       />
 
       {snapshot.actionItemCount > 0 && (
@@ -101,7 +101,7 @@ function DebriefBubbles({ debrief }: { debrief: LiveDebrief }) {
 const QUICK_LINKS: { label: string; to: string; icon: LucideIcon }[] = [
   { label: 'Resources', to: '/resources', icon: BookOpen },
   { label: 'Calendar', to: '/events', icon: Calendar },
-  { label: 'Committees', to: '/committees', icon: UsersRound },
+  { label: 'Crews', to: '/committees', icon: UsersRound },
   { label: 'Grades', to: '/grades', icon: GraduationCap },
 ]
 
@@ -119,7 +119,7 @@ export function DashboardRail({ committee, debrief, upcoming }: DashboardRailPro
   return (
     <div className="flex flex-col gap-7">
       {committee && (
-        <RailSection title="My committee">
+        <RailSection title="My crew">
           <CommitteeCard snapshot={committee} />
         </RailSection>
       )}
@@ -128,7 +128,7 @@ export function DashboardRail({ committee, debrief, upcoming }: DashboardRailPro
         <RailSection
           title="Live debrief"
           action={
-            <Link to={debrief.to} className="ml-auto text-[12.5px] text-accent-600 underline-offset-2 hover:underline">
+            <Link to={debrief.to} className="ml-auto text-[12.5px] text-accent-ink underline-offset-2 hover:underline">
               Monitor
             </Link>
           }
@@ -171,9 +171,9 @@ export function DashboardRail({ committee, debrief, upcoming }: DashboardRailPro
             <li key={label}>
               <Link
                 to={to}
-                className="flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-3 text-[13px] text-ink-muted transition duration-[420ms] ease-out-quick hover:scale-[1.015] hover:border-accent-600 hover:text-accent-600 hover:shadow-card-hover hover:duration-[260ms]"
+                className="flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-3 text-[13px] text-ink-muted transition duration-[420ms] ease-out-quick hover:scale-[1.015] hover:border-accent-600 hover:text-accent-ink hover:shadow-card-hover hover:duration-[260ms]"
               >
-                <Icon aria-hidden="true" className="h-4 w-4 text-accent-600" />
+                <Icon aria-hidden="true" className="h-4 w-4 text-accent-ink" />
                 {label}
               </Link>
             </li>

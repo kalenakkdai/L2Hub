@@ -33,7 +33,7 @@ function daysFromNow(days: number, hour = 9): string {
 }
 
 export const SAMPLE_DASHBOARD: DashboardData = {
-  committee: 'Activities committee',
+  committee: 'Activities crew',
   campsiteCount: 9,
 
   stats: { points: 1240, level: 8, openCount: 3 },
@@ -63,7 +63,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
     { date: daysFromNow(4) },
     {
       date: daysFromNow(5, 15),
-      title: 'Activities committee sync',
+      title: 'Activities crew sync',
       detail: '3:30 PM · Room 402',
     },
     { date: daysFromNow(6) },
@@ -91,7 +91,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
     },
     {
       id: 'booth-budget',
-      title: 'Booth Budget — Committee Deliverable',
+      title: 'Booth Budget — Crew Deliverable',
       meta: 'Due tomorrow 11:59 PM · late accepted until Aug 10 — 10 pts possible',
       status: { label: 'Not started', tone: 'neutral' },
       urgency: 'normal',
@@ -126,7 +126,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
       },
       {
         id: 'g3',
-        assignment: 'Committee Sync — Meeting Response',
+        assignment: 'Crew Sync — Meeting Response',
         event: null,
         status: { label: 'Submitted', tone: 'accent' },
         earned: 8,
@@ -167,13 +167,13 @@ export const SAMPLE_DASHBOARD: DashboardData = {
     {
       id: 'a2',
       kind: 'submission',
-      description: 'Activities committee notes published',
+      description: 'Activities crew notes published',
       occurredAt: hoursFromNow(-27),
     },
     {
       id: 'a3',
       kind: 'committee',
-      description: 'Added to the Tech committee as committee head',
+      description: 'Added to the Tech crew as crew head',
       occurredAt: hoursFromNow(-30),
     },
     {
@@ -205,7 +205,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
   upcoming: [
     { id: 'u1', startsAt: daysFromNow(1, 8), title: 'Maze Day 2026' },
     { id: 'u2', startsAt: daysFromNow(1, 14), title: 'Maze Day debrief' },
-    { id: 'u3', startsAt: daysFromNow(5, 15), title: 'Activities committee sync' },
+    { id: 'u3', startsAt: daysFromNow(5, 15), title: 'Activities crew sync' },
     { id: 'u4', startsAt: daysFromNow(9, 10), title: 'Fall rally planning' },
   ],
 }

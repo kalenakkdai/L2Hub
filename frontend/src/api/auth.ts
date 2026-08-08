@@ -50,7 +50,7 @@ export function fetchDashboard(): Promise<DashboardPayload> {
 
 const ROLE_LABELS: Record<string, string> = {
   member: 'Member',
-  committee_head: 'Committee Head',
+  committee_head: 'Crew Head',
   asbo: 'ASBO',
   ac: 'AC',
   president: 'President',

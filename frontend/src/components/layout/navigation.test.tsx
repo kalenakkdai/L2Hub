@@ -61,7 +61,7 @@ describe('Sidebar', () => {
     renderChrome(<Sidebar name="Ada Lovelace" role="committee_head" />)
 
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
-    expect(screen.getByText('Committee Head')).toBeInTheDocument()
+    expect(screen.getByText('Crew Head')).toBeInTheDocument()
   })
 
   it('signs out from the user menu', async () => {

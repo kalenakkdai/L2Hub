@@ -40,7 +40,7 @@ export function AssignPeopleForm({ planId }: { planId: string }) {
           }`}
           onClick={() => setTargetType('committee')}
         >
-          By committee
+          By crew
         </button>
         <button
           type="button"
@@ -61,7 +61,7 @@ export function AssignPeopleForm({ planId }: { planId: string }) {
             htmlFor="assign-committee"
             className="text-xs font-medium text-ink-muted"
           >
-            Committee
+            Crew
           </label>
           <select
             id="assign-committee"
@@ -70,7 +70,7 @@ export function AssignPeopleForm({ planId }: { planId: string }) {
             onChange={(event) => setCommitteeId(event.target.value)}
             className="mt-1 w-full rounded-control border border-border-strong bg-surface px-3 py-2 text-sm"
           >
-            <option value="">Select committee…</option>
+            <option value="">Select crew…</option>
             {(committees.data ?? []).map((committee: { id: string; name: string }) => (
               <option key={committee.id} value={committee.id}>
                 {committee.name}

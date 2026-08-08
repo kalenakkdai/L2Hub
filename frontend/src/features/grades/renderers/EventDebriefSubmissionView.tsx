@@ -48,7 +48,7 @@ export function EventDebriefSubmissionView({
 
       <section>
         <h3 className="text-base font-semibold text-slate-900">
-          Committee Helpfulness
+          Crew Helpfulness
         </h3>
         <ul className="mt-2 space-y-2">
           {data.committeeRatings.map((item) => (

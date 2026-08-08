@@ -39,7 +39,7 @@ function RoleBadges({ user }: { user: UserListItem }) {
           </span>
           {role.scope === 'committee' ? (
             <span className="text-[10px] text-ink-subtle">
-              {role.committee_name ?? 'Committee'}
+              {role.committee_name ?? 'Crew'}
             </span>
           ) : role.scope === 'global' ? (
             <span className="text-[10px] text-ink-subtle">Global</span>
@@ -147,7 +147,7 @@ function UserDetailPanel({
 
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
-                Committees
+                Crews
               </h3>
               <ul className="mt-2 space-y-1 text-sm text-ink">
                 {detailQuery.data.committees.length === 0 ? (
@@ -233,7 +233,7 @@ export function UsersPage() {
         <div>
           <h1 className="text-display font-semibold text-ink">Users</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Manage L2 Hub accounts, roles, committee assignments, and access.
+            Manage L2 Hub accounts, roles, crew assignments, and access.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -285,7 +285,7 @@ export function UsersPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-ink-muted">User</th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">Role(s)</th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">
-                  Committee(s)
+                  Crew(s)
                 </th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">Status</th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">
