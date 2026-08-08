@@ -79,9 +79,15 @@ export function ContactSection({
             </Button>
           </div>
 
+          {/* Say why the button is off. A disabled control with no reason
+              reads as broken, and this one is disabled precisely because
+              everything is fine. The reason cannot go in a `title`: Button
+              sets `disabled:pointer-events-none`, so a disabled button never
+              receives the hover that would show it. */}
           <p className="mt-1.5 text-[12.5px] text-ink-subtle">
-            Changing your address sends a confirmation link and marks it unverified until
-            you follow it.
+            {profile.email_verified && !emailChanged
+              ? 'This address is already verified. To verify a different one, type it above.'
+              : 'We send a six-digit code to this address. It stays unverified until you enter the code.'}
           </p>
         </div>
 
@@ -120,19 +126,24 @@ export function ContactSection({
                 !smsConfigured() ||
                 (profile.phone_verified && !phoneChanged)
               }
-              title={
-                smsConfigured() ? undefined : 'Text messaging is not set up for this Campsite.'
-              }
               onClick={() => setVerifying('phone')}
             >
               Verify
             </Button>
           </div>
 
+          {/* Whatever switched the button off has to be legible here. The
+              `title` this used to carry was never readable: Button sets
+              `disabled:pointer-events-none`, so the one state that needed
+              explaining was the one state that could not be hovered. */}
           <p className="mt-1.5 text-[12.5px] text-ink-subtle">
-            {smsConfigured()
-              ? 'A verified phone is required before SMS notifications can be switched on.'
-              : 'Text messaging is not set up for this Campsite yet, so SMS notifications are unavailable.'}
+            {!smsConfigured()
+              ? 'Text messaging is not set up for this Campsite yet, so phone verification is unavailable.'
+              : !phone.trim()
+                ? 'Enter a number above to verify it.'
+                : profile.phone_verified && !phoneChanged
+                  ? 'This number is already verified. To verify a different one, type it above.'
+                  : 'A verified phone is required before SMS notifications can be switched on.'}
           </p>
         </div>
       </div>
