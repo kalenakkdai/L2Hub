@@ -18,6 +18,12 @@ export type RoleAssignment = {
   committee_name?: string | null
 }
 
+export type CommitteeMembership = {
+  id: string
+  name: string
+  is_head: boolean
+}
+
 export type CurrentUser = {
   id: string
   email: string
@@ -27,6 +33,8 @@ export type CurrentUser = {
   created_at: string
   roles?: RoleAssignment[]
   permissions?: string[]
+  /** Committees the caller belongs to, whether or not they hold a role there. */
+  committees?: CommitteeMembership[]
 }
 
 export type DashboardModule = {

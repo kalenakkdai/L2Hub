@@ -2,11 +2,13 @@ import { useEffect, useMemo } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import {
+  applyAccentColor,
   applyAppearance,
   DEFAULT_APPEARANCE,
   watchSystemTheme,
   type Appearance,
 } from '../lib/appearance'
+import { useCampsiteChrome } from '../hooks/useCampsiteModules'
 
 /**
  * Applies the signed-in camper's appearance preferences to the whole app.
@@ -21,6 +23,7 @@ import {
 export function AppearanceEffect() {
   const { status } = useAuth()
   const { profile } = useProfile()
+  const chrome = useCampsiteChrome()
 
   const appearance: Appearance = useMemo(
     () =>
@@ -44,6 +47,13 @@ export function AppearanceEffect() {
     if (appearance.theme !== 'system') return
     return watchSystemTheme(() => applyAppearance(appearance))
   }, [appearance])
+
+  // The Campsite's accent colour, which is configuration rather than a
+  // personal preference, so it does not live in `appearance`.
+  const accent = chrome.data?.accentColor ?? null
+  useEffect(() => {
+    applyAccentColor(accent)
+  }, [accent])
 
   return null
 }

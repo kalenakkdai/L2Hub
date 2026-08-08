@@ -96,3 +96,80 @@ export function prefersReducedMotion(root: HTMLElement = document.documentElemen
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
 }
+
+// ---------------------------------------------------------------------------
+// Campsite accent colour
+// ---------------------------------------------------------------------------
+
+function channel(value: number): number {
+  const v = value / 255
+  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+}
+
+/** WCAG relative luminance, 0 (black) to 1 (white). */
+export function luminance(hex: string): number | null {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!match) return null
+
+  const int = Number.parseInt(match[1], 16)
+  const r = channel((int >> 16) & 255)
+  const g = channel((int >> 8) & 255)
+  const b = channel(int & 255)
+
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrastRatio(a: string, b: string): number | null {
+  const la = luminance(a)
+  const lb = luminance(b)
+  if (la === null || lb === null) return null
+
+  const [light, dark] = la > lb ? [la, lb] : [lb, la]
+  return (light + 0.05) / (dark + 0.05)
+}
+
+/** Shifts a colour toward black by `amount` (0-1), for a hover state. */
+function darken(hex: string, amount: number): string {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!match) return hex
+
+  const int = Number.parseInt(match[1], 16)
+  const shift = (v: number) => Math.max(0, Math.round(v * (1 - amount)))
+  const r = shift((int >> 16) & 255)
+  const g = shift((int >> 8) & 255)
+  const b = shift(int & 255)
+
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
+}
+
+/** Minimum contrast for a fill that carries white text. */
+const MIN_FILL_CONTRAST = 4.5
+
+/**
+ * Applies a Campsite's chosen accent colour.
+ *
+ * Only the *fill* steps move. accent-ink is left alone, because a custom
+ * colour readable as a button background is often unreadable as body text,
+ * and silently making links illegible is worse than an accent that only
+ * partly applies.
+ *
+ * A colour that cannot carry white text is refused outright and the default
+ * palette stays — a Campsite should not be able to configure itself into
+ * unreadable buttons.
+ */
+export function applyAccentColor(
+  color: string | null | undefined,
+  root: HTMLElement = document.documentElement,
+): boolean {
+  root.style.removeProperty('--color-accent-600')
+  root.style.removeProperty('--color-accent-700')
+
+  if (!color) return false
+
+  const ratio = contrastRatio(color, '#ffffff')
+  if (ratio === null || ratio < MIN_FILL_CONTRAST) return false
+
+  root.style.setProperty('--color-accent-600', color)
+  root.style.setProperty('--color-accent-700', darken(color, 0.18))
+  return true
+}

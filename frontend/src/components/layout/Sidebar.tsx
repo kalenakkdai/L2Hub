@@ -1,4 +1,5 @@
 import { filterNavSections, NAV_SECTIONS } from './navigation'
+import { useCampsiteChrome } from '../../hooks/useCampsiteModules'
 import { NavItem } from './NavItem'
 import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
@@ -21,7 +22,12 @@ export function Sidebar({
   permissions,
   campsiteCount,
 }: SidebarProps) {
-  const sections = filterNavSections(NAV_SECTIONS, permissions)
+  const chrome = useCampsiteChrome()
+  const sections = filterNavSections(
+    NAV_SECTIONS,
+    permissions,
+    chrome.data?.modulesEnabled,
+  )
   const showNotifications = permissions?.includes('notifications.view_own') ?? false
 
   return (

@@ -26,6 +26,8 @@ export type NavItemDefinition = {
   icon: LucideIcon
   /** When set, item is shown only if the caller holds this permission. */
   permission?: string
+  /** When set, item is hidden if the Campsite has switched this module off. */
+  module?: string
   badge?: NavBadge
 }
 
@@ -49,6 +51,7 @@ export const NAV_SECTIONS: NavSection[] = [
       {
         label: 'Grades',
         to: '/grades',
+        module: 'grades',
         icon: BookOpenCheck,
         badge: { kind: 'count', value: 2, tone: 'accent' },
       },
@@ -72,14 +75,16 @@ export const NAV_SECTIONS: NavSection[] = [
       {
         label: 'Committees',
         to: '/committees',
+        module: 'committees',
         icon: UsersRound,
         badge: { kind: 'count', value: 12, tone: 'muted' },
       },
-      { label: 'Events', to: '/events', icon: CalendarDays },
+      { label: 'Events', to: '/events', module: 'events', icon: CalendarDays },
       { label: 'Event planning', to: '/event-planning', icon: ClipboardCheck },
       {
         label: 'Debriefs',
         to: '/debriefs',
+        module: 'debriefs',
         icon: MessagesSquare,
         badge: { kind: 'live' },
       },
@@ -120,14 +125,24 @@ export const IMPLEMENTED_ROUTES = new Set([
   '/dev/health',
 ])
 
+/**
+ * Hides destinations the caller cannot use.
+ *
+ * Two independent gates: permissions decide what *this camper* may see, and
+ * the Campsite's module toggles decide what *anyone* may see. A module that
+ * has never been configured counts as on, so a new feature is not invisible
+ * until someone remembers to switch it on.
+ */
 export function filterNavSections(
   sections: NavSection[],
   permissions: string[] | undefined,
+  modulesEnabled?: Record<string, boolean>,
 ): NavSection[] {
   return sections
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
+        if (item.module && modulesEnabled?.[item.module] === false) return false
         if (!item.permission) return true
         return permissions?.includes(item.permission) ?? false
       }),
