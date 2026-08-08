@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from './cn'
 
-type Variant = 'primary' | 'secondary' | 'light' | 'ghost' | 'icon'
+type Variant = 'primary' | 'secondary' | 'light' | 'navy' | 'ghost' | 'icon'
 type Size = 'sm' | 'md' | 'lg'
 
 const VARIANTS: Record<Variant, string> = {
@@ -11,6 +11,8 @@ const VARIANTS: Record<Variant, string> = {
     'border border-border-subtle bg-surface text-accent-600 hover:border-accent-600 hover:bg-accent-50',
   /** For use on the near-black chrome, where an accent fill disappears. */
   light: 'bg-white text-accent-600 hover:bg-accent-50',
+  /** Quieter counterpart to `light`, for secondary actions on dark surfaces. */
+  navy: 'bg-white/10 text-navy-ink hover:bg-white/15',
   ghost: 'text-ink-subtle hover:bg-surface-muted hover:text-ink',
   icon: 'border border-border-subtle bg-surface text-ink-muted hover:border-accent-600 hover:text-accent-600',
 }
