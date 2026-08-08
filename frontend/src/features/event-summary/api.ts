@@ -14,6 +14,9 @@ export type EventListItem = {
   slug: string
   year: number
   eventStatus: string
+  /** Scheduled window, when one has been set. Used to group the events list. */
+  startsAt?: string | null
+  endsAt?: string | null
   summaryStatus: SummaryStatus
   managingCommitteeId: string | null
   /** Set once the Wrapped has been walked through with the class. */

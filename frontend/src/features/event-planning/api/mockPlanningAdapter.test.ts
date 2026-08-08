@@ -40,6 +40,12 @@ describe('MockEventPlanningDataProvider', () => {
       title: 'Spirit lunch games',
       summary: 'Midweek spirit games',
     })
+    expect(created.agenda.templateSource).toBe('Winter Ball planning agenda')
+    expect(created.agenda.sections.map((s) => s.title)).toEqual([
+      'Attendees',
+      'To-do before meeting',
+      'Agenda / Meeting Notes',
+    ])
     const withCommittee = await data.assign(created.id, {
       targetType: 'committee',
       committeeId: 'com-spirit',
@@ -52,6 +58,23 @@ describe('MockEventPlanningDataProvider', () => {
       roleLabel: 'Scorekeeper',
     })
     expect(withPerson.assignments.at(-1)?.memberName).toBe('Taylor Kim')
+  })
+
+  it('auto-generates a Winter Ball–style agenda every time a plan is created', async () => {
+    const data = new MockEventPlanningDataProvider()
+    const created = await data.createPlan({
+      title: 'Winter Ball',
+      summary: 'Enchanted Forest formal with progressive tickets',
+      eventDate: '2026-02-20',
+    })
+
+    expect(created.agenda.schoolName).toBe('MISSION SAN JOSE HIGH SCHOOL')
+    expect(created.agenda.title).toMatch(/Winter Ball Meeting Agenda for /)
+    expect(created.agenda.sections).toHaveLength(3)
+    expect(created.agenda.goals.some((g) => /Winter Ball/.test(g))).toBe(true)
+
+    const listed = await data.listPlans()
+    expect(listed.every((plan) => plan.agenda?.sections?.length === 3)).toBe(true)
   })
 
   it('never returns author identity on anonymous reports', async () => {

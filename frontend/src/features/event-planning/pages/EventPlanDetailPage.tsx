@@ -6,6 +6,7 @@ import { ErrorState } from '../../../components/ui/ErrorState'
 import { fetchCurrentUser } from '../../../api/auth'
 import { AnonymousReportForm } from '../components/AnonymousReportForm'
 import { AssignPeopleForm } from '../components/AssignPeopleForm'
+import { PlanAgendaDocumentView } from '../components/PlanAgendaDocumentView'
 import { PlanStatusBadge } from '../components/PlanStatusBadge'
 import { PlanningRagPanel } from '../components/PlanningRagPanel'
 import { reportCategoryLabel } from '../lib/rag'
@@ -117,6 +118,10 @@ export function EventPlanDetailPage() {
             Assignees cannot accept until Mr. Jan enables this plan.
           </p>
         ) : null}
+      </div>
+
+      <div className="mb-4">
+        <PlanAgendaDocumentView agenda={plan.agenda} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

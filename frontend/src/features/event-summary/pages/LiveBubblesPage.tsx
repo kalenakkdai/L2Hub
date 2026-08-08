@@ -8,12 +8,14 @@ import { AppShell } from '../../../components/layout/AppShell'
 import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { FullPageMessage } from '../../../components/FullPageMessage'
+import { BubbleFilters } from '../components/BubbleFilters'
 import {
   isBubbleAudioSupported,
   playBubblePops,
   POP_STAGGER_SECONDS,
   unlockBubbleAudio,
 } from '../bubbleAudio'
+import { placeBubble, statusCounts, submittedPercent } from '../lib/bubbleTank'
 import { fetchLiveParticipants, type LiveParticipant } from '../api'
 
 /**
@@ -25,66 +27,42 @@ function bubbleTint(status: LiveParticipant['status']): CSSProperties {
   switch (status) {
     case 'submitted':
       return {
-        '--tint-core': 'rgb(16 185 129 / 0.26)',
-        '--tint-glow': 'rgb(16 185 129 / 0.30)',
-        '--tint-shadow': 'rgb(4 120 87 / 0.38)',
+        '--tint-core': 'rgb(16 185 129 / 0.34)',
+        '--tint-glow': 'rgb(16 185 129 / 0.38)',
+        '--tint-shadow': 'rgb(4 120 87 / 0.34)',
       } as CSSProperties
     case 'writing':
       return {
-        '--tint-core': 'rgb(251 191 36 / 0.26)',
-        '--tint-glow': 'rgb(251 191 36 / 0.30)',
-        '--tint-shadow': 'rgb(180 83 9 / 0.38)',
+        '--tint-core': 'rgb(251 191 36 / 0.34)',
+        '--tint-glow': 'rgb(251 191 36 / 0.38)',
+        '--tint-shadow': 'rgb(180 83 9 / 0.34)',
       } as CSSProperties
     case 'absent':
       return {
-        '--tint-core': 'rgb(203 213 225 / 0.18)',
-        '--tint-glow': 'rgb(148 163 184 / 0.22)',
-        '--tint-shadow': 'rgb(51 65 85 / 0.38)',
+        '--tint-core': 'rgb(203 213 225 / 0.20)',
+        '--tint-glow': 'rgb(148 163 184 / 0.24)',
+        '--tint-shadow': 'rgb(51 65 85 / 0.34)',
       } as CSSProperties
     default:
       return {
-        '--tint-core': 'rgb(244 63 94 / 0.24)',
-        '--tint-glow': 'rgb(244 63 94 / 0.28)',
-        '--tint-shadow': 'rgb(159 18 57 / 0.38)',
+        '--tint-core': 'rgb(244 63 94 / 0.32)',
+        '--tint-glow': 'rgb(244 63 94 / 0.36)',
+        '--tint-shadow': 'rgb(159 18 57 / 0.34)',
       } as CSSProperties
   }
 }
 
-// The list refetches every few seconds. Deriving motion from the participant id
-// instead of Math.random keeps each bubble on its own path across refetches
-// rather than restarting the animation with new values.
-function seedFrom(id: string): number {
-  let hash = 0
-  for (let i = 0; i < id.length; i += 1) {
-    hash = (hash * 31 + id.charCodeAt(i)) % 100000
+function statusDot(status: LiveParticipant['status']): string {
+  switch (status) {
+    case 'submitted':
+      return 'bg-emerald-400'
+    case 'writing':
+      return 'bg-amber-300'
+    case 'absent':
+      return 'bg-zinc-300'
+    default:
+      return 'bg-rose-400'
   }
-  return hash
-}
-
-function bubbleStyle(
-  participant: LiveParticipant,
-  index: number,
-): CSSProperties {
-  const seed = seedFrom(participant.id)
-  const driftX = 6 + (seed % 13)
-  const driftY = 8 + ((seed >> 3) % 15)
-  const size = 84 + (seed % 6) * 7
-
-  return {
-    ...bubbleTint(participant.status),
-    '--bubble-size': `${size}px`,
-    '--drift-x': `${seed % 2 === 0 ? driftX : -driftX}px`,
-    '--drift-y': `${driftY}px`,
-    '--float-duration': `${9 + (seed % 8)}s`,
-    '--wobble-duration': `${7 + ((seed >> 2) % 6)}s`,
-    '--float-delay': `-${seed % 9}s`,
-    // Each bubble's film catches the light from a slightly different angle.
-    '--rim-start': `${seed % 360}deg`,
-    '--rim-duration': `${14 + (seed % 11)}s`,
-    '--rim-direction': seed % 3 === 0 ? 'reverse' : 'normal',
-    // Matches the audio clock so the pop is heard as the bubble appears.
-    '--pop-delay': `${index * POP_STAGGER_SECONDS}s`,
-  } as CSSProperties
 }
 
 function statusLabel(status: LiveParticipant['status']) {
@@ -106,6 +84,32 @@ function initials(displayName: string): string {
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
+}
+
+function bubbleStyle(
+  participant: LiveParticipant,
+  index: number,
+  total: number,
+): CSSProperties {
+  const placement = placeBubble(participant.id, index, total)
+
+  return {
+    ...bubbleTint(participant.status),
+    left: `${placement.leftPercent}%`,
+    top: `${placement.topPercent}%`,
+    '--bubble-size': `${placement.size}px`,
+    '--depth-opacity': `${0.72 + placement.depth * 0.28}`,
+    '--drift-x': `${placement.leftPercent > 50 ? -placement.driftX : placement.driftX}px`,
+    '--drift-y': `${placement.driftY}px`,
+    '--float-duration': `${placement.floatDuration}s`,
+    '--wobble-duration': `${placement.wobbleDuration}s`,
+    '--float-delay': `${placement.floatDelay}s`,
+    '--rim-start': `${placement.rimStart}deg`,
+    '--rim-duration': `${placement.rimDuration}s`,
+    '--rim-direction': placement.rimReverse ? 'reverse' : 'normal',
+    // Matches the audio clock so the pop is heard as the bubble appears.
+    '--pop-delay': `${index * POP_STAGGER_SECONDS}s`,
+  } as CSSProperties
 }
 
 export function LiveBubblesPage() {
@@ -172,6 +176,9 @@ export function LiveBubblesPage() {
   const me = meQuery.data
   const unauthorized =
     liveQuery.error instanceof ApiError && liveQuery.error.status === 403
+  const roster = liveQuery.data?.participants ?? []
+  const counts = statusCounts(roster)
+  const percent = submittedPercent(roster)
 
   return (
     <AppShell
@@ -180,6 +187,7 @@ export function LiveBubblesPage() {
       permissions={me.permissions}
     >
       <div className="bubble-stage pointer-events-none fixed inset-0 z-0 lg:left-64" />
+      <BubbleFilters />
 
       <div className="on-navy relative z-10 pb-16">
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-white/12 pt-2 pb-4 sm:pt-6">
@@ -234,55 +242,111 @@ export function LiveBubblesPage() {
         ) : null}
 
         {liveQuery.data ? (
-          <>
-            <div className="mb-6 flex flex-wrap gap-3 text-xs text-navy-ink-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <i className="h-2.5 w-2.5 rounded-full bg-emerald-400" /> Submitted
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <i className="h-2.5 w-2.5 rounded-full bg-amber-300" /> Writing
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <i className="h-2.5 w-2.5 rounded-full bg-rose-400" /> Not started
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <i className="h-2.5 w-2.5 rounded-full bg-zinc-300" /> Absent
-              </span>
-            </div>
-
-            <div
-              key={wave}
-              className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-x-4 gap-y-8"
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            {/* Left: the readable record. */}
+            <section
+              aria-label="Live debrief"
+              className="rounded-card border border-white/12 bg-white/[0.07] p-4 shadow-card backdrop-blur-sm"
             >
-              {liveQuery.data.participants.map((p, index) => (
+              <h2 className="text-sm font-semibold text-navy-ink">Live debrief</h2>
+              <p className="mt-1 text-xs text-navy-ink-muted">
+                {counts.submitted} of {roster.length} submitted · {percent}%
+              </p>
+
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div
-                  key={p.id}
-                  className="flex flex-col items-center gap-2 text-center"
-                  title={statusLabel(p.status)}
-                  style={bubbleStyle(p, index)}
+                  className="h-full rounded-full bg-emerald-400 transition-[width] duration-500"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+
+              <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                {(
+                  [
+                    ['Submitted', counts.submitted, 'bg-emerald-400'],
+                    ['Writing', counts.writing, 'bg-amber-300'],
+                    ['Not started', counts.not_started, 'bg-rose-400'],
+                    ['Absent', counts.absent, 'bg-zinc-300'],
+                  ] as const
+                ).map(([label, value, dot]) => (
+                  <div
+                    key={label}
+                    className="rounded-control bg-white/[0.06] px-2.5 py-2"
+                  >
+                    <dt className="flex items-center gap-1.5 text-navy-ink-muted">
+                      <i className={`h-2 w-2 rounded-full ${dot}`} />
+                      {label}
+                    </dt>
+                    <dd className="mt-0.5 text-base font-semibold text-navy-ink">
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              <ul
+                aria-label="Participants"
+                className="mt-4 max-h-[46vh] space-y-1 overflow-y-auto pr-1"
+              >
+                {roster.map((participant) => (
+                  <li
+                    key={participant.id}
+                    className="flex items-center justify-between gap-2 rounded-control px-2 py-1.5 hover:bg-white/[0.06]"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <i
+                        aria-hidden="true"
+                        className={`h-2 w-2 shrink-0 rounded-full ${statusDot(participant.status)}`}
+                      />
+                      <span className="truncate text-xs font-medium text-navy-ink">
+                        {participant.displayName}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[11px] text-navy-ink-muted">
+                      {statusLabel(participant.status)}
+                    </span>
+                  </li>
+                ))}
+                {roster.length === 0 ? (
+                  <li className="px-2 py-3 text-xs text-navy-ink-muted">
+                    No participants yet.
+                  </li>
+                ) : null}
+              </ul>
+            </section>
+
+            {/* Right: the same roster, floating. */}
+            <section
+              aria-label="Bubble tank"
+              key={wave}
+              className="bubble-tank relative h-[clamp(420px,68vh,760px)] overflow-hidden rounded-card border border-white/12"
+            >
+              {roster.map((participant, index) => (
+                <span
+                  key={participant.id}
+                  className="bubble-slot absolute"
+                  style={bubbleStyle(participant, index, roster.length)}
+                  title={`${participant.displayName} · ${statusLabel(participant.status)}`}
                 >
                   <span className="bubble-entrance">
                     <span className="bubble-float">
                       <span className="bubble">
-                        <span className="bubble-rim" aria-hidden="true" />
+                        <span className="bubble-film" aria-hidden="true" />
+                        <span className="bubble-sheenfilm" aria-hidden="true" />
+                        <span className="bubble-fresnel" aria-hidden="true" />
                         <span className="bubble-gloss" aria-hidden="true" />
                         <span className="bubble-spark" aria-hidden="true" />
                         <span className="bubble-initials">
-                          {initials(p.displayName)}
+                          {initials(participant.displayName)}
                         </span>
                       </span>
+                      <span className="bubble-name">{participant.displayName}</span>
                     </span>
                   </span>
-                  <span className="text-xs font-medium text-navy-ink">
-                    {p.displayName}
-                  </span>
-                  <span className="text-[11px] text-navy-ink-muted">
-                    {statusLabel(p.status)}
-                  </span>
-                </div>
+                </span>
               ))}
-            </div>
-          </>
+            </section>
+          </div>
         ) : null}
 
         <div className="mt-10">
@@ -309,14 +373,41 @@ export function LiveBubblesPage() {
             linear-gradient(160deg, #070d18 0%, #05090f 60%, #04070c 100%);
         }
 
+        /* The tank is a touch lighter than the page so the films read. */
+        .bubble-tank {
+          background:
+            radial-gradient(
+              ellipse at 30% 15%,
+              rgb(40 62 104 / 0.55),
+              rgb(5 9 15 / 0) 60%
+            ),
+            radial-gradient(
+              ellipse at 78% 88%,
+              rgb(14 74 68 / 0.5),
+              rgb(5 9 15 / 0) 58%
+            ),
+            linear-gradient(170deg, #0a1220 0%, #060b14 70%, #04070c 100%);
+        }
+
+        .bubble-slot {
+          /* Positioned by its centre, so the jittered percentages line up. */
+          transform: translate(-50%, -50%);
+          opacity: var(--depth-opacity, 1);
+        }
+
         .bubble-entrance {
           display: inline-flex;
+          flex-direction: column;
+          align-items: center;
           animation: bubblePop 700ms cubic-bezier(0.2, 1.4, 0.35, 1)
             var(--pop-delay, 0s) backwards;
         }
 
         .bubble-float {
           display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.35rem;
           animation: bubbleFloat var(--float-duration, 12s) ease-in-out
             var(--float-delay, 0s) infinite;
           will-change: transform;
@@ -330,108 +421,163 @@ export function LiveBubblesPage() {
           height: var(--bubble-size, 92px);
           width: var(--bubble-size, 92px);
           border-radius: 9999px;
-          /* Three stacked gradients: the top-left sheen, the status tint, and
-           * the light that bounces back up off the surface below. */
+          /* A bubble is mostly window: a soft top-left sheen, a faint status
+           * tint, and the light that transmits back up through the bottom. */
           background:
             radial-gradient(
-              circle at 30% 26%,
-              rgb(255 255 255 / 0.40),
-              rgb(255 255 255 / 0.05) 42%,
-              rgb(255 255 255 / 0) 62%
+              circle at 32% 24%,
+              rgb(255 255 255 / 0.30),
+              rgb(255 255 255 / 0.04) 38%,
+              rgb(255 255 255 / 0) 58%
             ),
             radial-gradient(
-              circle at 50% 52%,
+              circle at 50% 55%,
               var(--tint-core, rgb(255 255 255 / 0.12)),
-              rgb(255 255 255 / 0) 70%
+              rgb(255 255 255 / 0) 78%
             ),
             radial-gradient(
-              circle at 50% 116%,
-              rgb(255 255 255 / 0.28),
-              rgb(255 255 255 / 0) 42%
+              circle at 50% 108%,
+              rgb(255 255 255 / 0.34),
+              rgb(255 255 255 / 0) 46%
             );
           box-shadow:
-            inset 0 0 0 1px rgb(255 255 255 / 0.30),
-            inset 0 0 20px rgb(255 255 255 / 0.18),
-            inset 0 -12px 24px var(--tint-shadow, rgb(0 0 0 / 0.3)),
-            0 12px 30px rgb(3 6 12 / 0.55),
-            0 0 28px var(--tint-glow, rgb(255 255 255 / 0.12));
+            inset 0 0 0 1px rgb(255 255 255 / 0.22),
+            inset 0 10px 22px rgb(255 255 255 / 0.10),
+            inset 0 -14px 26px var(--tint-shadow, rgb(0 0 0 / 0.3)),
+            0 16px 34px rgb(3 6 12 / 0.5),
+            0 0 34px var(--tint-glow, rgb(255 255 255 / 0.12));
           /* Refraction: whatever is behind the bubble bends through it. */
-          backdrop-filter: blur(2px) saturate(1.3);
-          -webkit-backdrop-filter: blur(2px) saturate(1.3);
+          backdrop-filter: blur(4px) saturate(1.5) brightness(1.08);
+          -webkit-backdrop-filter: blur(4px) saturate(1.5) brightness(1.08);
           animation: bubbleWobble var(--wobble-duration, 9s) ease-in-out
             var(--float-delay, 0s) infinite;
         }
 
-        /* Thin-film interference: the rainbow band that rides a soap bubble's
-         * edge. Masked to a ring so the colour never floods the middle. */
-        .bubble-rim {
+        /* Thin-film interference: the rainbow that rides a soap bubble's skin.
+         * Displaced by turbulence so the colour crawls like liquid instead of
+         * spinning as a rigid wheel. */
+        .bubble-film {
           position: absolute;
           inset: -3%;
           border-radius: 9999px;
           background: conic-gradient(
             from var(--rim-start, 0deg),
-            #ff3b30,
-            #ff9500,
-            #ffd60a,
-            #34c759,
-            #32ade6,
-            #5e5ce6,
-            #ff2d55,
-            #ff3b30
+            #ff5f6d,
+            #ffb057,
+            #fff07a,
+            #7bf7a5,
+            #6fd6ff,
+            #9a8cff,
+            #ff86c8,
+            #ff5f6d
           );
           -webkit-mask: radial-gradient(
             closest-side,
-            transparent 66%,
-            #000 79%,
-            #000 100%
+            transparent 64%,
+            #000 84%,
+            rgb(0 0 0 / 0.35) 100%
           );
           mask: radial-gradient(
             closest-side,
-            transparent 66%,
-            #000 79%,
-            #000 100%
+            transparent 64%,
+            #000 84%,
+            rgb(0 0 0 / 0.35) 100%
           );
-          filter: blur(3px) saturate(1.5);
+          /* Heavily blurred and dimmed: iridescence is a wash, not a decal. */
+          filter: url(#bubble-liquid) blur(5px) saturate(1.15);
           mix-blend-mode: screen;
-          opacity: 0.9;
+          opacity: 0.55;
           animation: rimSpin var(--rim-duration, 16s) linear infinite;
           animation-direction: var(--rim-direction, normal);
+        }
+
+        /* A second, fainter film drifting the other way across the whole
+         * surface, so the colour pools and shifts instead of turning as one
+         * rigid wheel. */
+        .bubble-sheenfilm {
+          position: absolute;
+          inset: 0;
+          border-radius: 9999px;
+          background: conic-gradient(
+            from calc(var(--rim-start, 0deg) * -1),
+            #ff9ec4,
+            #9fe8ff,
+            #c8ffd6,
+            #fff3a8,
+            #c9b8ff,
+            #ff9ec4
+          );
+          filter: url(#bubble-sheen) blur(9px);
+          mix-blend-mode: screen;
+          opacity: 0.2;
+          animation: rimSpin calc(var(--rim-duration, 16s) * 1.7) linear infinite;
+          animation-direction: var(--rim-direction, normal);
+        }
+
+        /* Fresnel: a real bubble is nearly invisible head-on and bright at the
+         * grazing edge. This thin bright ring is what sells the sphere. */
+        .bubble-fresnel {
+          position: absolute;
+          inset: 0;
+          border-radius: 9999px;
+          background: radial-gradient(
+            circle at 50% 50%,
+            rgb(255 255 255 / 0) 70%,
+            rgb(255 255 255 / 0.14) 86%,
+            rgb(255 255 255 / 0.72) 96%,
+            rgb(255 255 255 / 0.22) 100%
+          );
+          mix-blend-mode: screen;
+          pointer-events: none;
         }
 
         /* Specular highlight: reads as a wet surface rather than a flat disc. */
         .bubble-gloss {
           position: absolute;
-          top: 11%;
-          left: 15%;
-          height: 30%;
-          width: 38%;
+          top: 8%;
+          left: 12%;
+          height: 36%;
+          width: 44%;
           border-radius: 9999px;
           background: radial-gradient(
-            circle at 30% 30%,
-            rgb(255 255 255 / 0.9),
-            rgb(255 255 255 / 0) 70%
+            circle at 32% 30%,
+            rgb(255 255 255 / 0.95),
+            rgb(255 255 255 / 0.35) 45%,
+            rgb(255 255 255 / 0) 72%
           );
-          filter: blur(1px);
+          filter: url(#bubble-sheen) blur(2px);
         }
 
         /* The small hard glint opposite the main highlight. */
         .bubble-spark {
           position: absolute;
-          right: 22%;
-          bottom: 20%;
-          height: 9%;
-          width: 9%;
+          right: 24%;
+          bottom: 22%;
+          height: 8%;
+          width: 8%;
           border-radius: 9999px;
-          background: rgb(255 255 255 / 0.75);
-          filter: blur(0.5px);
+          background: rgb(255 255 255 / 0.85);
+          filter: blur(0.6px);
         }
 
         .bubble-initials {
           position: relative;
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
           font-weight: 600;
           color: #ffffff;
           text-shadow: 0 1px 6px rgb(3 6 12 / 0.8);
+        }
+
+        .bubble-name {
+          max-width: 11ch;
+          overflow: hidden;
+          font-size: 0.6875rem;
+          font-weight: 500;
+          color: rgb(226 232 240 / 0.92);
+          text-align: center;
+          text-overflow: ellipsis;
+          text-shadow: 0 1px 5px rgb(3 6 12 / 0.9);
+          white-space: nowrap;
         }
 
         @keyframes bubblePop {
@@ -485,6 +631,7 @@ export function LiveBubblesPage() {
           }
         }
 
+        /* Surface tension: the outline is never perfectly circular. */
         @keyframes bubbleWobble {
           0%,
           100% {

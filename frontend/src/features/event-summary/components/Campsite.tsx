@@ -84,7 +84,7 @@ function ForestBand({
 }
 
 /** One committee's tent: a lit A-frame with a pennant and a name board. */
-function CommitteeTent({ tent }: { tent: Tent }) {
+function CommitteeTent({ tent, open = false }: { tent: Tent; open?: boolean }) {
   const width = TENT_WIDTH * tent.scale
   const height = TENT_HEIGHT * tent.scale
   const half = width / 2
@@ -106,15 +106,35 @@ function CommitteeTent({ tent }: { tent: Tent }) {
     'Z',
   ].join(' ')
 
+  // The doorway arch, lit from inside. The two canvas flaps below cover it
+  // when shut and peel back toward the poles when the owl passes over.
+  const doorTop = y - height * 0.68
+  const leftOuter = x - half * 0.3
+  const rightOuter = x + half * 0.3
+
   const door = [
-    `M${r(x - half * 0.3)} ${r(y)}`,
-    `C${r(x - half * 0.26)} ${r(y - height * 0.48)}, ${r(x - half * 0.1)} ${r(y - height * 0.68)}, ${r(x)} ${r(y - height * 0.68)}`,
-    `C${r(x + half * 0.1)} ${r(y - height * 0.68)}, ${r(x + half * 0.26)} ${r(y - height * 0.48)}, ${r(x + half * 0.3)} ${r(y)}`,
+    `M${r(leftOuter)} ${r(y)}`,
+    `C${r(x - half * 0.26)} ${r(y - height * 0.48)}, ${r(x - half * 0.1)} ${r(doorTop)}, ${r(x)} ${r(doorTop)}`,
+    `C${r(x + half * 0.1)} ${r(doorTop)}, ${r(x + half * 0.26)} ${r(y - height * 0.48)}, ${r(rightOuter)} ${r(y)}`,
+    'Z',
+  ].join(' ')
+
+  const leftFlap = [
+    `M${r(leftOuter)} ${r(y)}`,
+    `C${r(x - half * 0.26)} ${r(y - height * 0.48)}, ${r(x - half * 0.1)} ${r(doorTop)}, ${r(x)} ${r(doorTop)}`,
+    `L${r(x)} ${r(y)}`,
+    'Z',
+  ].join(' ')
+
+  const rightFlap = [
+    `M${r(x)} ${r(doorTop)}`,
+    `C${r(x + half * 0.1)} ${r(doorTop)}, ${r(x + half * 0.26)} ${r(y - height * 0.48)}, ${r(rightOuter)} ${r(y)}`,
+    `L${r(x)} ${r(y)}`,
     'Z',
   ].join(' ')
 
   return (
-    <g data-tent={tent.name}>
+    <g data-tent={tent.name} className={open ? 'tent tent-open' : 'tent'}>
       <ellipse
         cx={r(x)}
         cy={r(y)}
@@ -131,7 +151,26 @@ function CommitteeTent({ tent }: { tent: Tent }) {
 
       <path d={body} fill={tent.color} opacity={0.88} />
       <path d={shade} fill="#020806" opacity={0.28} />
-      <path d={door} fill="url(#campsite-lantern)" />
+
+      <path className="tent-door-glow" d={door} fill="url(#campsite-lantern)" />
+      <path
+        className="tent-flap tent-flap-left"
+        d={leftFlap}
+        fill={tent.color}
+        stroke="#020806"
+        strokeOpacity={0.28}
+        strokeWidth={0.6}
+        style={{ transformOrigin: `${r(leftOuter)}px ${r(y)}px` }}
+      />
+      <path
+        className="tent-flap tent-flap-right"
+        d={rightFlap}
+        fill={tent.color}
+        stroke="#020806"
+        strokeOpacity={0.28}
+        strokeWidth={0.6}
+        style={{ transformOrigin: `${r(rightOuter)}px ${r(y)}px` }}
+      />
 
       <line
         x1={r(x)}
@@ -253,7 +292,14 @@ function Campfire() {
   )
 }
 
-export function Campsite({ committees = L2_COMMITTEES }: { committees?: string[] }) {
+export function Campsite({
+  committees = L2_COMMITTEES,
+  openTents,
+}: {
+  committees?: string[]
+  /** Names of tents whose doors are currently thrown open by the passing owl. */
+  openTents?: ReadonlySet<string>
+}) {
   const tents = useMemo(() => campsiteTents(committees), [committees])
 
   const forest = useMemo(
@@ -339,7 +385,11 @@ export function Campsite({ committees = L2_COMMITTEES }: { committees?: string[]
         <ellipse cx={FIRE_X} cy={236} rx={392} ry={72} fill="#0d2015" opacity={0.75} />
 
         {tents.map((tent) => (
-          <CommitteeTent key={tent.name} tent={tent} />
+          <CommitteeTent
+            key={tent.name}
+            tent={tent}
+            open={openTents?.has(tent.name) ?? false}
+          />
         ))}
 
         <Campfire />
@@ -382,6 +432,47 @@ export function Campsite({ committees = L2_COMMITTEES }: { committees?: string[]
           animation: campsitePennant 3.2s ease-in-out infinite;
         }
 
+        /* Doors shut by default. Each flap hinges on its outer pole (its inline
+         * transform-origin) and peels toward the side when the tent opens. */
+        .tent-flap {
+          transform-box: view-box;
+          transform: scaleX(1) rotate(0deg);
+          transition: transform 260ms ease;
+        }
+
+        .tent-door-glow {
+          opacity: 0.85;
+          transition: opacity 260ms ease;
+        }
+
+        .tent-open .tent-door-glow {
+          opacity: 1;
+        }
+
+        .tent-open .tent-flap-left {
+          animation: tentFlapLeft 640ms ease-in-out infinite;
+        }
+
+        .tent-open .tent-flap-right {
+          animation: tentFlapRight 640ms ease-in-out infinite;
+        }
+
+        @keyframes tentFlapLeft {
+          0% { transform: scaleX(1) rotate(0deg); }
+          30% { transform: scaleX(0.18) rotate(-7deg); }
+          55% { transform: scaleX(0.28) rotate(-2deg); }
+          78% { transform: scaleX(0.2) rotate(-8deg); }
+          100% { transform: scaleX(0.25) rotate(-4deg); }
+        }
+
+        @keyframes tentFlapRight {
+          0% { transform: scaleX(1) rotate(0deg); }
+          30% { transform: scaleX(0.18) rotate(7deg); }
+          55% { transform: scaleX(0.28) rotate(2deg); }
+          78% { transform: scaleX(0.2) rotate(8deg); }
+          100% { transform: scaleX(0.25) rotate(4deg); }
+        }
+
         @keyframes campsiteFlameDance {
           0%, 100% { transform: scale(1, 1) rotate(0deg); }
           25% { transform: scale(0.93, 1.1) rotate(-3deg); }
@@ -414,7 +505,9 @@ export function Campsite({ committees = L2_COMMITTEES }: { committees?: string[]
           .campsite-flame,
           .campsite-glow,
           .campsite-label,
-          .campsite-pennant {
+          .campsite-pennant,
+          .tent-open .tent-flap-left,
+          .tent-open .tent-flap-right {
             animation: none;
           }
 

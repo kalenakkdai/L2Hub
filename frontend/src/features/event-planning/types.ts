@@ -46,6 +46,34 @@ export interface PlanAssignment {
   status: AssignmentStatus
 }
 
+/**
+ * Meeting agenda auto-generated when a plan is created.
+ * Shape mirrors the Winter Ball planning agendas (Attendees /
+ * To-do before meeting / Agenda & Meeting Notes).
+ */
+export interface PlanAgendaItem {
+  letter?: string
+  text: string
+  subItems?: string[]
+}
+
+export interface PlanAgendaSection {
+  roman: string
+  title: string
+  items: PlanAgendaItem[]
+}
+
+export interface PlanAgendaDocument {
+  schoolName: string
+  schoolYear: string
+  title: string
+  goals: string[]
+  sections: PlanAgendaSection[]
+  generatedAt: string
+  /** Which historical document the shape was taken from. */
+  templateSource: string
+}
+
 export interface EventPlan {
   id: string
   title: string
@@ -58,6 +86,8 @@ export interface EventPlan {
   enabledAt?: string | null
   enabledByName?: string | null
   assignments: PlanAssignment[]
+  /** Always set on create — Winter Ball–style meeting agenda draft. */
+  agenda: PlanAgendaDocument
 }
 
 export interface CreateEventPlanInput {

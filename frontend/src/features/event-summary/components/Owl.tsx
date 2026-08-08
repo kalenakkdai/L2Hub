@@ -57,12 +57,28 @@ export function owlPosition(progress: number): Point {
   }
 }
 
-export function Owl() {
+export type OwlProps = {
+  /**
+   * Called with the owl's on-screen box every time it moves, so a parent can
+   * react to where the owl is flying (e.g. open a tent's doors underneath it).
+   */
+  onSweep?: (rect: DOMRect) => void
+}
+
+export function Owl({ onSweep }: OwlProps = {}) {
   const anchorRef = useRef<HTMLDivElement | null>(null)
+  const svgRef = useRef<SVGSVGElement | null>(null)
   const [flying, setFlying] = useState(false)
   const [facingLeft, setFacingLeft] = useState(false)
   const [roaming, setRoaming] = useState(false)
   const lastX = useRef(WAYPOINTS[0].x)
+
+  // Kept in a ref so the scroll/roam loops always call the latest handler
+  // without needing to resubscribe every time the parent re-renders.
+  const onSweepRef = useRef(onSweep)
+  useEffect(() => {
+    onSweepRef.current = onSweep
+  }, [onSweep])
 
   // Position is written straight to the node instead of through state: scroll
   // fires every frame, and re-rendering React that often to move one element
@@ -80,6 +96,12 @@ export function Owl() {
     if (Math.abs(x - lastX.current) > 0.35) {
       setFacingLeft(x < lastX.current)
       lastX.current = x
+    }
+
+    // Report where the owl now appears so tents below can react as it passes.
+    const svg = svgRef.current
+    if (svg && onSweepRef.current) {
+      onSweepRef.current(svg.getBoundingClientRect())
     }
   }
 
@@ -154,6 +176,7 @@ export function Owl() {
         >
           <div className={bodyClass}>
             <svg
+              ref={svgRef}
               width={OWL_SIZE}
               height={OWL_SIZE}
               viewBox="0 0 64 64"
@@ -167,11 +190,7 @@ export function Owl() {
               </defs>
 
               {/* Moonlit halo so the white owl reads against a pale star */}
-              <ellipse cx="32" cy="36" rx="21" ry="20" fill="#ffffff" opacity="0.14" />
-
-              <g className="owl-wing owl-wing-far">
-                <path d="M32 26 C20 24 12 32 14 42 C20 44 28 40 32 34 Z" fill="#c9d4e6" />
-              </g>
+              <ellipse cx="32" cy="36" rx="24" ry="21" fill="#ffffff" opacity="0.14" />
 
               <ellipse cx="32" cy="36" rx="16" ry="17" fill="url(#owl-belly)" />
 
@@ -181,11 +200,41 @@ export function Owl() {
 
               {/* Speckles, the snowy owl's giveaway */}
               <g fill="#c9d4e6" opacity="0.75">
-                <circle cx="25" cy="42" r="1.5" />
                 <circle cx="32" cy="47" r="1.5" />
-                <circle cx="39" cy="42" r="1.5" />
-                <circle cx="28" cy="49" r="1.2" />
-                <circle cx="36" cy="49" r="1.2" />
+                <circle cx="28.5" cy="42" r="1.5" />
+                <circle cx="35.5" cy="42" r="1.5" />
+                <circle cx="29" cy="50" r="1.2" />
+                <circle cx="35" cy="50" r="1.2" />
+              </g>
+
+              {/* Wings hug the flanks and pivot at their own shoulder. Drawn
+               * before the face so a raised wing tucks behind the head
+               * instead of covering an eye. */}
+              <g className="owl-wing owl-wing-far">
+                <path
+                  d="M22 28.5 C15.5 30.5 11.5 36 12.5 43 C13.2 48 15.5 51.5 18 53 C21.5 49.5 24.2 44 24.7 38 C25 33.5 24 30.2 22 28.5 Z"
+                  fill="#c2cee2"
+                />
+                <path
+                  d="M20.5 34 C17.5 37.5 16.5 43 17.5 48.5"
+                  fill="none"
+                  stroke="#aebdd6"
+                  strokeWidth="0.9"
+                  strokeLinecap="round"
+                />
+              </g>
+              <g className="owl-wing owl-wing-near">
+                <path
+                  d="M42 28.5 C48.5 30.5 52.5 36 51.5 43 C50.8 48 48.5 51.5 46 53 C42.5 49.5 39.8 44 39.3 38 C39 33.5 40 30.2 42 28.5 Z"
+                  fill="#dbe4f2"
+                />
+                <path
+                  d="M43.5 34 C46.5 37.5 47.5 43 46.5 48.5"
+                  fill="none"
+                  stroke="#c2cee2"
+                  strokeWidth="0.9"
+                  strokeLinecap="round"
+                />
               </g>
 
               {/* Face */}
@@ -201,10 +250,6 @@ export function Owl() {
               <g className="owl-feet" fill="#f59e0b">
                 <rect x="27" y="51" width="3.2" height="4" rx="1.4" />
                 <rect x="33.8" y="51" width="3.2" height="4" rx="1.4" />
-              </g>
-
-              <g className="owl-wing owl-wing-near">
-                <path d="M32 26 C44 24 52 32 50 42 C44 44 36 40 32 34 Z" fill="#eef2f9" />
               </g>
             </svg>
           </div>
@@ -242,21 +287,40 @@ export function Owl() {
           animation: owlSwoop 900ms ease-in-out infinite;
         }
 
+        /* Each wing turns about its own shoulder — a wing pivoting on the
+         * body's centre line reads as detached. The two sides mirror each
+         * other so the owl beats both wings the same way at the same time. */
         .owl-wing {
-          transform-origin: 32px 27px;
-          animation: owlGlide 3.6s ease-in-out infinite;
+          transform-box: view-box;
         }
 
-        .owl-body-flying .owl-wing {
-          animation: owlFlap 260ms ease-in-out infinite;
+        .owl-wing-far {
+          transform-origin: 22px 28.5px;
+          animation: owlGlideFar 3.6s ease-in-out infinite;
+        }
+
+        .owl-wing-near {
+          transform-origin: 42px 28.5px;
+          animation: owlGlideNear 3.6s ease-in-out infinite;
+        }
+
+        .owl-body-flying .owl-wing-far {
+          animation: owlFlapFar 260ms ease-in-out infinite;
+        }
+
+        .owl-body-flying .owl-wing-near {
+          animation: owlFlapNear 260ms ease-in-out infinite;
         }
 
         .owl-body-flying .owl-feet {
           opacity: 0;
         }
 
+        /* fill-box keeps each eye squashing about itself; the default box
+         * would blink them toward the middle of the drawing. */
         .owl-eye {
           animation: owlBlink 6.5s ease-in-out infinite;
+          transform-box: fill-box;
           transform-origin: center;
         }
 
@@ -270,14 +334,24 @@ export function Owl() {
           50% { transform: translateY(-10px) rotate(4deg); }
         }
 
-        @keyframes owlGlide {
+        @keyframes owlGlideNear {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-5deg); }
+          50% { transform: rotate(-4deg); }
         }
 
-        @keyframes owlFlap {
-          0%, 100% { transform: rotate(-6deg) scaleY(1); }
-          50% { transform: rotate(-46deg) scaleY(0.72); }
+        @keyframes owlGlideFar {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(4deg); }
+        }
+
+        @keyframes owlFlapNear {
+          0%, 100% { transform: rotate(6deg); }
+          50% { transform: rotate(-28deg); }
+        }
+
+        @keyframes owlFlapFar {
+          0%, 100% { transform: rotate(-6deg); }
+          50% { transform: rotate(28deg); }
         }
 
         @keyframes owlBlink {
