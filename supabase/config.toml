@@ -322,10 +322,26 @@ max_frequency = "5s"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
+# Enabled with placeholder credentials, and nothing is ever sent through it.
+#
+# The CLI refuses to turn phone login on unless some provider block is
+# enabled — it logs "no SMS provider is enabled. Disabling phone login" and
+# silently forces [auth.sms] enable_signup back to false, which is what
+# GOTRUE_EXTERNAL_PHONE_ENABLED is built from. [auth.sms.test_otp] on its own
+# is not enough to satisfy that check.
+#
+# GoTrue matches an incoming number against the test_otp map before it reaches
+# a provider, so any number listed there never touches Twilio. A number NOT in
+# that map would attempt a real send and fail on these credentials, which is
+# the right way round for a development stack.
+#
+# This whole block is local-only, which is the other reason
+# `supabase config push` must never be run against the shared project.
+enabled = true
+account_sid = "local-development-only"
+message_service_sid = "local-development-only"
+# Left as an unset env lookup on purpose: there is no real token, and there
+# should not be one. DO NOT commit a real Twilio auth token.
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
