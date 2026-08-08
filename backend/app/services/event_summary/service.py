@@ -419,6 +419,8 @@ def event_list_item(event: Event) -> dict:
         "slug": event.slug,
         "year": event.year,
         "eventStatus": event.status,
+        "startsAt": event.starts_at.isoformat() if event.starts_at else None,
+        "endsAt": event.ends_at.isoformat() if event.ends_at else None,
         "summaryStatus": status,
         "wrappedPresentedAt": (
             summary.presented_at.isoformat()

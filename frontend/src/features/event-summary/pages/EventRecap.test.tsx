@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
@@ -111,6 +111,15 @@ describe('Event recap drop-down', () => {
   beforeEach(() => {
     mock.__setSession(makeSession())
     vi.restoreAllMocks()
+    // The events list groups by calendar year, so pin the clock: the 2026
+    // fixtures must keep landing in the "Previous (2026)" block. Only Date is
+    // faked so user-event and React Query keep their real timers.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-07T12:00:00Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('hides the expander until the Wrapped has been reviewed with the class', async () => {
