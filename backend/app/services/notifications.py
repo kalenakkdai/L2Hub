@@ -14,10 +14,10 @@ import json
 import uuid
 from datetime import UTC, datetime, time
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.models.event_summary import Notification
+from app.models.event_summary import Notification, NotificationPreference
 from app.models.profile import Profile
 
 CHANNEL = "in_app"
@@ -110,16 +110,15 @@ def should_deliver(
 
 def _preference(db: Session, profile_id: uuid.UUID, event_type: str) -> bool:
     """The camper's in-app preference, defaulting to on when unset."""
-    from sqlalchemy import text
-
-    row = db.execute(
-        text(
-            "select enabled from public.notification_preferences "
-            "where profile_id = :pid and event_type = :et and channel = :ch"
-        ),
-        {"pid": profile_id, "et": event_type, "ch": CHANNEL},
-    ).scalar()
-    return True if row is None else bool(row)
+    enabled = db.scalar(
+        select(NotificationPreference.enabled).where(
+            NotificationPreference.profile_id == profile_id,
+            NotificationPreference.event_type == event_type,
+            NotificationPreference.channel == CHANNEL,
+        )
+    )
+    # No row means the camper never touched the switch, which is on.
+    return True if enabled is None else bool(enabled)
 
 
 def deliver(
@@ -153,10 +152,10 @@ def deliver(
         if not should_deliver(
             event_type=event_type,
             enabled=enabled,
-            paused=bool(getattr(profile, "notifications_paused", False)),
+            paused=profile.notifications_paused,
             now=moment.time(),
-            quiet_start=getattr(profile, "quiet_hours_start", None),
-            quiet_end=getattr(profile, "quiet_hours_end", None),
+            quiet_start=profile.quiet_hours_start,
+            quiet_end=profile.quiet_hours_end,
         ):
             continue
 
@@ -171,19 +170,53 @@ def deliver(
         )
         written += 1
 
+    # The session runs with autoflush off, so make the rows visible inside
+    # this transaction. Committing stays the caller's decision.
+    if written:
+        db.flush()
+
     return written
 
 
 def unread_count(db: Session, profile_id: uuid.UUID) -> int:
     return int(
         db.scalar(
-            select(Notification)
+            select(func.count())
+            .select_from(Notification)
             .where(
                 Notification.recipient_user_id == profile_id,
                 Notification.read_at.is_(None),
             )
-            .with_only_columns(Notification.id)
-            .count_by()  # type: ignore[attr-defined]
         )
         or 0
     )
+
+
+def mark_all_read(db: Session, profile_id: uuid.UUID, *, now: datetime | None = None) -> int:
+    """Marks every unread notification read. Returns how many changed."""
+    result = db.execute(
+        update(Notification)
+        .where(
+            Notification.recipient_user_id == profile_id,
+            Notification.read_at.is_(None),
+        )
+        .values(read_at=now or datetime.now(UTC))
+    )
+    return result.rowcount or 0
+
+
+def mark_read(
+    db: Session, profile_id: uuid.UUID, notification_id: uuid.UUID, *, now: datetime | None = None
+) -> int:
+    """Marks one notification read, scoped to its owner."""
+    result = db.execute(
+        update(Notification)
+        .where(
+            Notification.id == notification_id,
+            # Scoped to the caller so an id from elsewhere cannot be used.
+            Notification.recipient_user_id == profile_id,
+            Notification.read_at.is_(None),
+        )
+        .values(read_at=now or datetime.now(UTC))
+    )
+    return result.rowcount or 0

@@ -7,6 +7,7 @@ from app.models.event_summary import (
     EventSummary,
     EventSummaryRequest,
     Notification,
+    NotificationPreference,
 )
 from app.models.profile import Profile
 from app.models.rbac import (
@@ -30,6 +31,7 @@ __all__ = [
     "EventSummary",
     "EventSummaryRequest",
     "Notification",
+    "NotificationPreference",
     "Permission",
     "PermissionOverride",
     "Profile",

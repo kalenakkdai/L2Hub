@@ -199,7 +199,22 @@ export function fetchLiveParticipants(eventRef: string) {
 }
 
 export function fetchNotifications() {
-  return apiFetch<{ notifications: AppNotification[] }>('/notifications')
+  // `unread` is counted server-side rather than derived from the page of
+  // notifications, which is capped at 50 and would undercount past that.
+  return apiFetch<{ unread: number; notifications: AppNotification[] }>('/notifications')
+}
+
+export function markAllNotificationsRead() {
+  return apiFetch<{ markedRead: number; unread: number }>('/notifications/read', {
+    method: 'POST',
+  })
+}
+
+export function markNotificationRead(notificationId: string) {
+  return apiFetch<{ markedRead: number; unread: number }>(
+    `/notifications/${notificationId}/read`,
+    { method: 'POST' },
+  )
 }
 
 export function summaryStatusLabel(status: SummaryStatus | string): string {

@@ -233,10 +233,61 @@ def check_avatars(report: Report) -> None:
     print("  (cleaned up)")
 
 
+def check_notifications(report: Report) -> None:
+    """Gating, end to end: preference -> API -> row written or not.
+
+    Drives the real backend, so the FastAPI server must be running on
+    VITE_API_BASE_URL. Uses the seeded ASBO account, which can request a
+    Wrapped and therefore triggers a notification to the superadmins.
+    """
+    import urllib.parse
+
+    api = ""
+    for line in (ROOT / "frontend" / ".env").read_text().splitlines():
+        if line.startswith("VITE_API_BASE_URL="):
+            api = line.split("=", 1)[1].strip()
+    if not api:
+        report.check("backend base URL configured", False, "VITE_API_BASE_URL missing")
+        return
+
+    admin_token, admin_id = sign_in("ac@l2hub.local")
+
+    def backend(path: str, method: str = "GET", body: dict | None = None, token: str | None = None):
+        request = urllib.request.Request(urllib.parse.urljoin(api, path), method=method)
+        request.add_header("Authorization", f"Bearer {token}")
+        data = json.dumps(body).encode() if body is not None else None
+        if data is not None:
+            request.add_header("Content-Type", "application/json")
+        try:
+            with urllib.request.urlopen(request, data) as response:
+                return response.status, json.loads(response.read() or b"{}")
+        except urllib.error.HTTPError as error:
+            return error.code, {}
+        except urllib.error.URLError:
+            return 0, {}
+
+    status, payload = backend("/notifications", token=admin_token)
+    if status == 0:
+        report.check("backend reachable", False, "start uvicorn on " + api)
+        return
+    report.check("list own notifications", status == 200)
+    report.check("unread count is served by the API", "unread" in payload)
+
+    status, payload = backend("/notifications/read", "POST", token=admin_token)
+    report.check("mark all read", status == 200 and payload.get("unread") == 0)
+
+    # A notification id belonging to nobody must change nothing.
+    status, payload = backend(
+        "/notifications/00000000-0000-4000-8000-000000000000/read", "POST", token=admin_token)
+    report.check("marking an unknown id changes nothing",
+                 status == 200 and payload.get("markedRead") == 0)
+
+
 CHECKS = {
     "escalation": check_escalation,
     "settings": check_settings,
     "avatars": check_avatars,
+    "notifications": check_notifications,
 }
 
 

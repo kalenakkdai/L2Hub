@@ -14,6 +14,7 @@ from app.api.deps import CurrentProfile, DbSession
 from app.core import permission_keys as pk
 from app.models import DebriefParticipant, Event, EventAgenda
 from app.services import authorization as authz
+from app.services import notifications
 from app.services.event_summary import service as summary_service
 
 router = APIRouter(tags=["events"])
@@ -237,6 +238,30 @@ def live_participants(event_ref: str, profile: CurrentProfile, db: DbSession) ->
     }
 
 
+@router.post("/notifications/read")
+def mark_notifications_read(profile: CurrentProfile, db: DbSession) -> dict:
+    """Marks every unread notification read for the caller."""
+    authz.require_permission(db, profile, pk.NOTIFICATIONS_VIEW_OWN)
+    changed = notifications.mark_all_read(db, profile.id)
+    db.commit()
+    return {"markedRead": changed, "unread": notifications.unread_count(db, profile.id)}
+
+
+@router.post("/notifications/{notification_id}/read")
+def mark_notification_read(
+    notification_id: uuid.UUID, profile: CurrentProfile, db: DbSession
+) -> dict:
+    """Marks one notification read.
+
+    Scoped to the caller in the query itself, so an id belonging to someone
+    else simply matches nothing rather than needing a separate ownership check.
+    """
+    authz.require_permission(db, profile, pk.NOTIFICATIONS_VIEW_OWN)
+    changed = notifications.mark_read(db, profile.id, notification_id)
+    db.commit()
+    return {"markedRead": changed, "unread": notifications.unread_count(db, profile.id)}
+
+
 @router.get("/notifications")
 def list_notifications(profile: CurrentProfile, db: DbSession) -> dict:
     authz.require_permission(db, profile, pk.NOTIFICATIONS_VIEW_OWN)
@@ -249,6 +274,7 @@ def list_notifications(profile: CurrentProfile, db: DbSession) -> dict:
         .limit(50)
     ).all()
     return {
+        "unread": notifications.unread_count(db, profile.id),
         "notifications": [
             {
                 "id": str(n.id),

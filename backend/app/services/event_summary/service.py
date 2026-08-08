@@ -15,11 +15,11 @@ from app.models import (
     EventAgenda,
     EventSummary,
     EventSummaryRequest,
-    Notification,
     Profile,
     UserRoleAssignment,
 )
 from app.services import authorization as authz
+from app.services import notifications
 from app.services.audit import write_audit_log
 from app.services.event_summary.deterministic import DeterministicEventSummaryProvider
 from app.services.event_summary.provider import GENERATION_STAGES, STAGE_LABELS
@@ -64,16 +64,20 @@ def _notify(
     body: str,
     payload: dict | None = None,
 ) -> None:
-    for recipient_id in recipient_ids:
-        db.add(
-            Notification(
-                recipient_user_id=recipient_id,
-                type=type,
-                title=title,
-                body=body,
-                payload_json=json.dumps(payload) if payload else None,
-            )
-        )
+    """Delivers to whoever wants it.
+
+    Previously wrote a row per recipient unconditionally, which made the
+    settings grid, quiet hours, and the pause switch decorative. Gating lives
+    in one place so every future notification source inherits it.
+    """
+    notifications.deliver(
+        db,
+        recipient_ids=recipient_ids,
+        type=type,
+        title=title,
+        body=body,
+        payload=payload,
+    )
 
 
 def _superadmin_ids(db: Session) -> list[uuid.UUID]:
