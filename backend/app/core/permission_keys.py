@@ -99,6 +99,13 @@ PLANNING_CREATE: Final = "planning.create"
 PLANNING_ASSIGN: Final = "planning.assign"
 PLANNING_ENABLE: Final = "planning.enable"
 
+# settings
+# Distinct from admin.settings, which covers platform configuration. These
+# two gate the Campsite settings screens: view is granted to advisers so they
+# can read the configuration without being able to change it.
+SETTINGS_VIEW: Final = "settings.view"
+SETTINGS_EDIT: Final = "settings.edit"
+
 # admin
 ADMIN_SETTINGS: Final = "admin.settings"
 ADMIN_AUDIT: Final = "admin.audit"
@@ -168,6 +175,8 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
     (PLANNING_ASSIGN, "Assign committees or members to plans", "planning"),
     (PLANNING_ENABLE, "Enable event planning before assignees accept", "planning"),
     (NOTIFICATIONS_VIEW_OWN, "View own notifications", "notifications"),
+    (SETTINGS_VIEW, "View Campsite settings", "admin"),
+    (SETTINGS_EDIT, "Edit Campsite settings", "admin"),
     (ADMIN_SETTINGS, "Configure platform settings", "admin"),
     (ADMIN_AUDIT, "View audit logs", "admin"),
     (ADMIN_PREVIEW_USER, "Preview another user's dashboard", "admin"),
