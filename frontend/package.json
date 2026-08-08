@@ -13,7 +13,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.1",
+    "@supabase/supabase-js": "^2.112.2",
     "@tanstack/react-query": "^5.101.4",
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",

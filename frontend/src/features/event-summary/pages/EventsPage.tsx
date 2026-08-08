@@ -4,6 +4,7 @@ import { AppShell } from '../../../components/layout/AppShell'
 import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { FullPageMessage } from '../../../components/FullPageMessage'
+import { CampsiteScene } from '../components/CampsiteScene'
 import {
   fetchEvents,
   requestSummary,
@@ -54,87 +55,97 @@ export function EventsPage() {
 
   return (
     <AppShell name={name} role={me.role} permissions={me.permissions}>
-      <header className="mb-5 border-b border-border-subtle pb-4">
-        <h1 className="text-display font-semibold text-ink">Events</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Track Event Summary status and open Wrapped experiences.
-        </p>
-      </header>
+      <CampsiteScene />
 
-      {eventsQuery.isPending ? (
-        <p className="text-sm text-ink-muted">Loading events…</p>
-      ) : null}
-      {eventsQuery.isError ? (
-        <ErrorState
-          title="Could not load events"
-          description="Check that the backend is running."
-          onRetry={() => void eventsQuery.refetch()}
-        />
-      ) : null}
+      <div className="on-navy relative z-10 pb-16">
+        <header className="mb-5 border-b border-white/12 pt-2 pb-4 sm:pt-6">
+          <h1 className="text-display font-semibold text-navy-ink">Events</h1>
+          <p className="mt-1 text-sm text-navy-ink-muted">
+            Track Event Summary status and open Wrapped experiences.
+          </p>
+        </header>
 
-      {eventsQuery.data ? (
-        <div className="overflow-hidden rounded-card border border-border-subtle bg-surface shadow-xs">
-          <table className="w-full min-w-[640px] border-collapse text-left">
-            <thead className="border-b border-border-strong bg-surface-sunken">
-              <tr>
-                <th className="px-4 py-3 text-xs font-semibold text-ink-muted">Event</th>
-                <th className="px-3 py-3 text-xs font-semibold text-ink-muted">Summary</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-ink-muted">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventsQuery.data.events.map((event) => (
-                <tr
-                  key={event.id}
-                  className="border-b border-border-subtle last:border-b-0"
-                >
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-semibold text-ink">
-                      {event.name} {event.year}
-                    </p>
-                    <p className="text-xs text-ink-subtle capitalize">{event.eventStatus}</p>
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge status={event.summaryStatus} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <ButtonLink
-                        to={`/events/${event.slug}/summary`}
-                        variant="secondary"
-                        size="sm"
-                      >
-                        Open
-                      </ButtonLink>
-                      {event.summaryStatus === 'published' ||
-                      event.summaryStatus === 'generated' ? (
-                        <ButtonLink to={`/events/${event.slug}/wrapped`} size="sm">
-                          Wrapped
-                        </ButtonLink>
-                      ) : null}
-                      {canRequest &&
-                      event.eventStatus === 'complete' &&
-                      event.summaryStatus === 'not_requested' ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          disabled={requestMutation.isPending}
-                          onClick={() => requestMutation.mutate(event.slug)}
-                        >
-                          Generate Event Summary
-                        </Button>
-                      ) : null}
-                    </div>
-                  </td>
+        {eventsQuery.isPending ? (
+          <p className="text-sm text-navy-ink-muted">Loading events…</p>
+        ) : null}
+        {eventsQuery.isError ? (
+          <ErrorState
+            title="Could not load events"
+            description="Check that the backend is running."
+            onRetry={() => void eventsQuery.refetch()}
+          />
+        ) : null}
+
+        {eventsQuery.data ? (
+          <div className="overflow-hidden rounded-card border border-white/12 bg-white/[0.07] shadow-card backdrop-blur-sm">
+            <table className="w-full min-w-[640px] border-collapse text-left">
+              <thead className="border-b border-white/15 bg-white/[0.06]">
+                <tr>
+                  <th className="px-4 py-3 text-xs font-semibold text-navy-ink-muted">
+                    Event
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-navy-ink-muted">
+                    Summary
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-navy-ink-muted">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+              </thead>
+              <tbody>
+                {eventsQuery.data.events.map((event) => (
+                  <tr
+                    key={event.id}
+                    className="border-b border-white/10 last:border-b-0 hover:bg-white/[0.04]"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-semibold text-navy-ink">
+                        {event.name} {event.year}
+                      </p>
+                      <p className="text-xs text-navy-ink-muted capitalize">
+                        {event.eventStatus}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <StatusBadge status={event.summaryStatus} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <ButtonLink
+                          to={`/events/${event.slug}/summary`}
+                          variant="navy"
+                          size="sm"
+                        >
+                          Open
+                        </ButtonLink>
+                        {event.summaryStatus === 'published' ||
+                        event.summaryStatus === 'generated' ? (
+                          <ButtonLink to={`/events/${event.slug}/wrapped`} size="sm">
+                            Wrapped
+                          </ButtonLink>
+                        ) : null}
+                        {canRequest &&
+                        event.eventStatus === 'complete' &&
+                        event.summaryStatus === 'not_requested' ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="navy"
+                            disabled={requestMutation.isPending}
+                            onClick={() => requestMutation.mutate(event.slug)}
+                          >
+                            Generate Event Summary
+                          </Button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </div>
     </AppShell>
   )
 }

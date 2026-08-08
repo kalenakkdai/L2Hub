@@ -6,6 +6,8 @@ import { AppShell } from '../../../components/layout/AppShell'
 import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { FullPageMessage } from '../../../components/FullPageMessage'
+import { CampsiteScene } from '../components/CampsiteScene'
+import { SummaryTrail } from '../components/SummaryTrail'
 import {
   approveSummary,
   fetchEvent,
@@ -15,6 +17,9 @@ import {
   requestSummary,
   summaryStatusLabel,
 } from '../api'
+
+const PANEL =
+  'rounded-card border border-white/12 bg-white/[0.07] p-5 shadow-card backdrop-blur-sm'
 
 export function EventSummaryPage() {
   const { eventId = '' } = useParams()
@@ -110,126 +115,157 @@ export function EventSummaryPage() {
 
   return (
     <AppShell name={name} role={me.role} permissions={me.permissions}>
-      <header className="mb-6 border-b border-border-subtle pb-4">
-        <p className="text-xs font-semibold tracking-wide text-ink-subtle uppercase">
-          Event Summary
-        </p>
-        <h1 className="mt-1 text-display font-semibold text-ink">
-          {event.name} {event.year}
-        </h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Status:{' '}
-          <span className="font-semibold text-ink">
-            {summaryStatusLabel(event.summaryStatus)}
-          </span>
-        </p>
-      </header>
+      <CampsiteScene />
 
-      <div className="flex flex-col gap-4">
-        {event.summaryStatus === 'not_requested' && canRequest ? (
-          <section className="rounded-card border border-border-subtle bg-surface p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-ink">Request generation</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              Ask AC or President to approve Event Wrapped generation.
-            </p>
-            <Button
-              className="mt-4"
-              type="button"
-              disabled={busy || event.eventStatus !== 'complete'}
-              onClick={() => requestMutation.mutate()}
-            >
-              Generate Event Summary
-            </Button>
-          </section>
-        ) : null}
+      <div className="on-navy relative z-10">
+        <header className="mb-6 pt-2 sm:pt-6">
+          <p className="text-xs font-semibold tracking-wide text-navy-ink-muted uppercase">
+            Event Summary
+          </p>
+          <h1 className="mt-1 text-display font-semibold text-navy-ink">
+            {event.name} {event.year}
+          </h1>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-navy-ink-muted">
+            Status:{' '}
+            <span className="font-semibold text-navy-ink">
+              {summaryStatusLabel(event.summaryStatus)}
+            </span>
+          </p>
 
-        {event.summaryStatus === 'pending_approval' && canApprove ? (
-          <section className="rounded-card border border-border-subtle bg-surface p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-ink">Approval required</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              Approving starts generation. Rejecting returns the event to Not Requested.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                disabled={busy}
-                onClick={() => approveMutation.mutate()}
-              >
-                Approve &amp; Generate
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => rejectMutation.mutate()}
-              >
-                Reject
-              </Button>
+          <SummaryTrail status={event.summaryStatus} />
+
+          {event.summaryStatus === 'generated' || event.summaryStatus === 'published' ? (
+            <div className="mt-6 flex flex-wrap gap-2">
+              <ButtonLink to={`/events/${eventId}/wrapped`}>Open Wrapped</ButtonLink>
+              <ButtonLink to={`/events/${eventId}/agenda`} variant="navy">
+                Agenda
+              </ButtonLink>
+              <ButtonLink to={`/events/${eventId}/live`} variant="navy">
+                Live bubbles
+              </ButtonLink>
             </div>
-          </section>
-        ) : null}
+          ) : null}
+        </header>
 
-        {event.summaryStatus === 'pending_approval' && !canApprove ? (
-          <section className="rounded-card border border-border-subtle bg-surface p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-ink">Waiting for approval</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              AC or President must approve before generation starts.
-            </p>
-          </section>
-        ) : null}
-
-        {canGenerate &&
-        (event.summaryStatus === 'not_requested' ||
-          event.summaryStatus === 'generated') ? (
-          <section className="rounded-card border border-border-subtle bg-surface p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-ink">
-              {event.summaryStatus === 'generated' ? 'Regenerate' : 'Generate directly'}
-            </h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              AC and President can activate generation without a request.
-            </p>
-            <Button
-              className="mt-4"
-              type="button"
-              variant="secondary"
-              disabled={busy}
-              onClick={() => generateMutation.mutate()}
-            >
-              {event.summaryStatus === 'generated' ? 'Regenerate Wrapped' : 'Generate Now'}
-            </Button>
-          </section>
-        ) : null}
-
-        {event.summaryStatus === 'generating' ? (
-          <ButtonLink to={`/events/${eventId}/summary/generating`}>
-            View generation progress
-          </ButtonLink>
-        ) : null}
-
-        {event.summaryStatus === 'generated' || event.summaryStatus === 'published' ? (
-          <div className="flex flex-wrap gap-2">
-            <ButtonLink to={`/events/${eventId}/wrapped`}>Open Wrapped</ButtonLink>
-            <ButtonLink to={`/events/${eventId}/agenda`} variant="secondary">
-              Agenda
-            </ButtonLink>
-            <ButtonLink to={`/events/${eventId}/live`} variant="secondary">
-              Live bubbles
-            </ButtonLink>
-            {canPublish && event.summaryStatus === 'generated' ? (
+        <div className="flex flex-col gap-4 pb-16">
+          {event.summaryStatus === 'not_requested' && canRequest ? (
+            <section className={PANEL}>
+              <h2 className="text-sm font-semibold text-navy-ink">
+                Request generation
+              </h2>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                Ask AC or President to approve Event Wrapped generation.
+              </p>
               <Button
+                className="mt-4"
+                type="button"
+                disabled={busy || event.eventStatus !== 'complete'}
+                onClick={() => requestMutation.mutate()}
+              >
+                Generate Event Summary
+              </Button>
+            </section>
+          ) : null}
+
+          {event.summaryStatus === 'pending_approval' && canApprove ? (
+            <section className={PANEL}>
+              <h2 className="text-sm font-semibold text-navy-ink">
+                Approval required
+              </h2>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                Approving starts generation. Rejecting returns the event to Not
+                Requested.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => approveMutation.mutate()}
+                >
+                  Approve &amp; Generate
+                </Button>
+                <Button
+                  type="button"
+                  variant="navy"
+                  disabled={busy}
+                  onClick={() => rejectMutation.mutate()}
+                >
+                  Reject
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
+          {event.summaryStatus === 'pending_approval' && !canApprove ? (
+            <section className={PANEL}>
+              <h2 className="text-sm font-semibold text-navy-ink">
+                Waiting for approval
+              </h2>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                AC or President must approve before generation starts.
+              </p>
+            </section>
+          ) : null}
+
+          {canGenerate &&
+          (event.summaryStatus === 'not_requested' ||
+            event.summaryStatus === 'generated' ||
+            event.summaryStatus === 'published') ? (
+            <section className={PANEL}>
+              <h2 className="text-sm font-semibold text-navy-ink">
+                {event.summaryStatus === 'not_requested'
+                  ? 'Generate directly'
+                  : 'Regenerate'}
+              </h2>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                {event.summaryStatus === 'published'
+                  ? 'Regenerating replaces this Wrapped and returns it to unpublished until you publish again.'
+                  : 'AC and President can activate generation without a request.'}
+              </p>
+              <Button
+                className="mt-4"
+                type="button"
+                variant="navy"
+                disabled={busy}
+                onClick={() => generateMutation.mutate()}
+              >
+                {event.summaryStatus === 'not_requested'
+                  ? 'Generate Now'
+                  : 'Regenerate Wrapped'}
+              </Button>
+            </section>
+          ) : null}
+
+          {event.summaryStatus === 'generating' ? (
+            <ButtonLink to={`/events/${eventId}/summary/generating`}>
+              View generation progress
+            </ButtonLink>
+          ) : null}
+
+          {canPublish && event.summaryStatus === 'generated' ? (
+            <section className={PANEL}>
+              <h2 className="text-sm font-semibold text-navy-ink">Publish</h2>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                Publishing makes this Wrapped visible to every member who can see
+                the event.
+              </p>
+              <Button
+                className="mt-4"
                 type="button"
                 disabled={busy}
                 onClick={() => publishMutation.mutate()}
               >
                 Publish to members
               </Button>
-            ) : null}
-          </div>
-        ) : null}
+            </section>
+          ) : null}
 
-        <ButtonLink to="/events" variant="ghost">
-          Back to events
-        </ButtonLink>
+          <div>
+            <ButtonLink to="/events" variant="navy">
+              Back to events
+            </ButtonLink>
+          </div>
+        </div>
       </div>
     </AppShell>
   )

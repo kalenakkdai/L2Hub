@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCurrentUser } from '../../../api/auth'
@@ -11,14 +12,41 @@ import { fetchLiveParticipants, type LiveParticipant } from '../api'
 function bubbleTone(status: LiveParticipant['status']) {
   switch (status) {
     case 'submitted':
-      return 'bg-emerald-500'
+      return 'from-emerald-300 via-emerald-500 to-emerald-700'
     case 'writing':
-      return 'bg-amber-400'
+      return 'from-amber-200 via-amber-400 to-amber-600'
     case 'absent':
-      return 'bg-zinc-400'
+      return 'from-zinc-200 via-zinc-400 to-zinc-500'
     default:
-      return 'bg-rose-500'
+      return 'from-rose-300 via-rose-500 to-rose-700'
   }
+}
+
+// The list refetches every few seconds. Deriving motion from the participant id
+// instead of Math.random keeps each bubble on its own path across refetches
+// rather than restarting the animation with new values.
+function seedFrom(id: string): number {
+  let hash = 0
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 100000
+  }
+  return hash
+}
+
+function bubbleMotion(id: string): CSSProperties {
+  const seed = seedFrom(id)
+  const driftX = 6 + (seed % 13)
+  const driftY = 8 + ((seed >> 3) % 15)
+  const size = 52 + (seed % 5) * 4
+
+  return {
+    '--bubble-size': `${size}px`,
+    '--drift-x': `${seed % 2 === 0 ? driftX : -driftX}px`,
+    '--drift-y': `${driftY}px`,
+    '--float-duration': `${9 + (seed % 8)}s`,
+    '--wobble-duration': `${7 + ((seed >> 2) % 6)}s`,
+    '--float-delay': `-${seed % 9}s`,
+  } as CSSProperties
 }
 
 function statusLabel(status: LiveParticipant['status']) {
@@ -103,15 +131,21 @@ export function LiveBubblesPage() {
                 key={p.id}
                 className="flex w-28 flex-col items-center gap-2 text-center"
                 title={statusLabel(p.status)}
+                style={bubbleMotion(p.id)}
               >
-                <span
-                  className={`flex h-14 w-14 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm ${bubbleTone(p.status)}`}
-                >
-                  {p.displayName
-                    .split(' ')
-                    .map((part) => part[0])
-                    .join('')
-                    .slice(0, 2)}
+                <span className="bubble-float flex h-20 w-20 items-center justify-center">
+                  <span
+                    className={`bubble-skin flex items-center justify-center bg-gradient-to-br text-sm font-semibold text-white ${bubbleTone(p.status)}`}
+                  >
+                    <span className="bubble-gloss" aria-hidden="true" />
+                    <span className="relative drop-shadow-sm">
+                      {p.displayName
+                        .split(' ')
+                        .map((part) => part[0])
+                        .join('')
+                        .slice(0, 2)}
+                    </span>
+                  </span>
                 </span>
                 <span className="text-xs font-medium text-ink">{p.displayName}</span>
                 <span className="text-[11px] text-ink-subtle">
@@ -128,6 +162,88 @@ export function LiveBubblesPage() {
           Back to summary
         </ButtonLink>
       </div>
+
+      <style>{`
+        .bubble-float {
+          animation: bubbleFloat var(--float-duration, 12s) ease-in-out
+            var(--float-delay, 0s) infinite;
+          will-change: transform;
+        }
+
+        .bubble-skin {
+          position: relative;
+          height: var(--bubble-size, 56px);
+          width: var(--bubble-size, 56px);
+          overflow: hidden;
+          animation: bubbleWobble var(--wobble-duration, 9s) ease-in-out
+            var(--float-delay, 0s) infinite;
+          box-shadow:
+            inset 0 -6px 12px rgb(0 0 0 / 0.18),
+            inset 0 6px 10px rgb(255 255 255 / 0.35),
+            0 8px 18px rgb(16 24 40 / 0.16);
+        }
+
+        /* Specular highlight: reads as a wet surface rather than a flat disc. */
+        .bubble-gloss {
+          position: absolute;
+          top: 12%;
+          left: 16%;
+          height: 34%;
+          width: 42%;
+          border-radius: 9999px;
+          background: radial-gradient(
+            circle at 30% 30%,
+            rgb(255 255 255 / 0.85),
+            rgb(255 255 255 / 0) 70%
+          );
+          filter: blur(1px);
+        }
+
+        @keyframes bubbleFloat {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+          }
+          25% {
+            transform: translate3d(var(--drift-x), calc(var(--drift-y) * -1), 0);
+          }
+          50% {
+            transform: translate3d(
+              calc(var(--drift-x) * -0.7),
+              calc(var(--drift-y) * -0.35),
+              0
+            );
+          }
+          75% {
+            transform: translate3d(
+              calc(var(--drift-x) * 0.5),
+              calc(var(--drift-y) * 0.6),
+              0
+            );
+          }
+        }
+
+        @keyframes bubbleWobble {
+          0%,
+          100% {
+            border-radius: 49% 51% 52% 48% / 52% 48% 52% 48%;
+          }
+          33% {
+            border-radius: 55% 45% 47% 53% / 45% 56% 44% 55%;
+          }
+          66% {
+            border-radius: 45% 55% 56% 44% / 56% 43% 57% 44%;
+          }
+        }
+
+        /* The global reduced-motion rule stops the animations; pin a clean
+         * circle so a paused wobble frame is not what users are left with. */
+        @media (prefers-reduced-motion: reduce) {
+          .bubble-skin {
+            border-radius: 9999px;
+          }
+        }
+      `}</style>
     </AppShell>
   )
 }

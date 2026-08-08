@@ -104,6 +104,42 @@ def test_asbo_cannot_edit_grades_endpoint_still_views(client, make_token, seeded
     assert client.get("/feedback/private", headers=headers).status_code == 403
 
 
+def test_every_theme_quotes_match_its_mention_count():
+    from app.services.event_summary.deterministic import DeterministicEventSummaryProvider
+
+    payload = DeterministicEventSummaryProvider().build_payload(
+        event_name="Maze Day", event_year=2026
+    )
+    themes = payload["graph"]["themes"]
+    assert themes
+
+    for theme in themes:
+        quotes = theme["contributors"]
+        assert theme["mentions"] == len(quotes), theme["id"]
+        # Repeating one quote verbatim would read as a bug, not as feedback.
+        assert len({q["quote"] for q in quotes}) == len(quotes), theme["id"]
+
+        named = [q["name"] for q in quotes if not q["anonymous"]]
+        assert len(named) == len(set(named)), theme["id"]
+
+        for quote in quotes:
+            if quote["anonymous"]:
+                assert quote["name"] is None
+                assert quote["committee"] is None
+
+
+def test_graph_node_mentions_match_theme_quote_counts():
+    from app.services.event_summary.deterministic import DeterministicEventSummaryProvider
+
+    graph = DeterministicEventSummaryProvider().build_payload(
+        event_name="Maze Day", event_year=2026
+    )["graph"]
+    quote_counts = {t["id"]: len(t["contributors"]) for t in graph["themes"]}
+
+    for node in graph["nodes"]:
+        assert node["mentions"] == quote_counts[node["id"]]
+
+
 def test_notifications_created_for_superadmins(client, make_token, seeded):
     headers = auth_header(make_token, seeded["asbo"].id)
     client.post("/events/maze-day-2026/summary/request", headers=headers)
