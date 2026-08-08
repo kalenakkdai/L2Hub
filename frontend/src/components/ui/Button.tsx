@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from './cn'
 
@@ -42,10 +42,15 @@ export function Button({
   size = 'md',
   className,
   children,
+  // React 19 passes ref as an ordinary prop to function components; declaring
+  // it here lets callers focus a Button without a forwardRef wrapper.
+  ref,
   ...rest
-}: CommonProps & ButtonHTMLAttributes<HTMLButtonElement>) {
+}: CommonProps &
+  ButtonHTMLAttributes<HTMLButtonElement> & { ref?: Ref<HTMLButtonElement> }) {
   return (
     <button
+      ref={ref}
       className={cn(BASE, variant !== 'icon' && MOTION, VARIANTS[variant], SIZES[size], className)}
       {...rest}
     >

@@ -42,9 +42,43 @@ export function createSupabaseMock(initialSession: Session | null = null) {
     for (const handler of handlers) handler(event, next)
   }
 
+  /**
+   * Minimal PostgREST query-builder stub.
+   *
+   * Chainable like the real client and resolves to an empty result, which is
+   * what the settings hooks need: a query that settles rather than hanging.
+   * Tests that care about returned rows override `from` directly.
+   */
+  const makeQuery = () => {
+    const result = Promise.resolve({ data: [], error: null })
+    const builder: Record<string, unknown> = {
+      select: vi.fn(() => builder),
+      eq: vi.fn(() => builder),
+      order: vi.fn(() => builder),
+      limit: vi.fn(() => builder),
+      single: vi.fn(async () => ({ data: null, error: null })),
+      maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+      insert: vi.fn(async () => ({ data: null, error: null })),
+      update: vi.fn(async () => ({ data: null, error: null })),
+      upsert: vi.fn(async () => ({ data: null, error: null })),
+      delete: vi.fn(async () => ({ data: null, error: null })),
+      then: result.then.bind(result),
+      catch: result.catch.bind(result),
+      finally: result.finally.bind(result),
+    }
+    return builder
+  }
+
   return {
+    from: vi.fn(() => makeQuery()),
+
     auth: {
       getSession: vi.fn(async () => ({ data: { session }, error: null })),
+
+      getUser: vi.fn(async () => ({
+        data: { user: session?.user ?? null },
+        error: null,
+      })),
 
       onAuthStateChange: vi.fn((handler: AuthChangeHandler) => {
         handlers.add(handler)
