@@ -10,8 +10,8 @@ const statusStyles: Record<
     filled: boolean
   }
 > = {
-  submitted: { text: 'text-accent-700', icon: 'circle', filled: true },
-  graded: { text: 'text-accent-700', icon: 'check', filled: true },
+  submitted: { text: 'text-accent-ink', icon: 'circle', filled: true },
+  graded: { text: 'text-accent-ink', icon: 'check', filled: true },
   draft: { text: 'text-status-info', icon: 'circle', filled: true },
   not_started: { text: 'text-ink-subtle', icon: 'circle', filled: false },
   late: { text: 'text-status-warning', icon: 'clock', filled: true },

@@ -116,7 +116,7 @@ export function DebriefsPage() {
                       className={`rounded-control px-2 py-0.5 text-[11px] font-semibold ${
                         openCount > 0
                           ? 'bg-status-warning-bg text-status-warning'
-                          : 'bg-accent-50 text-accent-700'
+                          : 'bg-accent-50 text-accent-ink'
                       }`}
                     >
                       {openCount > 0 ? `Open · ${openCount} outstanding` : 'All submitted'}

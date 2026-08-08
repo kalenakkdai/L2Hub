@@ -63,7 +63,7 @@ export function CalendarRail({ days }: { days: CalendarDay[] }) {
                   <div
                     className={cn(
                       'text-[11.5px] font-semibold',
-                      scheduled && !day.isToday ? 'text-accent-700' : 'text-ink-subtle',
+                      scheduled && !day.isToday ? 'text-accent-ink' : 'text-ink-subtle',
                     )}
                   >
                     {weekdayShort(day.date)}

@@ -102,7 +102,7 @@ export function DashboardPage() {
           aside={
             <Link
               to="/grades"
-              className="text-[13px] text-accent-600 underline-offset-2 hover:underline"
+              className="text-[13px] text-accent-ink underline-offset-2 hover:underline"
             >
               Open gradebook
             </Link>

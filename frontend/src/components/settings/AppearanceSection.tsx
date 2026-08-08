@@ -50,7 +50,7 @@ export function AppearanceSection({
               className={cn(
                 'cursor-pointer rounded-control border px-3 py-1.5 text-sm transition duration-200',
                 profile.theme === theme.value
-                  ? 'border-accent-600 bg-accent-50 font-medium text-accent-600'
+                  ? 'border-accent-600 bg-accent-50 font-medium text-accent-ink'
                   : 'border-border-subtle text-ink-subtle hover:bg-surface-muted hover:text-ink',
               )}
             >

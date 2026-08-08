@@ -9,7 +9,7 @@ import { cn } from './cn'
 export type BadgeTone = 'accent' | 'warning' | 'danger' | 'info' | 'neutral'
 
 const TONES: Record<BadgeTone, string> = {
-  accent: 'bg-accent-100 text-accent-600 border-accent-200',
+  accent: 'bg-accent-100 text-accent-ink border-accent-200',
   warning: 'bg-status-warning-bg text-status-warning border-status-warning-border',
   danger: 'bg-status-danger-bg text-status-danger border-status-danger-border',
   info: 'bg-status-info-bg text-status-info border-status-info-border',

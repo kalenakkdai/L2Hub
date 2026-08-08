@@ -104,7 +104,7 @@ export function AccountSection({ profile }: AccountSectionProps) {
             </Button>
 
             {passwordState.kind === 'done' && (
-              <span role="status" className="text-[12.5px] text-accent-600">
+              <span role="status" className="text-[12.5px] text-accent-ink">
                 Password changed
               </span>
             )}

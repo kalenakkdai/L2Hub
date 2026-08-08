@@ -45,7 +45,7 @@ export function ProgressPanel({ progress }: { progress: ProgressSummary }) {
       </div>
 
       {progress.note && (
-        <p className="mt-3.5 rounded-control border border-accent-200 bg-accent-50 px-3 py-2.5 text-[13px] text-accent-600">
+        <p className="mt-3.5 rounded-control border border-accent-200 bg-accent-50 px-3 py-2.5 text-[13px] text-accent-ink">
           {progress.note}
         </p>
       )}

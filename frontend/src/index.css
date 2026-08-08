@@ -54,8 +54,12 @@
   --color-accent-100: #e8f0ea; /* progress tracks, badge fills */
   --color-accent-200: #cfdfd4; /* accent borders */
   --color-accent-400: #9be3be; /* on dark chrome — 10.9:1 on navy-900 */
-  --color-accent-600: #12372a; /* fills with white text — 11.9:1 */
-  --color-accent-700: #1a4d38; /* hover, and accent text on white — 8.9:1 */
+  --color-accent-600: #12372a; /* fills, always with white text — 11.9:1 */
+  --color-accent-700: #1a4d38; /* fill hover */
+  /* Accent-coloured *text*, which has the opposite requirement to a fill:
+   * dark on light surfaces, light on dark ones. Separated from the fill
+   * scale so both can be right in both themes. */
+  --color-accent-ink: #12372a; /* 11.9:1 on white */
 
   /* ---- Status ----------------------------------------------------------
    * No green here: "complete" uses the accent, so green never carries two
@@ -115,6 +119,76 @@
   /* ---- Motion ------------------------------------------------------------ */
   --ease-out-quick: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark palette
+ *
+ * Only the token *values* move; every token name is the same, which is what
+ * lets the whole product follow without a single component changing.
+ *
+ * Two things are deliberately not simple inversions. Surfaces get lighter as
+ * they come forward — canvas is darkest and cards sit above it — the reverse
+ * of the light theme, where cards are the brightest thing. And the accent
+ * splits: fills stay dark enough to carry white text, while accent-ink goes
+ * light so accent-coloured text is readable.
+ *
+ * The navy chrome barely moves. It was already near-black, and a sidebar that
+ * shifts between themes reads as a bug rather than a feature.
+ *
+ * "System" is resolved in appearance.ts, so this needs one selector rather
+ * than a duplicate block inside a prefers-color-scheme query.
+ * ------------------------------------------------------------------------ */
+:root[data-theme='dark'] {
+  --color-canvas: #0f1211;
+  --color-surface: #161a19;
+  --color-surface-sunken: #121615;
+  --color-surface-muted: #1c2220;
+  --color-shell: #0a0c0b;
+
+  --color-border-subtle: #272e2b;
+  --color-border-divider: #1f2523;
+  --color-border-strong: #364039;
+  --color-border-dotted: #3d4643;
+
+  --color-ink: #e8ebe9; /* 13.4:1 on surface */
+  --color-ink-muted: #b4bbb8; /* 8.1:1 */
+  --color-ink-subtle: #8d9591; /* 4.9:1 */
+  --color-ink-faint: #5c6360; /* decorative only */
+
+  --color-accent-50: #13241d;
+  --color-accent-100: #172e24;
+  --color-accent-200: #2a4a3a;
+  --color-accent-400: #9be3be;
+  --color-accent-600: #1b7a55; /* white text — 5.0:1 */
+  --color-accent-700: #156044; /* fill hover: darkens, staying legible */
+  --color-accent-ink: #74d8a8; /* 9.6:1 on surface */
+
+  /* Status colours lift off a dark ground; the tinted backgrounds become
+   * dark washes rather than pastels. */
+  --color-status-warning: #f0b95e;
+  --color-status-warning-bg: #2a2013;
+  --color-status-warning-border: #4a3a1d;
+  --color-status-danger: #f08d78;
+  --color-status-danger-bg: #2c1a16;
+  --color-status-danger-border: #4d2c24;
+  --color-status-info: #7fb4f5;
+  --color-status-info-bg: #12202f;
+  --color-status-info-border: #23384f;
+  --color-status-neutral: #a3aba7;
+  --color-status-neutral-bg: #1c2220;
+  --color-status-neutral-border: #2c3431;
+  --color-status-amber: #e0a82e;
+
+  /* The same five grade bands, darkened so the score text stays readable. */
+  --color-grade-a-plus: #1d5c42;
+  --color-grade-a: #1a4a37;
+  --color-grade-a-minus: #17372a;
+  --color-grade-bc: #4a3a15;
+  --color-grade-below-c: #4a2620;
+
+  /* Native controls — scrollbars, date pickers — follow too. */
+  color-scheme: dark;
 }
 
 @layer base {

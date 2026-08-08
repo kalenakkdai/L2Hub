@@ -241,7 +241,7 @@ export function AnonymousReportForm({ planId }: { planId: string }) {
           </p>
         ) : null}
         {sent && submitReport.isSuccess ? (
-          <p className="text-sm text-accent-700" role="status">
+          <p className="text-sm text-accent-ink" role="status">
             Report submitted anonymously.
           </p>
         ) : null}

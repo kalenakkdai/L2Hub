@@ -96,7 +96,7 @@ export function GradeAssignmentPage() {
           onRetry={() => void detailQuery.refetch()}
         />
         <p className="mt-4">
-          <Link to="/grades" className="text-sm font-medium text-accent-700 underline">
+          <Link to="/grades" className="text-sm font-medium text-accent-ink underline">
             Back to Grades
           </Link>
         </p>

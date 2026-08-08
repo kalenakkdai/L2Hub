@@ -11,7 +11,7 @@ const LABELS: Record<PlanStatus, string> = {
 const TONES: Record<PlanStatus, string> = {
   draft: 'bg-status-neutral-bg text-ink-muted',
   pending_enablement: 'bg-status-warning-bg text-status-warning',
-  enabled: 'bg-accent-50 text-accent-700',
+  enabled: 'bg-accent-50 text-accent-ink',
   active: 'bg-status-info-bg text-status-info',
   completed: 'bg-status-neutral-bg text-ink-muted',
 }

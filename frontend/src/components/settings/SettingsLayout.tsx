@@ -73,7 +73,7 @@ export function SettingsLayout({
                     className={cn(
                       'block rounded-control px-3 py-1.5 text-sm whitespace-nowrap transition duration-200',
                       active === section.id
-                        ? 'bg-accent-50 font-medium text-accent-600'
+                        ? 'bg-accent-50 font-medium text-accent-ink'
                         : 'text-ink-subtle hover:bg-surface-muted hover:text-ink',
                     )}
                   >

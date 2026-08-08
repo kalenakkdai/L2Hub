@@ -8,13 +8,13 @@ type Size = 'sm' | 'md' | 'lg'
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent-600 text-white hover:bg-accent-700',
   secondary:
-    'border border-border-subtle bg-surface text-accent-600 hover:border-accent-600 hover:bg-accent-50',
+    'border border-border-subtle bg-surface text-accent-ink hover:border-accent-600 hover:bg-accent-50',
   /** For use on the near-black chrome, where an accent fill disappears. */
-  light: 'bg-white text-accent-600 hover:bg-accent-50',
+  light: 'bg-white text-accent-ink hover:bg-accent-50',
   /** Quieter counterpart to `light`, for secondary actions on dark surfaces. */
   navy: 'bg-white/10 text-navy-ink hover:bg-white/15',
   ghost: 'text-ink-subtle hover:bg-surface-muted hover:text-ink',
-  icon: 'border border-border-subtle bg-surface text-ink-muted hover:border-accent-600 hover:text-accent-600',
+  icon: 'border border-border-subtle bg-surface text-ink-muted hover:border-accent-600 hover:text-accent-ink',
 }
 
 const SIZES: Record<Size, string> = {

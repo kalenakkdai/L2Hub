@@ -154,7 +154,7 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
                 ) : (
                   <Check
                     size={11}
-                    className="mt-0.5 shrink-0 text-accent-700"
+                    className="mt-0.5 shrink-0 text-accent-ink"
                     aria-hidden="true"
                   />
                 )}
@@ -162,7 +162,7 @@ export function AssignmentSummaryRail({ detail }: AssignmentSummaryRailProps) {
                   className={
                     item.passed === false
                       ? 'text-status-danger'
-                      : 'text-accent-700'
+                      : 'text-accent-ink'
                   }
                 >
                   {item.label}

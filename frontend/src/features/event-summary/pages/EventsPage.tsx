@@ -18,7 +18,7 @@ import {
 function StatusBadge({ status }: { status: SummaryStatus | string }) {
   const tone =
     status === 'published'
-      ? 'bg-accent-50 text-accent-700'
+      ? 'bg-accent-50 text-accent-ink'
       : status === 'generating' || status === 'pending_approval'
         ? 'bg-status-warning-bg text-status-warning'
         : status === 'generated'

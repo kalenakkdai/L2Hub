@@ -175,7 +175,7 @@ export function VerifyCodeModal({
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-100">
                 <Check
                   aria-hidden="true"
-                  className="h-6 w-6 animate-[riseIn_320ms_cubic-bezier(0.34,1.56,0.64,1)_both] text-accent-600"
+                  className="h-6 w-6 animate-[riseIn_320ms_cubic-bezier(0.34,1.56,0.64,1)_both] text-accent-ink"
                 />
               </span>
               <p className="font-medium text-ink">Verified</p>

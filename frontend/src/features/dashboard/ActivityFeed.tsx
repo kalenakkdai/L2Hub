@@ -38,7 +38,7 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
                 aria-hidden="true"
                 className={
                   awarded
-                    ? 'h-[15px] w-[15px] shrink-0 text-accent-600'
+                    ? 'h-[15px] w-[15px] shrink-0 text-accent-ink'
                     : 'h-[15px] w-[15px] shrink-0 text-ink-subtle'
                 }
               />
@@ -46,7 +46,7 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
                 {item.description}
               </span>
               {item.points !== undefined && (
-                <span className="shrink-0 rounded bg-accent-100 px-1.5 py-0.5 font-mono text-[11.5px] text-accent-600">
+                <span className="shrink-0 rounded bg-accent-100 px-1.5 py-0.5 font-mono text-[11.5px] text-accent-ink">
                   +{item.points}
                 </span>
               )}

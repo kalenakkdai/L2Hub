@@ -63,7 +63,7 @@ export function SignUpPage() {
           {confirmationSentTo ? (
             <div>
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-card bg-accent-100">
-                <MailCheck aria-hidden="true" className="h-5 w-5 text-accent-600" />
+                <MailCheck aria-hidden="true" className="h-5 w-5 text-accent-ink" />
               </span>
               <h1 className="mt-4 text-[28px] font-bold tracking-[-0.022em] text-ink">
                 Check your email
@@ -210,7 +210,7 @@ export function SignUpPage() {
                 Already have an account?{' '}
                 <Link
                   to="/login"
-                  className="font-medium text-accent-600 underline-offset-2 hover:underline"
+                  className="font-medium text-accent-ink underline-offset-2 hover:underline"
                 >
                   Sign in
                 </Link>

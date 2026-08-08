@@ -97,7 +97,7 @@ export function LoginPage() {
               </label>
               <Link
                 to="/login"
-                className="text-[12.5px] text-accent-600 underline-offset-2 hover:underline"
+                className="text-[12.5px] text-accent-ink underline-offset-2 hover:underline"
               >
                 Forgot password?
               </Link>
@@ -147,7 +147,7 @@ export function LoginPage() {
             Starting a new club?{' '}
             <Link
               to="/signup"
-              className="font-medium text-accent-600 underline-offset-2 hover:underline"
+              className="font-medium text-accent-ink underline-offset-2 hover:underline"
             >
               Set up your Campsite
             </Link>

@@ -35,7 +35,7 @@ export function CompletionCriteria({ feedback }: { feedback: GradeFeedback }) {
               {item.passed === true ? (
                 <Check
                   size={16}
-                  className="mt-0.5 shrink-0 text-accent-700"
+                  className="mt-0.5 shrink-0 text-accent-ink"
                   aria-hidden="true"
                 />
               ) : item.passed === false ? (

@@ -19,7 +19,7 @@ export function SavedIndicator({ status }: { status: SaveStatus }) {
 
   if (status === 'saved') {
     return (
-      <span role="status" className="flex items-center gap-1.5 text-[12.5px] text-accent-600">
+      <span role="status" className="flex items-center gap-1.5 text-[12.5px] text-accent-ink">
         <Check aria-hidden="true" className="h-3 w-3" />
         Saved
       </span>
@@ -170,7 +170,7 @@ export function VerificationChip({ verified }: { verified: boolean }) {
       className={cn(
         'inline-flex items-center gap-1.5 rounded-[5px] border px-2 py-0.5 text-xs font-medium',
         verified
-          ? 'border-accent-200 bg-accent-100 text-accent-600'
+          ? 'border-accent-200 bg-accent-100 text-accent-ink'
           : 'border-status-warning-border bg-status-warning-bg text-status-warning',
       )}
     >
