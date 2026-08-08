@@ -1,14 +1,16 @@
 import { useMemo } from 'react'
 import { mulberry32 } from '../lib/campsite'
+import { Moon } from './Moon'
 
 /**
- * Decorative campsite night sky: a gradient backdrop, a star field, and three
- * constellations. Purely presentational — it fills whatever element it is
- * dropped into and is hidden from assistive tech.
+ * Decorative campsite night sky: a gradient backdrop, a star field, three
+ * constellations, and the moon. Purely presentational — it fills whatever
+ * element it is dropped into and is hidden from assistive tech.
  *
  * The star field is stretched to cover any viewport shape, which dots and
- * lines survive. Everything below the horizon belongs to `Campsite`, which
- * keeps its aspect ratio so the pines never look squashed.
+ * lines survive. The moon does not, so `Moon` draws itself in its own
+ * aspect-preserving SVG. Everything below the horizon belongs to `Campsite`,
+ * which keeps its aspect ratio so the pines never look squashed.
  */
 
 const SKY_WIDTH = 960
@@ -72,16 +74,6 @@ export function NightSky() {
         viewBox={`0 0 ${SKY_WIDTH} ${SKY_HEIGHT}`}
         preserveAspectRatio="none"
       >
-        <defs>
-          <radialGradient id="moon-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#e6eaf2" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#e6eaf2" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <circle cx={860} cy={110} r={120} fill="url(#moon-glow)" />
-        <circle cx={860} cy={110} r={26} fill="#f4f7ff" opacity={0.9} />
-
         {stars.map((star, index) => (
           <circle
             key={`star-${index}`}
@@ -120,6 +112,8 @@ export function NightSky() {
           ))}
         </g>
       </svg>
+
+      <Moon />
 
       <style>{`
         .night-sky {
