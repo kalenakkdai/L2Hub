@@ -72,6 +72,7 @@ WRAPPED_APPROVE: Final = "wrapped.approve"
 WRAPPED_GENERATE: Final = "wrapped.generate"
 WRAPPED_EDIT: Final = "wrapped.edit"
 WRAPPED_PUBLISH: Final = "wrapped.publish"
+WRAPPED_PRESENT: Final = "wrapped.present"
 
 # notifications
 NOTIFICATIONS_VIEW_OWN: Final = "notifications.view_own"
@@ -151,6 +152,7 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
     (WRAPPED_GENERATE, "Activate or regenerate Event Summaries", "wrapped"),
     (WRAPPED_EDIT, "Edit Event Summary content", "wrapped"),
     (WRAPPED_PUBLISH, "Publish Wrapped reports", "wrapped"),
+    (WRAPPED_PRESENT, "Mark Event Wrapped as presented to the class", "wrapped"),
     (MATERIALS_VIEW_COMMITTEE, "View committee materials", "materials"),
     (MATERIALS_MANAGE_COMMITTEE, "Manage committee materials", "materials"),
     (MATERIALS_VIEW_ALL, "View all materials", "materials"),

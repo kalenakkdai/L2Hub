@@ -60,6 +60,7 @@ Responses never include author metadata.
 | `wrapped.generate` | Yes | Yes | No | No | No |
 | `wrapped.publish` | Yes | Yes | No | No | No |
 | `wrapped.edit` | Yes | Yes | No | No | No |
+| `wrapped.present` | Yes | Yes | Yes | No | No |
 | `wrapped.view_published` | Yes | Yes | Yes | Yes | Yes |
 | `agenda.generate` | Yes | Yes | No | No | No |
 | `notifications.view_own` | Yes | Yes | Yes | Yes | Yes |

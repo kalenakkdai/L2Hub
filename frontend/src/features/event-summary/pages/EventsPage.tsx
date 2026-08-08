@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ChevronRight } from 'lucide-react'
 import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { AppShell } from '../../../components/layout/AppShell'
 import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { CampsiteScene } from '../components/CampsiteScene'
+import { EventRecapPanel } from '../components/EventRecapPanel'
 import {
   fetchEvents,
   requestSummary,
@@ -32,6 +35,7 @@ export function EventsPage() {
   const queryClient = useQueryClient()
   const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser })
   const eventsQuery = useQuery({ queryKey: ['events'], queryFn: fetchEvents })
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   const requestMutation = useMutation({
     mutationFn: (eventRef: string) => requestSummary(eventRef),
@@ -81,6 +85,9 @@ export function EventsPage() {
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead className="border-b border-white/15 bg-white/[0.06]">
                 <tr>
+                  <th className="w-10 px-1 py-3">
+                    <span className="sr-only">Expand recap</span>
+                  </th>
                   <th className="px-4 py-3 text-xs font-semibold text-navy-ink-muted">
                     Event
                   </th>
@@ -93,54 +100,96 @@ export function EventsPage() {
                 </tr>
               </thead>
               <tbody>
-                {eventsQuery.data.events.map((event) => (
-                  <tr
-                    key={event.id}
-                    className="border-b border-white/10 last:border-b-0 hover:bg-white/[0.04]"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-navy-ink">
-                        {event.name} {event.year}
-                      </p>
-                      <p className="text-xs text-navy-ink-muted capitalize">
-                        {event.eventStatus}
-                      </p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <StatusBadge status={event.summaryStatus} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <ButtonLink
-                          to={`/events/${event.slug}/summary`}
-                          variant="navy"
-                          size="sm"
-                        >
-                          Open
-                        </ButtonLink>
-                        {event.summaryStatus === 'published' ||
-                        event.summaryStatus === 'generated' ? (
-                          <ButtonLink to={`/events/${event.slug}/wrapped`} size="sm">
-                            Wrapped
-                          </ButtonLink>
-                        ) : null}
-                        {canRequest &&
-                        event.eventStatus === 'complete' &&
-                        event.summaryStatus === 'not_requested' ? (
-                          <Button
+                {eventsQuery.data.events.flatMap((event) => {
+                  // The recap unlocks only once the class has been through the
+                  // full Wrapped together.
+                  const reviewed = Boolean(event.wrappedPresentedAt)
+                  const open = reviewed && expanded === event.id
+                  const panelId = `event-recap-${event.id}`
+
+                  return [
+                    <tr
+                      key={event.id}
+                      className="border-b border-white/10 last:border-b-0 hover:bg-white/[0.04]"
+                    >
+                      <td className="px-1 py-3 align-top">
+                        {reviewed ? (
+                          <button
                             type="button"
-                            size="sm"
-                            variant="navy"
-                            disabled={requestMutation.isPending}
-                            onClick={() => requestMutation.mutate(event.slug)}
+                            aria-expanded={open}
+                            aria-controls={panelId}
+                            onClick={() => setExpanded(open ? null : event.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-control text-navy-ink-muted hover:bg-white/10 hover:text-navy-ink"
                           >
-                            Generate Event Summary
-                          </Button>
+                            <span className="sr-only">
+                              {open ? 'Hide' : 'Show'} {event.name} {event.year} recap
+                            </span>
+                            <ChevronRight
+                              aria-hidden="true"
+                              size={16}
+                              className={`transition-transform duration-200 ${
+                                open ? 'rotate-90' : ''
+                              }`}
+                            />
+                          </button>
                         ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-semibold text-navy-ink">
+                          {event.name} {event.year}
+                        </p>
+                        <p className="text-xs text-navy-ink-muted capitalize">
+                          {event.eventStatus}
+                        </p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={event.summaryStatus} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <ButtonLink
+                            to={`/events/${event.slug}/summary`}
+                            variant="navy"
+                            size="sm"
+                          >
+                            Open
+                          </ButtonLink>
+                          {event.summaryStatus === 'published' ||
+                          event.summaryStatus === 'generated' ? (
+                            <ButtonLink to={`/events/${event.slug}/wrapped`} size="sm">
+                              Wrapped
+                            </ButtonLink>
+                          ) : null}
+                          {canRequest &&
+                          event.eventStatus === 'complete' &&
+                          event.summaryStatus === 'not_requested' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="navy"
+                              disabled={requestMutation.isPending}
+                              onClick={() => requestMutation.mutate(event.slug)}
+                            >
+                              Generate Event Summary
+                            </Button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>,
+                    open ? (
+                      <tr
+                        key={`${event.id}-recap`}
+                        className="border-b border-white/10"
+                      >
+                        <td colSpan={4} className="p-0">
+                          <div id={panelId} className="bg-white/[0.04]">
+                            <EventRecapPanel eventRef={event.slug} />
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null,
+                  ]
+                })}
               </tbody>
             </table>
           </div>

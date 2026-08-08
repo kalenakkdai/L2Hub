@@ -288,6 +288,84 @@ def publish_summary(db: Session, user: Profile, event: Event) -> EventSummary:
     return summary
 
 
+def mark_presented(db: Session, user: Profile, event: Event) -> EventSummary:
+    """Record that the Wrapped was walked through with the class.
+
+    The first walkthrough wins: calling this again keeps the original
+    timestamp, so a later viewer cannot rewrite when the class reviewed it.
+    """
+    authz.require_permission(db, user, pk.WRAPPED_PRESENT)
+    summary = get_or_create_summary(db, event)
+    if summary.status not in {"generated", "published"} or not summary.payload_json:
+        raise authz.permission_denied(
+            code="summary_not_ready",
+            message="Generate the Event Wrapped before presenting it to the class.",
+        )
+    if summary.presented_at is not None:
+        return summary
+
+    summary.presented_at = _utcnow()
+    summary.presented_by = user.id
+    write_audit_log(
+        db,
+        actor_user_id=user.id,
+        action="wrapped.present",
+        target_type="event",
+        target_id=event.id,
+    )
+    db.commit()
+    db.refresh(summary)
+    return summary
+
+
+def _theme_headline(theme: dict) -> dict:
+    """A theme stripped down to its headline.
+
+    Contributor quotes stay out of the recap entirely: they carry names and
+    committees, and some of them are anonymous.
+    """
+    return {
+        "id": theme.get("id"),
+        "label": theme.get("label"),
+        "mentions": theme.get("mentions"),
+        "summary": theme.get("summary"),
+    }
+
+
+def build_recap(event: Event, summary: EventSummary) -> dict:
+    """The condensed Wrapped shown when an event row is expanded."""
+    payload = json.loads(summary.payload_json or "{}")
+    wrapped = payload.get("wrapped", {})
+    executive = payload.get("executiveSummary", {})
+
+    return {
+        "event": event_list_item(event),
+        "presentedAt": summary.presented_at,
+        "hero": wrapped.get("hero"),
+        "overallRating": wrapped.get("overallRating"),
+        "participation": wrapped.get("participation"),
+        "committeeRankings": wrapped.get("committeeRankings", []),
+        "topStrengths": [_theme_headline(t) for t in wrapped.get("topStrengths", [])],
+        "topImprovements": [
+            _theme_headline(t) for t in wrapped.get("topImprovements", [])
+        ],
+        "materialRequests": wrapped.get("materialRequests", []),
+        "summary": executive.get("summary"),
+        "recommendedActions": executive.get("recommendedActions", []),
+    }
+
+
+def ensure_can_view_recap(db: Session, user: Profile, event: Event) -> EventSummary:
+    """The recap unlocks only once the class has been through the Wrapped."""
+    summary = ensure_can_view_wrapped(db, user, event)
+    if summary.presented_at is None:
+        raise authz.permission_denied(
+            code="wrapped_not_presented",
+            message="This recap unlocks after the Wrapped is reviewed with the class.",
+        )
+    return summary
+
+
 def ensure_can_view_wrapped(db: Session, user: Profile, event: Event) -> EventSummary:
     summary = get_or_create_summary(db, event)
     if summary.status == "published" and (
@@ -342,6 +420,11 @@ def event_list_item(event: Event) -> dict:
         "year": event.year,
         "eventStatus": event.status,
         "summaryStatus": status,
+        "wrappedPresentedAt": (
+            summary.presented_at.isoformat()
+            if summary and summary.presented_at
+            else None
+        ),
         "managingCommitteeId": (
             str(event.managing_committee_id) if event.managing_committee_id else None
         ),

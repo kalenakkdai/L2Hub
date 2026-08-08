@@ -16,10 +16,51 @@ export type EventListItem = {
   eventStatus: string
   summaryStatus: SummaryStatus
   managingCommitteeId: string | null
+  /** Set once the Wrapped has been walked through with the class. */
+  wrappedPresentedAt: string | null
   canRequest?: boolean
   canApprove?: boolean
   canGenerate?: boolean
   canPublish?: boolean
+  canPresent?: boolean
+}
+
+/** A theme headline. The recap never carries contributor quotes or names. */
+export type RecapTheme = {
+  id: string
+  label: string
+  mentions: number
+  summary: string
+}
+
+export type WrappedRecap = {
+  event: EventListItem
+  presentedAt: string | null
+  hero: {
+    title: string
+    tagline: string
+    contributors: number
+    submissionRate: number
+  } | null
+  overallRating: { score: number; max: number; stars?: number } | null
+  participation: {
+    invited: number
+    submitted: number
+    absent: number
+    completionPercent: number
+  } | null
+  committeeRankings: Array<{ name: string; rating: number }>
+  topStrengths: RecapTheme[]
+  topImprovements: RecapTheme[]
+  materialRequests: Array<{
+    name: string
+    requests: number
+    quantity: number
+    estimatedCost: number
+    purchasingUrl?: string
+  }>
+  summary: string | null
+  recommendedActions: string[]
 }
 
 export type GenerationStatus = {
@@ -120,6 +161,22 @@ export function publishSummary(eventRef: string) {
 
 export function fetchWrapped(eventRef: string) {
   return apiFetch<WrappedPayload>(`/events/${eventRef}/wrapped`)
+}
+
+/**
+ * Records that the class has now been through this Wrapped. The server stamps
+ * the time and keeps the first walkthrough, so repeat calls are harmless.
+ */
+export function markWrappedPresented(eventRef: string) {
+  return apiFetch<{ status: string; presentedAt: string | null }>(
+    `/events/${eventRef}/wrapped/presented`,
+    { method: 'POST' },
+  )
+}
+
+/** The condensed Wrapped shown when an event row is expanded. */
+export function fetchWrappedRecap(eventRef: string) {
+  return apiFetch<WrappedRecap>(`/events/${eventRef}/recap`)
 }
 
 export function fetchAgenda(eventRef: string) {

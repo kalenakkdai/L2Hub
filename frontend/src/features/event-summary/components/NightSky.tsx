@@ -1,34 +1,18 @@
 import { useMemo } from 'react'
+import { mulberry32 } from '../lib/campsite'
 
 /**
- * Decorative campsite night sky: star field, two constellations, a layered
- * treeline, and a campfire glow. Purely presentational — it fills whatever
- * element it is dropped into and is hidden from assistive tech.
+ * Decorative campsite night sky: a gradient backdrop, a star field, and three
+ * constellations. Purely presentational — it fills whatever element it is
+ * dropped into and is hidden from assistive tech.
  *
- * The sky is drawn as three layers so it can cover any viewport shape without
- * cropping the parts that matter: a CSS gradient underneath, a stretched star
- * field (dots and lines survive distortion), and a bottom-anchored treeline
- * that keeps its aspect ratio so the pines never look squashed.
+ * The star field is stretched to cover any viewport shape, which dots and
+ * lines survive. Everything below the horizon belongs to `Campsite`, which
+ * keeps its aspect ratio so the pines never look squashed.
  */
 
 const SKY_WIDTH = 960
 const SKY_HEIGHT = 1080
-
-const GROUND_WIDTH = 960
-const GROUND_HEIGHT = 300
-const HORIZON = 96
-
-// A seeded generator keeps the sky identical between renders. Math.random would
-// reshuffle every star on each React update.
-function mulberry32(seed: number) {
-  let a = seed
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 type Star = { x: number; y: number; r: number; opacity: number; delay: number }
 
@@ -46,21 +30,6 @@ function buildStars(seed: number, count: number): Star[] {
       delay: random() * 6,
     }
   })
-}
-
-/** Peaks alternate with valleys so the silhouette reads as pines, not sawteeth. */
-function treeline(seed: number, baseY: number, peaks: number): string {
-  const random = mulberry32(seed)
-  const step = GROUND_WIDTH / peaks
-  let path = `M -30 ${GROUND_HEIGHT} L -30 ${baseY}`
-
-  for (let i = 0; i <= peaks; i += 1) {
-    const x = i * step
-    const height = 30 + random() * 46
-    path += ` L ${x - step / 2} ${baseY} L ${x} ${baseY - height} L ${x + step / 2} ${baseY}`
-  }
-
-  return `${path} L ${GROUND_WIDTH + 30} ${baseY} L ${GROUND_WIDTH + 30} ${GROUND_HEIGHT} Z`
 }
 
 // Fixed shapes, so the constellations stay recognisable rather than random.
@@ -152,30 +121,6 @@ export function NightSky() {
         </g>
       </svg>
 
-      <svg
-        className="absolute inset-x-0 bottom-0 h-[280px] w-full"
-        viewBox={`0 0 ${GROUND_WIDTH} ${GROUND_HEIGHT}`}
-        preserveAspectRatio="xMidYMax slice"
-      >
-        <defs>
-          <radialGradient id="campfire-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.45" />
-            <stop offset="55%" stopColor="#f97316" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <ellipse cx={196} cy={HORIZON + 96} rx={170} ry={72} fill="url(#campfire-glow)" />
-
-        <path d={treeline(4242, HORIZON, 14)} fill="#0b1a12" opacity={0.85} />
-        <path d={treeline(9137, HORIZON + 30, 11)} fill="#050f0a" />
-
-        <g className="campfire">
-          <path d="M186 262 L196 228 L206 262 Z" fill="#f97316" opacity={0.9} />
-          <path d="M191 262 L196 242 L201 262 Z" fill="#fcd34d" />
-        </g>
-      </svg>
-
       <style>{`
         .night-sky {
           background: linear-gradient(
@@ -190,20 +135,9 @@ export function NightSky() {
           animation: nightTwinkle 5.5s ease-in-out infinite;
         }
 
-        .campfire {
-          transform-origin: 196px 262px;
-          animation: campfireFlicker 2.4s ease-in-out infinite;
-        }
-
         @keyframes nightTwinkle {
           0%, 100% { opacity: 0.35; }
           50% { opacity: 1; }
-        }
-
-        @keyframes campfireFlicker {
-          0%, 100% { transform: scaleY(1); opacity: 0.95; }
-          40% { transform: scaleY(1.18); opacity: 1; }
-          70% { transform: scaleY(0.92); opacity: 0.85; }
         }
 
         /* The global reduced-motion rule freezes animations mid-keyframe, which

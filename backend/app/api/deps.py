@@ -11,11 +11,21 @@ from app.core.security import AuthConfigurationError, AuthError, verify_token
 from app.db.session import get_db
 from app.models.profile import Profile
 from app.services import authorization as authz
+from app.storage.factory import get_storage_singleton
+from app.storage.protocol import ObjectStorage
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 DbSession = Annotated[Session, Depends(get_db)]
 BearerToken = Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)]
+
+
+def get_storage() -> ObjectStorage:
+    """Inject the configured object store (local folder today; S3/GCS later)."""
+    return get_storage_singleton()
+
+
+Storage = Annotated[ObjectStorage, Depends(get_storage)]
 
 _UNAUTHENTICATED = {"WWW-Authenticate": "Bearer"}
 

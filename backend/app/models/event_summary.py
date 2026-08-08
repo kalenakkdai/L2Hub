@@ -63,6 +63,12 @@ class EventSummary(Base):
     published_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
     )
+    # Set the first time the Wrapped is walked through with the class. The
+    # per-event recap stays hidden until then.
+    presented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    presented_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

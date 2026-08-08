@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { fetchCurrentUser } from '../../../api/auth'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { ApiError } from '../../../api/client'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
+import { CampsiteScene } from '../components/CampsiteScene'
 import { FeedbackConstellation } from '../components/FeedbackConstellation'
-import { fetchWrapped } from '../api'
+import { fetchWrapped, markWrappedPresented } from '../api'
 
 type Slide =
   | { id: string; title: string; body: React.ReactNode }
@@ -30,11 +31,21 @@ export function WrappedPage() {
   const reducedMotion = usePrefersReducedMotion()
   const [index, setIndex] = useState(0)
   const [listMode, setListMode] = useState(false)
+  const queryClient = useQueryClient()
   const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser })
   const wrappedQuery = useQuery({
     queryKey: ['events', eventId, 'wrapped'],
     queryFn: () => fetchWrapped(eventId),
     enabled: Boolean(eventId),
+  })
+
+  const canPresent = hasPermission(meQuery.data, 'wrapped.present')
+  const presentMutation = useMutation({
+    mutationFn: () => markWrappedPresented(eventId),
+    onSuccess: () => {
+      // The events list uses this to unlock each event's recap drop-down.
+      void queryClient.invalidateQueries({ queryKey: ['events'] })
+    },
   })
 
   const slides = useMemo((): Slide[] => {
@@ -319,6 +330,33 @@ export function WrappedPage() {
     ]
   }, [eventId, listMode, reducedMotion, wrappedQuery.data])
 
+  // Pitch a tent for the committees this event actually ran with, falling back
+  // to the full Leadership roster when Wrapped does not name them.
+  const wrappedCommittees = useMemo(() => {
+    const w = wrappedQuery.data?.wrapped as Record<string, any> | undefined
+    const named = [
+      ...((w?.committeeBreakdown ?? []) as Array<{ name?: string }>),
+      ...((w?.committeeRankings ?? []) as Array<{ name?: string }>),
+    ]
+      .map((entry) => entry?.name)
+      .filter((name): name is string => Boolean(name?.trim()))
+    return named.length > 0 ? Array.from(new Set(named)) : undefined
+  }, [wrappedQuery.data])
+
+  // Reaching the final slide of the deck is what counts as having gone through
+  // the Wrapped with the class. A ref keeps it to one call per visit; the
+  // server ignores repeats anyway and owns the timestamp.
+  const markedPresented = useRef(false)
+  const reachedEnd = slides.length > 0 && index >= slides.length - 1
+  const alreadyPresented = Boolean(wrappedQuery.data?.event.wrappedPresentedAt)
+
+  useEffect(() => {
+    if (listMode || !reachedEnd || !canPresent || alreadyPresented) return
+    if (markedPresented.current) return
+    markedPresented.current = true
+    presentMutation.mutate()
+  }, [alreadyPresented, canPresent, listMode, presentMutation, reachedEnd])
+
   useEffect(() => {
     if (listMode || reducedMotion) return
     const onKey = (event: KeyboardEvent) => {
@@ -369,15 +407,29 @@ export function WrappedPage() {
             <h1 className="text-2xl font-semibold text-white">
               {wrappedQuery.data.event.name} Wrapped
             </h1>
-            {!reducedMotion ? (
-              <button
-                type="button"
-                className="text-sm underline"
-                onClick={() => setListMode(false)}
-              >
-                Story view
-              </button>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              {canPresent && !alreadyPresented ? (
+                <button
+                  type="button"
+                  className="rounded-control border border-emerald-300/40 px-3 py-1.5 text-sm font-medium text-emerald-100 disabled:opacity-50"
+                  disabled={presentMutation.isPending || presentMutation.isSuccess}
+                  onClick={() => presentMutation.mutate()}
+                >
+                  {presentMutation.isSuccess
+                    ? 'Recap unlocked'
+                    : 'Mark reviewed with class'}
+                </button>
+              ) : null}
+              {!reducedMotion ? (
+                <button
+                  type="button"
+                  className="text-sm underline"
+                  onClick={() => setListMode(false)}
+                >
+                  Story view
+                </button>
+              ) : null}
+            </div>
           </div>
           <div className="space-y-10">
             {slides.map((s) => (
@@ -400,7 +452,7 @@ export function WrappedPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,#14532d_0%,#062016_55%,#03140d_100%)] text-emerald-50">
-      <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:24px_24px]" />
+      <CampsiteScene committees={wrappedCommittees} fullBleed owl={false} />
       <div className="relative z-10 flex min-h-screen flex-col">
         <header className="flex items-center justify-between px-4 py-4 sm:px-8">
           <Link to={`/events/${eventId}/summary`} className="text-sm text-emerald-100/80">
@@ -430,23 +482,32 @@ export function WrappedPage() {
           </div>
         </main>
 
-        <footer className="flex items-center justify-center gap-3 px-4 py-6">
-          <button
-            type="button"
-            className="h-10 rounded-control border border-white/20 px-4 text-sm disabled:opacity-40"
-            disabled={index === 0}
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            className="h-10 rounded-control bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:opacity-40"
-            disabled={index >= slides.length - 1}
-            onClick={() => setIndex((i) => Math.min(slides.length - 1, i + 1))}
-          >
-            Next
-          </button>
+        <footer className="flex flex-col items-center gap-2 px-4 py-6">
+          {canPresent &&
+          reachedEnd &&
+          (alreadyPresented || presentMutation.isSuccess) ? (
+            <p className="text-xs text-emerald-200/80" role="status">
+              Reviewed with the class — the recap is now open on the events list.
+            </p>
+          ) : null}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              className="h-10 rounded-control border border-white/20 px-4 text-sm disabled:opacity-40"
+              disabled={index === 0}
+              onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="h-10 rounded-control bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 disabled:opacity-40"
+              disabled={index >= slides.length - 1}
+              onClick={() => setIndex((i) => Math.min(slides.length - 1, i + 1))}
+            >
+              Next
+            </button>
+          </div>
         </footer>
       </div>
       <style>{`

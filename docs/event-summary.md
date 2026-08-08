@@ -31,6 +31,7 @@ published
 | Approve / reject | Yes | Yes | No | No | No |
 | Generate / regenerate | Yes | Yes | No | No | No |
 | Publish | Yes | Yes | No | No | No |
+| Mark reviewed with class | Yes | Yes | Yes | No | No |
 | View draft Wrapped | Yes | Yes | No | No | No |
 | View published Wrapped | Yes | Yes | Yes | Yes | Yes |
 | Generate agenda | Yes | Yes | No | No | No |
@@ -60,6 +61,23 @@ written to `event_summaries.generation_stage` and polled via
 Payload includes Wrapped slides, Feedback Constellation graph, executive
 summary, and agenda draft. Anonymous contributors are redacted (no author
 ids/names in API responses for anonymous quotes).
+
+## Class review and the event recap
+
+Each event row on `/events` has an expander arrow that drops down a condensed
+Wrapped recap. It stays hidden until the class has been through the Wrapped
+together.
+
+- `POST /events/{ref}/wrapped/presented` (`wrapped.present`) stamps
+  `event_summaries.presented_at` from the server clock. The first walkthrough
+  wins, so repeat calls never move the timestamp.
+- The Wrapped deck fires this when the presenter reaches the final slide; list
+  view offers the same action as a button for reduced-motion presenters.
+- `GET /events/{ref}/recap` returns the recap and 403s with
+  `wrapped_not_presented` until then. It also enforces the normal Wrapped view
+  rules, so members still see nothing before publish.
+- The recap carries theme headlines only — never contributor quotes, names, or
+  committees — so anonymous feedback cannot be traced through it.
 
 ## Frontend routes
 

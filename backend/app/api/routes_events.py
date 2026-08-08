@@ -62,6 +62,7 @@ def get_event(event_ref: str, profile: CurrentProfile, db: DbSession) -> dict:
     item["canApprove"] = authz.has_permission(db, profile, pk.WRAPPED_APPROVE)
     item["canGenerate"] = authz.has_permission(db, profile, pk.WRAPPED_GENERATE)
     item["canPublish"] = authz.has_permission(db, profile, pk.WRAPPED_PUBLISH)
+    item["canPresent"] = authz.has_permission(db, profile, pk.WRAPPED_PRESENT)
     return item
 
 
@@ -144,6 +145,23 @@ def get_wrapped(event_ref: str, profile: CurrentProfile, db: DbSession) -> dict:
         "graph": payload["graph"],
         "executiveSummary": payload["executiveSummary"],
     }
+
+
+@router.post("/events/{event_ref}/wrapped/presented")
+def mark_wrapped_presented(event_ref: str, profile: CurrentProfile, db: DbSession) -> dict:
+    event = _get_event(db, event_ref)
+    summary = summary_service.mark_presented(db, profile, event)
+    return {
+        "status": summary.status,
+        "presentedAt": summary.presented_at,
+    }
+
+
+@router.get("/events/{event_ref}/recap")
+def get_wrapped_recap(event_ref: str, profile: CurrentProfile, db: DbSession) -> dict:
+    event = _get_event(db, event_ref)
+    summary = summary_service.ensure_can_view_recap(db, profile, event)
+    return summary_service.build_recap(event, summary)
 
 
 @router.get("/events/{event_ref}/agenda")

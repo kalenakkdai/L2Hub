@@ -44,3 +44,4 @@ Thumbs.db
 
 # Alembic / local runtime
 backend/*.db
+backend/.local-storage/

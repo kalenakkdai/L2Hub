@@ -45,6 +45,20 @@ identities. Schema changes are versioned SQL files in `supabase/migrations/`.
 SQLite remains the fallback for tests and for running without a Supabase
 project configured.
 
+## Object storage
+
+File blobs (screenshots, future knowledge uploads) go through an injectable
+`ObjectStorage` protocol in `backend/app/storage/`. Call sites depend on the
+protocol via FastAPI `Depends(get_storage)`, not a concrete folder or bucket.
+
+| `STORAGE_BACKEND` | Implementation |
+|-------------------|----------------|
+| `local` (default) | Files under `STORAGE_LOCAL_ROOT` or `backend/.local-storage` |
+| `s3` / `gcs` | Reserved — swap in a cloud backend later without changing callers |
+
+Keys are opaque UUIDs (never original filenames) so anonymous attachments
+cannot leak author identity through storage paths.
+
 ## Roles
 
 Five protected system roles (Discord-inspired hierarchy). See

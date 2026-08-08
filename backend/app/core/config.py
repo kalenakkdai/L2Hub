@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     # Access tokens issued by Supabase Auth carry aud="authenticated".
     supabase_jwt_audience: str = "authenticated"
 
+    # Object storage (files, screenshots, future knowledge uploads).
+    # `local` writes under STORAGE_LOCAL_ROOT on this machine. Later swap to
+    # `s3` or `gcs` without changing call sites that depend on ObjectStorage.
+    storage_backend: str = "local"
+    # Empty → backend/.local-storage. Absolute or ~ paths are fine.
+    storage_local_root: str = ""
+
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding="utf-8",
