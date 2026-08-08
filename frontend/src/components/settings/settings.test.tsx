@@ -414,3 +414,27 @@ describe('module toggles gate navigation', () => {
     expect(filterNavSections(gated, ['users.view'], {})[0].items).toHaveLength(1)
   })
 })
+
+describe('avatar validation', () => {
+  const file = (type: string, size: number) =>
+    new File([new Uint8Array(size)], 'a', { type })
+
+  it('accepts the image types the bucket allows', async () => {
+    const { validateAvatar } = await import('../../lib/avatars')
+    for (const type of ['image/png', 'image/jpeg', 'image/webp', 'image/gif']) {
+      expect(validateAvatar(file(type, 1000))).toBeNull()
+    }
+  })
+
+  it('rejects a type the bucket would refuse anyway', async () => {
+    const { validateAvatar } = await import('../../lib/avatars')
+    // Checked here so the camper is told before a slow upload fails.
+    expect(validateAvatar(file('application/pdf', 10))).toBe('unsupported_type')
+  })
+
+  it('rejects a file over the bucket size limit', async () => {
+    const { validateAvatar, MAX_BYTES } = await import('../../lib/avatars')
+    expect(validateAvatar(file('image/png', MAX_BYTES + 1))).toBe('too_large')
+    expect(validateAvatar(file('image/png', MAX_BYTES))).toBeNull()
+  })
+})

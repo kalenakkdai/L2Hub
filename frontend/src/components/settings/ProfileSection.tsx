@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Upload } from 'lucide-react'
 import { Field, FIELD_CLASS, SettingsCard } from './primitives'
+import { AvatarField } from './AvatarField'
 import { roleLabel } from '../../api/auth'
 import type { CurrentUser } from '../../api/auth'
 import type { SaveStatus } from '../../hooks/useProfile'
@@ -155,30 +155,14 @@ export function ProfileSection({
           </select>
         </Field>
 
-        <Field label="Avatar" htmlFor="avatar" hint="Image uploads are not wired up yet.">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-100 text-[13px] font-semibold text-accent-600"
-            >
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (profile.full_name ?? profile.email).slice(0, 1).toUpperCase()
-              )}
-            </span>
-            <button
-              id="avatar"
-              type="button"
-              disabled
-              title="Avatar upload needs a storage bucket, which is not set up yet."
-              className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-control border border-border-subtle px-3 text-sm text-ink-subtle opacity-60"
-            >
-              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
-              Upload
-            </button>
-          </div>
-        </Field>
+        <AvatarField
+          avatarUrl={profile.avatar_url}
+          fallback={profile.full_name ?? profile.email}
+          onChange={(url) => {
+            save({ avatar_url: url })
+            saveNow()
+          }}
+        />
       </div>
 
       <div className="mt-5 border-t border-border-divider pt-4">
