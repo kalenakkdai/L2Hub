@@ -7,11 +7,14 @@ table profiles" while its component tests were green. This script exercises the
 same HTTP calls the browser makes, signed in as a seeded development account.
 
 Usage:
-    python3 scripts/verify_live.py audit         # GRANT vs RLS across all tables
-    python3 scripts/verify_live.py escalation    # can a member exceed their role?
-    python3 scripts/verify_live.py settings      # profile + preference writes
-    python3 scripts/verify_live.py avatars       # storage bucket rules
+    python3 scripts/verify_live.py escalation     # can a member exceed their role?
+    python3 scripts/verify_live.py settings       # profile + preference writes
+    python3 scripts/verify_live.py avatars        # storage bucket rules
+    python3 scripts/verify_live.py notifications  # notifications read path
     python3 scripts/verify_live.py all
+
+`notifications` needs the FastAPI backend running; the rest talk to Supabase
+directly.
 
 Everything it writes, it removes. The project is shared with another
 developer, so leaving test rows behind is not acceptable.
@@ -189,13 +192,25 @@ def check_settings(report: Report) -> None:
             f"/rest/v1/profiles?id=eq.{user_id}", "PATCH", {column: value}, token) == 0)
 
     print("\nNotification preferences")
+    # wrapped_activity is the only event type the grid offers, so it is the
+    # one a real toggle writes. It exists only after 20260813000000.
     status, _ = call(
         "/rest/v1/notification_preferences", "POST",
-        {"profile_id": user_id, "event_type": "task_assigned", "channel": "in_app",
+        {"profile_id": user_id, "event_type": "wrapped_activity", "channel": "in_app",
          "enabled": False},
         token=token, headers={"Prefer": "resolution=merge-duplicates"},
     )
-    report.check("write own preference", status in (200, 201, 204))
+    report.check("write own preference (wrapped_activity)", status in (200, 201, 204))
+
+    # The check constraint is the last line of defence against a typo in an
+    # event type reaching the table and silently never matching anything.
+    status, _ = call(
+        "/rest/v1/notification_preferences", "POST",
+        {"profile_id": user_id, "event_type": "not_a_real_event", "channel": "in_app",
+         "enabled": False},
+        token=token, headers={"Prefer": "resolution=merge-duplicates"},
+    )
+    report.check("rejected: unknown event type", status not in (200, 201, 204))
 
     # Restore.
     call(f"/rest/v1/notification_preferences?profile_id=eq.{user_id}", "DELETE", token=token)
@@ -234,11 +249,20 @@ def check_avatars(report: Report) -> None:
 
 
 def check_notifications(report: Report) -> None:
-    """Gating, end to end: preference -> API -> row written or not.
+    """The notifications read path, against the real backend and database.
+
+    Covers listing, the unread count, mark-all-read, and that an id belonging
+    to nobody changes nothing.
+
+    NOT covered: that a preference actually suppresses a row. Proving that
+    needs a real emitter to fire — requesting a Wrapped as the seeded ASBO
+    account — with the preference off and then on, and the resulting rows
+    cleaned out of a database shared with another developer. Until that exists,
+    the gating rules are only proven by the unit tests in
+    backend/tests/test_notifications.py, which is not the same claim.
 
     Drives the real backend, so the FastAPI server must be running on
-    VITE_API_BASE_URL. Uses the seeded ASBO account, which can request a
-    Wrapped and therefore triggers a notification to the superadmins.
+    VITE_API_BASE_URL.
     """
     import urllib.parse
 
