@@ -27,6 +27,7 @@ build/
 
 # Local SQLite databases
 *.db
+*.db.bak-*
 *.sqlite
 *.sqlite3
 
