@@ -91,3 +91,22 @@ def test_dashboard_endpoint_modules(client, make_token, seeded):
     keys = {module["key"] for module in body["modules"]}
     assert "feedback_review" in keys
     assert "user_management" in keys
+
+
+def test_users_list_reports_status_as_stored(client, make_token, seeded, db_session):
+    """The roster must not round a missing status up to 'active'.
+
+    _list_item used `profile.status or "active"`. This is the list staff read
+    when choosing who to hand administration to, and transfer_admin refuses a
+    recipient whose status is not 'active' — so a status the server could not
+    read should never be displayed as the one value that unblocks the transfer.
+    """
+    member = seeded["community_member"]
+    member.status = ""
+    db_session.flush()
+
+    response = client.get("/admin/users", headers=auth_header(make_token, seeded["ac"].id))
+
+    assert response.status_code == 200
+    listed = {user["email"]: user["status"] for user in response.json()["users"]}
+    assert listed[member.email] == ""

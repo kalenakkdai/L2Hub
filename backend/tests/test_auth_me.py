@@ -55,3 +55,29 @@ def test_role_comes_from_the_database_not_the_token(client, make_token, make_pro
         )
         assert response.status_code == 200
         assert response.json()["role"] == "member"
+
+
+@pytest.mark.parametrize("stored", ["left", ""])
+def test_status_is_reported_as_stored(stored, client, make_token, make_profile, db_session):
+    """Whatever is in the column is what the client is told.
+
+    /auth/me used to read `getattr(profile, "status", "active") or "active"`,
+    and the users list used `profile.status or "active"`. The column is NOT
+    NULL with a default, so the fallback could not fire in normal operation —
+    its only effect was to report a camper as active if the value ever went
+    missing, which is exactly when the caller needs to know that it did.
+
+    The empty case is the one that discriminates: 'left' is truthy and
+    survived the old code untouched, so a test using only 'left' would have
+    passed against the bug.
+    """
+    profile = make_profile(email="gone@example.edu")
+    profile.status = stored
+    db_session.flush()
+
+    response = client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {make_token(sub=profile.id)}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == stored

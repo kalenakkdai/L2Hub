@@ -22,7 +22,7 @@ def read_current_user(profile: CurrentProfile, db: DbSession) -> CurrentUser:
         email=profile.email,
         full_name=profile.full_name,
         role=authz.primary_role_slug(ctx),
-        status=getattr(profile, "status", "active") or "active",
+        status=profile.status,
         created_at=profile.created_at,
         roles=[RoleAssignmentOut(**role) for role in ctx.roles],
         permissions=sorted(ctx.permissions),

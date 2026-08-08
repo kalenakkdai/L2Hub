@@ -66,7 +66,7 @@ def _list_item(db: DbSession, profile: Profile) -> UserListItem:
         id=profile.id,
         email=profile.email,
         full_name=profile.full_name,
-        status=profile.status or "active",
+        status=profile.status,
         primary_role=primary_role,
         roles=roles,
         committees=committees,
