@@ -273,3 +273,38 @@
     display: none;
   }
 }
+
+/* The in-app "reduce motion" preference, which is an override rather than a
+ * duplicate of the OS setting above: it lets someone quiet this app without
+ * changing how their whole machine behaves.
+ *
+ * This kills hover transforms and the celebration animations outright — the
+ * setting is not a hint. Imperative animation (the confetti burst, the points
+ * count-up) reads the same attribute through prefersReducedMotion(). */
+:root[data-reduce-motion='true'] *,
+:root[data-reduce-motion='true'] *::before,
+:root[data-reduce-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-reduce-motion='true'] *:hover {
+  transform: none !important;
+}
+
+:root[data-reduce-motion='true'] [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+:root[data-reduce-motion='true'] .confetti-burst {
+  display: none;
+}
+
+/* Compact density tightens the whole spacing scale from one lever, rather
+ * than every component carrying a second set of paddings. */
+:root[data-density='compact'] {
+  --spacing: 0.21875rem;
+}

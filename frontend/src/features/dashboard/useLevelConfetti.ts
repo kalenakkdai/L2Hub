@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { prefersReducedMotion } from '../../lib/appearance'
 
 const STORAGE_KEY = 'quad.level'
 const COLORS = ['#12372A', '#9BE3BE', '#D99B12', '#A7F3D0']
@@ -35,12 +36,8 @@ export function useLevelConfetti<T extends HTMLElement>(level: number) {
   useEffect(() => {
     if (!Number.isFinite(level) || alreadyCelebrated(level)) return
 
-    const reduced =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
     remember(level)
-    if (reduced) return
+    if (prefersReducedMotion()) return
 
     const timer = window.setTimeout(() => {
       const host = ref.current

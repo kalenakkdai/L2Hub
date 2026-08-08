@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+import { prefersReducedMotion } from '../../lib/appearance'
 
 /**
  * Counts from 0 up to `target` over `duration`, eased out.
