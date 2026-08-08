@@ -90,6 +90,21 @@ QUERIES: dict[str, str] = {
         where n.nspname = 'public' and not t.tgisinternal
         order by c.relname, t.tgname
     """,
+    # Bodies, not just names. A trigger keeps its name while the function it
+    # calls is replaced, so comparing triggers alone says nothing about what
+    # they now do — 20260814000000 changed two function bodies and nothing
+    # else, and every other check here would have reported IDENTICAL whether
+    # or not it had reached the other database.
+    #
+    # Hashed to keep a difference readable: the name tells you which function
+    # to look at, without printing two copies of the source.
+    "function_bodies": """
+        select p.proname, md5(pg_get_functiondef(p.oid))
+        from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public' and p.prokind = 'f'
+        order by p.proname
+    """,
 }
 
 
