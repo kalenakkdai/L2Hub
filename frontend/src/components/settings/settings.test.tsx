@@ -5,7 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConfirmDialog, Toggle, VerificationChip } from './primitives'
 import { DangerZone } from './DangerZone'
 import { NotificationsGrid } from './NotificationsGrid'
-import { applyAppearance, prefersReducedMotion } from '../../lib/appearance'
+import {
+  applyAccentColor,
+  applyAppearance,
+  contrastRatio,
+  prefersReducedMotion,
+  resolveTheme,
+} from '../../lib/appearance'
+import { filterNavSections, type NavSection } from '../layout/navigation'
 import { CHANNELS, EVENT_TYPES } from '../../hooks/useNotificationPrefs'
 import type { SettingsProfile } from '../../hooks/useProfile'
 
@@ -304,5 +311,106 @@ describe('appearance', () => {
     applyAppearance({ theme: 'system', reduceMotion: true, compactDensity: false }, root)
     // This is what stops the confetti and the count-up, which CSS cannot reach.
     expect(prefersReducedMotion(root)).toBe(true)
+  })
+})
+
+describe('accent colour', () => {
+  it('applies a colour dark enough to carry white text', () => {
+    const root = document.createElement('html')
+
+    expect(applyAccentColor('#12372a', root)).toBe(true)
+    expect(root.style.getPropertyValue('--color-accent-600')).toBe('#12372a')
+    // The hover step is derived rather than asked for.
+    expect(root.style.getPropertyValue('--color-accent-700')).not.toBe('')
+  })
+
+  it('refuses a colour that would make button text unreadable', () => {
+    const root = document.createElement('html')
+
+    // Pale yellow: 1.1:1 against white. A Campsite must not be able to
+    // configure itself into invisible buttons.
+    expect(applyAccentColor('#ffee88', root)).toBe(false)
+    expect(root.style.getPropertyValue('--color-accent-600')).toBe('')
+  })
+
+  it('clears back to the default palette when unset', () => {
+    const root = document.createElement('html')
+    applyAccentColor('#12372a', root)
+
+    expect(applyAccentColor(null, root)).toBe(false)
+    expect(root.style.getPropertyValue('--color-accent-600')).toBe('')
+  })
+
+  it('ignores a malformed colour rather than writing garbage', () => {
+    const root = document.createElement('html')
+    expect(applyAccentColor('not-a-colour', root)).toBe(false)
+  })
+
+  it('computes contrast the way WCAG does', () => {
+    // Black on white is the maximum, 21:1.
+    expect(Math.round(contrastRatio('#000000', '#ffffff') ?? 0)).toBe(21)
+    expect(contrastRatio('#ffffff', '#ffffff')).toBe(1)
+  })
+})
+
+describe('theme resolution', () => {
+  it.each([
+    ['light', 'light'],
+    ['dark', 'dark'],
+  ] as const)('passes %s through unchanged', (theme, expected) => {
+    expect(resolveTheme(theme)).toBe(expected)
+  })
+
+  it('resolves system to something the stylesheet can use', () => {
+    expect(['light', 'dark']).toContain(resolveTheme('system'))
+  })
+})
+
+describe('module toggles gate navigation', () => {
+  const sections: NavSection[] = [
+    {
+      items: [
+        { label: 'Dashboard', to: '/dashboard', icon: (() => null) as never },
+        { label: 'Grades', to: '/grades', module: 'grades', icon: (() => null) as never },
+      ],
+    },
+  ]
+
+  it('hides a module the Campsite switched off', () => {
+    const filtered = filterNavSections(sections, [], { grades: false })
+
+    expect(filtered[0].items.map((item) => item.label)).toEqual(['Dashboard'])
+  })
+
+  it('shows a module that is switched on', () => {
+    const filtered = filterNavSections(sections, [], { grades: true })
+
+    expect(filtered[0].items.map((item) => item.label)).toEqual(['Dashboard', 'Grades'])
+  })
+
+  it('treats an unconfigured module as available', () => {
+    // A new feature should not be invisible until someone remembers to
+    // switch it on.
+    const filtered = filterNavSections(sections, [], {})
+
+    expect(filtered[0].items.map((item) => item.label)).toEqual(['Dashboard', 'Grades'])
+  })
+
+  it('still applies permission gating alongside module gating', () => {
+    const gated: NavSection[] = [
+      {
+        items: [
+          {
+            label: 'Campers',
+            to: '/admin/users',
+            permission: 'users.view',
+            icon: (() => null) as never,
+          },
+        ],
+      },
+    ]
+
+    expect(filterNavSections(gated, [], {})).toEqual([])
+    expect(filterNavSections(gated, ['users.view'], {})[0].items).toHaveLength(1)
   })
 })

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { makeSession, type SupabaseMock } from '../../test/supabaseMock'
 import { renderWithProviders } from '../../test/renderWithProviders'
 
@@ -20,6 +21,7 @@ vi.mock('../../lib/supabase', async () => {
 
 const { supabase } = await import('../../lib/supabase')
 const { AppRoutes } = await import('../../AppRoutes')
+const { AppearanceEffect } = await import('../../components/AppearanceEffect')
 
 const mock = supabase as unknown as SupabaseMock
 
@@ -61,20 +63,33 @@ const CAMPSITE_ROW = {
   },
 }
 
-/** Serves the rows each settings page reads, keyed by table. */
+/**
+ * Serves the rows each settings page reads, and *remembers writes*.
+ *
+ * A stub that always replays its initial row would hide the refetch after a
+ * save overwriting an optimistic update, so it has to behave like a database
+ * and reflect what was written.
+ */
 function stubTables() {
+  const rows: Record<string, Record<string, unknown>> = {
+    profiles: { ...PROFILE_ROW },
+    campsite_settings: { ...CAMPSITE_ROW },
+  }
+
   mock.from = vi.fn((table: string) => {
-    const row = table === 'profiles' ? PROFILE_ROW : table === 'campsite_settings' ? CAMPSITE_ROW : null
-    const rows = Promise.resolve({ data: [], error: null })
+    const empty = Promise.resolve({ data: [], error: null })
     const builder: Record<string, unknown> = {
       select: vi.fn(() => builder),
       eq: vi.fn(() => builder),
-      single: vi.fn(async () => ({ data: row, error: null })),
+      single: vi.fn(async () => ({ data: rows[table] ?? null, error: null })),
       upsert: vi.fn(async () => ({ data: null, error: null })),
-      update: vi.fn(() => builder),
-      then: rows.then.bind(rows),
-      catch: rows.catch.bind(rows),
-      finally: rows.finally.bind(rows),
+      update: vi.fn((patch: Record<string, unknown>) => {
+        if (rows[table]) Object.assign(rows[table], patch)
+        return builder
+      }),
+      then: empty.then.bind(empty),
+      catch: empty.catch.bind(empty),
+      finally: empty.finally.bind(empty),
     }
     return builder
   }) as unknown as SupabaseMock['from']
@@ -233,5 +248,93 @@ describe('/settings/campsite', () => {
 
     const danger = await screen.findByRole('region', { name: 'Danger zone' })
     expect(within(danger).getByRole('button', { name: 'Break Camp' })).toBeInTheDocument()
+  })
+})
+
+describe('appearance applies when edited', () => {
+  beforeEach(() => {
+    mock.__setSession(makeSession())
+    vi.restoreAllMocks()
+    stubTables()
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-reduce-motion')
+  })
+
+  /** Mounts the effect alongside the routes, as App does. */
+  function renderApp() {
+    return renderWithProviders(
+      <>
+        <AppearanceEffect />
+        <AppRoutes />
+      </>,
+      { route: '/settings' },
+    )
+  }
+
+  it('switches the document to dark when Dark is chosen', async () => {
+    const user = userEvent.setup()
+    mockAccount([])
+
+    renderApp()
+    await screen.findByRole('heading', { name: 'My settings', level: 1 })
+
+    await user.click(screen.getByRole('radio', { name: 'Dark' }))
+
+    // The optimistic write updates the shared profile cache, which the
+    // root-level effect reads — so the whole app changes, not just this page.
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark'),
+    )
+  })
+
+  it('switches back to light when Light is chosen', async () => {
+    const user = userEvent.setup()
+    mockAccount([])
+
+    renderApp()
+    await screen.findByRole('heading', { name: 'My settings', level: 1 })
+
+    await user.click(screen.getByRole('radio', { name: 'Dark' }))
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark'),
+    )
+
+    await user.click(screen.getByRole('radio', { name: 'Light' }))
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light'),
+    )
+  })
+
+  it('records the preference separately from the resolved theme', async () => {
+    const user = userEvent.setup()
+    mockAccount([])
+
+    renderApp()
+    await screen.findByRole('heading', { name: 'My settings', level: 1 })
+
+    await user.click(screen.getByRole('radio', { name: 'System' }))
+
+    // "System" resolves to light or dark for the stylesheet, but the choice
+    // itself is kept so the OS watcher knows to keep following.
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute('data-theme-preference')).toBe('system'),
+    )
+    expect(['light', 'dark']).toContain(
+      document.documentElement.getAttribute('data-theme'),
+    )
+  })
+
+  it('turns motion off across the app when Reduce motion is switched on', async () => {
+    const user = userEvent.setup()
+    mockAccount([])
+
+    renderApp()
+    await screen.findByRole('heading', { name: 'My settings', level: 1 })
+
+    await user.click(screen.getByRole('switch', { name: 'Reduce motion' }))
+
+    await waitFor(() =>
+      expect(document.documentElement.getAttribute('data-reduce-motion')).toBe('true'),
+    )
   })
 })
