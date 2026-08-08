@@ -2,6 +2,11 @@
 .env
 .env.local
 .env.*.local
+# Any parked copy of a local env file, e.g. `.env.local.off` when
+# switching back to the shared project. Renaming past the pattern above
+# is what un-ignores these, so match them explicitly.
+.env.local.*
+!.env.local.example
 *.pem
 *.key
 
