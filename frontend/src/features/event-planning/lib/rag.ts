@@ -20,6 +20,32 @@ type HistoricalRecord = {
 
 const CORPUS: HistoricalRecord[] = [
   {
+    id: 'hist-winter-ball-2025',
+    name: 'Winter Ball',
+    year: 2025,
+    summary:
+      'Ticketed winter formal in the gym (Enchanted Forest). Strengths: progressive ticket pricing, publicity cadence with reels and MSJ TV, lantern décor timeline. Improvements: order materials before break, confirm guest-pass process with admin early, tarp the gym floor.',
+    themes: [
+      'winter',
+      'ball',
+      'formal',
+      'tickets',
+      'decor',
+      'lanterns',
+      'publicity',
+      'dj',
+      'prom',
+      'fundraising',
+    ],
+    agendaBeats: [
+      'Confirm admin needs (ticketing, guests, gym floor tarps)',
+      'Finalize theme and décor materials list before winter break',
+      'Set progressive ticket prices and sales window',
+      'Lock publicity cadence: reels, MSJ TV, flyers, loudspeaker',
+      'Name ASBO / SCO / JCO / Pub owners for every open item',
+    ],
+  },
+  {
     id: 'hist-maze-2025',
     name: 'Maze Day',
     year: 2025,

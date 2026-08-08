@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../../../components/layout/AppShell'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
@@ -15,6 +15,7 @@ import {
 import type { EventPlan } from '../types'
 
 export function EventPlanningPage() {
+  const navigate = useNavigate()
   const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser })
   const { userQuery, hasPermission: hasPlanningPermission } = usePlanningAuth()
   const plansQuery = useEventPlans()
@@ -49,8 +50,9 @@ export function EventPlanningPage() {
       <header className="mb-5 border-b border-border-subtle pb-4">
         <h1 className="text-display font-semibold text-ink">Event planning</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Anyone can start a plan and assign committees or individuals. Mr. Jan
-          must enable a plan before people can accept their assignments.
+          Anyone can start a plan and assign committees or individuals. Creating a
+          plan auto-generates a Winter Ball–style meeting agenda. Mr. Jan must
+          enable a plan before people can accept their assignments.
         </p>
       </header>
 
@@ -65,10 +67,11 @@ export function EventPlanningPage() {
                   event.preventDefault()
                   void createPlan
                     .mutateAsync({ title, summary, eventDate: eventDate || null })
-                    .then(() => {
+                    .then((plan) => {
                       setTitle('')
                       setSummary('')
                       setEventDate('')
+                      navigate(`/event-planning/${plan.id}`)
                     })
                 }}
               >
@@ -135,6 +138,7 @@ export function EventPlanningPage() {
                         Created by {plan.createdByName}
                         {plan.eventDate ? ` · ${plan.eventDate}` : ''}
                         {` · ${plan.assignments.length} assignment${plan.assignments.length === 1 ? '' : 's'}`}
+                        {' · agenda ready'}
                       </p>
                     </div>
                     <PlanStatusBadge status={plan.status} />

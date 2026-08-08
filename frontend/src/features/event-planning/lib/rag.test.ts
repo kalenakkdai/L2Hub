@@ -29,4 +29,10 @@ describe('runPlanningRag', () => {
       /Rally Night/,
     )
   })
+
+  it('surfaces Winter Ball when the query matches that formal', () => {
+    const result = runPlanningRag('winter ball lanterns tickets publicity')
+    expect(result.hits[0]?.name).toBe('Winter Ball')
+    expect(result.outline?.guideline).toMatch(/Winter Ball/)
+  })
 })

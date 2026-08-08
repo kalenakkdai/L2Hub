@@ -11,6 +11,7 @@ import type {
   SubmitPlanningReportInput,
 } from '../types'
 import { runPlanningRag } from '../lib/rag'
+import { buildPlanAgendaDocument } from '../lib/planAgenda'
 import { sanitizeAttachmentDisplayName } from '../lib/reportAttachments'
 
 export interface EventPlanningDataProvider {
@@ -101,6 +102,12 @@ function seedPlans(): EventPlan[] {
       createdById: 'mem-kalena',
       createdByName: 'Kalena Dai',
       createdAt: '2026-08-01T17:00:00.000Z',
+      agenda: buildPlanAgendaDocument({
+        title: 'Maze Day 2026',
+        summary: 'Campus maze with timed stations and parent entry flow.',
+        eventDate: '2026-10-18',
+        now: new Date('2026-08-01T17:00:00.000Z'),
+      }),
       assignments: [
         {
           id: 'asg-1',
@@ -131,6 +138,12 @@ function seedPlans(): EventPlan[] {
       createdAt: '2026-07-20T16:00:00.000Z',
       enabledAt: '2026-07-22T18:00:00.000Z',
       enabledByName: 'Mr. Jan',
+      agenda: buildPlanAgendaDocument({
+        title: 'Fall Rally',
+        summary: 'Gym spirit rally with section seating.',
+        eventDate: '2026-09-12',
+        now: new Date('2026-07-20T16:00:00.000Z'),
+      }),
       assignments: [
         {
           id: 'asg-3',
@@ -176,16 +189,21 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
   async createPlan(input: CreateEventPlanInput): Promise<EventPlan> {
     const creator =
       MEMBERS.find((member) => member.id === this.currentUserId) ?? MEMBERS[0]
+    const title = input.title.trim()
+    const summary = input.summary.trim()
+    const eventDate = input.eventDate || null
     const plan: EventPlan = {
       id: `plan-${crypto.randomUUID().slice(0, 8)}`,
-      title: input.title.trim(),
-      summary: input.summary.trim(),
-      eventDate: input.eventDate || null,
+      title,
+      summary,
+      eventDate,
       status: 'draft',
       createdById: creator.id,
       createdByName: creator.name,
       createdAt: new Date().toISOString(),
       assignments: [],
+      // Every new plan starts with a Winter Ball–style meeting agenda.
+      agenda: buildPlanAgendaDocument({ title, summary, eventDate }),
     }
     this.plans.unshift(plan)
     return structuredClone(plan)
