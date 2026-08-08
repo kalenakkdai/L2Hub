@@ -12,6 +12,7 @@ export const EVENT_TYPES = [
   'crew_announcement',
   'points_awarded',
   'level_up',
+  'wrapped_activity',
 ] as const
 
 export const CHANNELS = ['email', 'sms', 'in_app'] as const
@@ -35,6 +36,26 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   crew_announcement: 'Committee announcement',
   points_awarded: 'Points awarded',
   level_up: 'Level up',
+  wrapped_activity: 'Event Wrapped updates',
+}
+
+/**
+ * The event types the grid offers.
+ *
+ * Mirrors SOURCED_EVENT_TYPES in backend/app/services/notifications.py. Every
+ * other entry in EVENT_TYPES describes a feature that does not exist: there is
+ * no tasks table and no points ledger, and nothing emits an event-created or
+ * committee-announcement notification. Rendering a switch for those would
+ * promise a camper a choice that changes nothing, so they are not shown.
+ *
+ * They stay in EVENT_TYPES because the column still accepts them and campers
+ * may already hold rows from when the grid did show them.
+ */
+export const SOURCED_EVENT_TYPES: NotificationEventType[] = ['wrapped_activity']
+
+/** What each offered row actually gates, for the grid's own description. */
+export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, string>> = {
+  wrapped_activity: 'When an Event Wrapped is requested, finishes generating, or is published',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

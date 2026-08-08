@@ -13,7 +13,12 @@ import {
   resolveTheme,
 } from '../../lib/appearance'
 import { filterNavSections, type NavSection } from '../layout/navigation'
-import { CHANNELS, EVENT_TYPES } from '../../hooks/useNotificationPrefs'
+import {
+  CHANNELS,
+  EVENT_TYPES,
+  EVENT_TYPE_LABELS,
+  SOURCED_EVENT_TYPES,
+} from '../../hooks/useNotificationPrefs'
 import type { SettingsProfile } from '../../hooks/useProfile'
 
 vi.mock('../../lib/supabase', async () => {
@@ -92,15 +97,32 @@ describe('VerificationChip', () => {
 describe('NotificationsGrid', () => {
   const noop = vi.fn()
 
-  it('renders every event type against every channel', () => {
+  it('renders every sourced event type against every channel', () => {
     renderWithQuery(
       <NotificationsGrid profile={profile()} status="idle" save={noop} saveNow={noop} />,
     )
 
-    expect(screen.getAllByRole('row')).toHaveLength(EVENT_TYPES.length + 1)
+    expect(screen.getAllByRole('row')).toHaveLength(SOURCED_EVENT_TYPES.length + 1)
     expect(screen.getAllByRole('switch')).toHaveLength(
-      EVENT_TYPES.length * CHANNELS.length + 1, // + the master pause
+      SOURCED_EVENT_TYPES.length * CHANNELS.length + 1, // + the master pause
     )
+  })
+
+  it('offers no switch for an event type nothing emits', () => {
+    renderWithQuery(
+      <NotificationsGrid profile={profile()} status="idle" save={noop} saveNow={noop} />,
+    )
+
+    // These have a column value and a label but no emitter anywhere in the
+    // codebase. A switch for them would gate nothing.
+    const unsourced = EVENT_TYPES.filter((type) => !SOURCED_EVENT_TYPES.includes(type))
+    expect(unsourced.length).toBeGreaterThan(0)
+
+    for (const eventType of unsourced) {
+      expect(
+        screen.queryByRole('rowheader', { name: new RegExp(EVENT_TYPE_LABELS[eventType]) }),
+      ).not.toBeInTheDocument()
+    }
   })
 
   it('disables SMS until the phone is verified', () => {
@@ -114,7 +136,7 @@ describe('NotificationsGrid', () => {
     )
 
     const smsToggles = screen.getAllByRole('switch', { name: /by SMS$/ })
-    expect(smsToggles).toHaveLength(EVENT_TYPES.length)
+    expect(smsToggles).toHaveLength(SOURCED_EVENT_TYPES.length)
     for (const toggle of smsToggles) {
       expect(toggle).toBeDisabled()
       expect(toggle).toHaveAccessibleDescription(/Verify your phone/)
@@ -139,15 +161,26 @@ describe('NotificationsGrid', () => {
     })
   })
 
-  it('says overdue alerts ignore quiet hours', () => {
+  it('says what the row actually gates', () => {
     renderWithQuery(
       <NotificationsGrid profile={profile()} status="idle" save={noop} saveNow={noop} />,
     )
 
-    expect(
-      screen.getByText('Always sends, even during quiet hours'),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/Overdue task alerts still send/)).toBeInTheDocument()
+    // The row used to be labelled "New event created" while gating the Wrapped
+    // lifecycle. The label and the emitter have to describe the same thing.
+    expect(screen.getByText('Event Wrapped updates')).toBeInTheDocument()
+    expect(screen.getByText(/requested, finishes generating, or is published/)).toBeInTheDocument()
+    expect(screen.queryByText('New event created')).not.toBeInTheDocument()
+  })
+
+  it('does not promise that quiet-hours notifications arrive later', () => {
+    renderWithQuery(
+      <NotificationsGrid profile={profile()} status="idle" save={noop} saveNow={noop} />,
+    )
+
+    // deliver() drops them rather than queueing, so the copy must not say wait.
+    expect(screen.queryByText(/wait until quiet hours end/)).not.toBeInTheDocument()
+    expect(screen.getByText(/are not sent/)).toBeInTheDocument()
   })
 
   it('saves the master pause immediately rather than waiting for a blur', async () => {

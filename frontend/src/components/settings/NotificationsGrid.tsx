@@ -3,8 +3,9 @@ import {
   ALWAYS_DELIVERS,
   CHANNELS,
   CHANNEL_LABELS,
-  EVENT_TYPES,
+  EVENT_TYPE_DESCRIPTIONS,
   EVENT_TYPE_LABELS,
+  SOURCED_EVENT_TYPES,
   useNotificationPrefs,
 } from '../../hooks/useNotificationPrefs'
 import type { ProfilePatch, SaveStatus, SettingsProfile } from '../../hooks/useProfile'
@@ -20,7 +21,12 @@ const SMS_DISABLED_REASON =
   'Verify your phone number before switching on SMS notifications.'
 
 /**
- * Eight event types by three channels, plus quiet hours and a master pause.
+ * The notification preferences a camper can meaningfully set.
+ *
+ * Only event types with something behind them are listed — see
+ * SOURCED_EVENT_TYPES. The grid used to show all eight from the schema, seven
+ * of which no code path could ever raise, so switching them off changed
+ * nothing and switching them on promised something that never arrived.
  *
  * SMS toggles are disabled until the phone is verified. That is a
  * convenience, not a control: the sender is what must actually refuse to
@@ -65,13 +71,18 @@ export function NotificationsGrid({
           </thead>
 
           <tbody>
-            {EVENT_TYPES.map((eventType) => (
+            {SOURCED_EVENT_TYPES.map((eventType) => (
               <tr key={eventType} className="border-t border-border-divider">
                 <th
                   scope="row"
                   className="py-2.5 pr-4 text-left text-sm font-normal text-ink"
                 >
                   {EVENT_TYPE_LABELS[eventType]}
+                  {EVENT_TYPE_DESCRIPTIONS[eventType] && (
+                    <span className="mt-0.5 block text-[12px] text-ink-subtle">
+                      {EVENT_TYPE_DESCRIPTIONS[eventType]}
+                    </span>
+                  )}
                   {ALWAYS_DELIVERS.includes(eventType) && (
                     <span className="mt-0.5 block text-[12px] text-ink-subtle">
                       Always sends, even during quiet hours
@@ -105,7 +116,7 @@ export function NotificationsGrid({
           <div>
             <p className="text-[13px] font-medium text-ink">Pause all notifications</p>
             <p className="mt-1 text-[12.5px] text-ink-subtle">
-              Nothing is sent while this is on, including overdue alerts.
+              Nothing is sent while this is on.
             </p>
           </div>
           <Toggle
@@ -122,8 +133,7 @@ export function NotificationsGrid({
       <div className="mt-5 border-t border-border-divider pt-5">
         <p className="text-[13px] font-medium text-ink">Quiet hours</p>
         <p className="mt-1 text-[12.5px] text-ink-subtle">
-          Notifications wait until quiet hours end. Overdue task alerts still send —
-          missing a deadline is worse than a late-night buzz.
+          Notifications that arrive during quiet hours are not sent.
         </p>
 
         <div className="mt-3 grid max-w-xs gap-3 sm:grid-cols-2">
