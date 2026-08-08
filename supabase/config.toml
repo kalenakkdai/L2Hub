@@ -244,7 +244,21 @@ web3 = 30
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
-double_confirm_changes = true
+#
+# Off, because the settings page collects exactly one six-digit code. With it
+# on, GoTrue sends two emails carrying two different codes — one to the old
+# address and one to the new — and the change only completes once BOTH are
+# confirmed. There is nowhere in the six-box modal to enter the second, so an
+# email change could be started and never finished.
+#
+# The trade-off is real: the old address no longer gets a say in the change.
+# What protects it is that the caller must already hold a valid session, and
+# the new address still has to prove itself. Turning this back on means
+# building a two-code flow, not just flipping the flag.
+#
+# This is the local stack only. The shared project's copy of this setting
+# lives in the dashboard, not here — `supabase config push` is never run.
+double_confirm_changes = false
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
@@ -265,6 +279,13 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# The settings page asks for a six-digit code in six boxes, so the message has
+# to carry {{ .Token }}. The built-in template sends {{ .ConfirmationURL }}
+# only — a link, with nothing in it to type into the boxes.
+[auth.email.template.email_change]
+subject = "Confirm your email for L2 Hub"
+content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

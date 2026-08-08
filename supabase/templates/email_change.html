@@ -1,0 +1,25 @@
+<!--
+  Email-change confirmation.
+
+  The settings page asks for a six-digit code in six boxes, so the message has
+  to carry {{ .Token }}. Supabase's built-in template sends {{ .ConfirmationURL }}
+  only, which is a link — there was nothing in the mail to type into the boxes,
+  so the flow could not be completed no matter what the camper did.
+
+  The link is kept as well: some people would rather click than type, and both
+  confirm the same change.
+-->
+<h2>Confirm your email address</h2>
+
+<p>Enter this code in L2 Hub to confirm this address:</p>
+
+<p style="font-size: 28px; font-weight: 700; letter-spacing: 6px; font-family: monospace;">
+  {{ .Token }}
+</p>
+
+<p>The code expires in an hour. If you did not ask for this, ignore this email
+and nothing will change.</p>
+
+<p style="color: #666; font-size: 13px;">
+  Prefer a link? <a href="{{ .ConfirmationURL }}">Confirm this address</a>.
+</p>

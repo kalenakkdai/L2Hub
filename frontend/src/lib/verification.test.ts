@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ERROR_MESSAGES,
   RESEND_COOLDOWN_SECONDS,
   canResend,
   classifyError,
@@ -181,11 +182,57 @@ describe('classifyError', () => {
   it.each([
     ['Email rate limit exceeded', 'rate_limited'],
     ['Too many requests', 'rate_limited'],
-    ['Token has expired or is invalid', 'expired_code'],
+    ['Token has expired or is invalid', 'invalid_code'],
     ['Invalid token', 'invalid_code'],
     ['Unsupported phone provider', 'sms_not_configured'],
   ] as const)('maps %s', (message, expected) => {
     expect(classifyError(new Error(message))).toBe(expected)
+  })
+
+  /**
+   * Captured verbatim from a local Supabase by scripts/verify_verification.py.
+   * The prose here is not invented — these are the exact bodies GoTrue
+   * returns, which is the point: the previous matching was written against
+   * what the errors were assumed to say.
+   */
+  describe('against what GoTrue actually returns', () => {
+    function authError(message: string, code: string) {
+      return Object.assign(new Error(message), { code })
+    }
+
+    it('recognises the resend cooldown', () => {
+      const error = authError(
+        'For security purposes, you can only request this after 4 seconds.',
+        'over_sms_send_rate_limit',
+      )
+
+      // Says neither "rate limit" nor "too many", so the old matching fell
+      // through to invalid_code — telling a camper their code was wrong
+      // before they had typed one, and skipping the cooldown, since only
+      // rate_limited holds it.
+      expect(classifyError(error)).toBe('rate_limited')
+    })
+
+    it('recognises the cooldown from the message alone', () => {
+      // supabase-js does not always surface error_code.
+      expect(
+        classifyError(new Error('For security purposes, you can only request this after 4 seconds.')),
+      ).toBe('rate_limited')
+    })
+
+    it('does not claim a mistyped code has expired', () => {
+      // A wrong code and an expired one are the same response, so nothing can
+      // tell them apart and the message must be true of both.
+      const error = authError('Token has expired or is invalid', 'otp_expired')
+
+      expect(classifyError(error)).toBe('invalid_code')
+      expect(ERROR_MESSAGES.invalid_code).toMatch(/not right, or it has expired/)
+    })
+
+    it('recognises a missing SMS provider', () => {
+      const error = authError('Unsupported phone provider', 'phone_provider_disabled')
+      expect(classifyError(error)).toBe('sms_not_configured')
+    })
   })
 
   it('treats an unrecognised failure as an invalid code', () => {

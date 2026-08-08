@@ -106,7 +106,12 @@ def server_version(dsn: str) -> str:
 
 
 def main() -> int:
-    local = env_value(ROOT / "backend" / ".env.local", "SUPABASE_DB_URL")
+    # `.env.local.off` is the parked copy left behind when switching back to
+    # the shared project. The local stack is still running and still worth
+    # comparing against, so read it rather than refusing.
+    local = env_value(ROOT / "backend" / ".env.local", "SUPABASE_DB_URL") or env_value(
+        ROOT / "backend" / ".env.local.off", "SUPABASE_DB_URL"
+    )
     shared = env_value(ROOT / "backend" / ".env", "SUPABASE_DB_URL")
 
     if not local:

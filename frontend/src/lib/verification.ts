@@ -120,7 +120,10 @@ export function secondsUntilResend(state: VerificationState, now: number): numbe
 }
 
 export const ERROR_MESSAGES: Record<VerificationError, string> = {
-  invalid_code: 'That code is not right. Check the digits and try again.',
+  // Supabase answers a wrong code and an expired one identically, so this
+  // covers both rather than guessing which happened and telling half the
+  // campers who see it something untrue.
+  invalid_code: 'That code is not right, or it has expired. Check it, or send a new one.',
   expired_code: 'That code has expired. Send a new one.',
   rate_limited: 'Too many attempts. Wait a moment before trying again.',
   send_failed: 'We could not send the code. Try again in a moment.',
@@ -131,19 +134,48 @@ export const ERROR_MESSAGES: Record<VerificationError, string> = {
 /**
  * Maps a Supabase auth error onto one of our reasons.
  *
- * Supabase does not expose stable error codes for all of these, so the
- * message is inspected as a fallback. Anything unrecognised is treated as an
- * invalid code, which is the safe reading: it keeps the camper on the entry
- * screen rather than claiming success.
+ * `error_code` is checked first. It is the stable part of a GoTrue error; the
+ * prose is not, and reading the prose alone got two cases wrong against a real
+ * server:
+ *
+ *   * a rate-limited resend says "For security purposes, you can only request
+ *     this after N seconds", which contains neither "rate limit" nor "too
+ *     many". It fell through to invalid_code, so a camper who pressed Resend
+ *     too quickly was told their code was wrong before they had typed one —
+ *     and, because only rate_limited holds the cooldown, was free to keep
+ *     pressing it.
+ *   * a wrong code and an expired code are the same response, `otp_expired`
+ *     with "Token has expired or is invalid". Matching "expired" first meant a
+ *     mistyped digit was reported as an expired code. Nothing can tell them
+ *     apart, so they share one reason and one honest message.
+ *
+ * Anything unrecognised is treated as an invalid code, which is the safe
+ * reading: it keeps the camper on the entry screen rather than claiming
+ * success.
  */
 export function classifyError(error: unknown): VerificationError {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code: unknown }).code ?? '')
+      : ''
+
+  if (code.includes('rate_limit')) return 'rate_limited'
+  if (code === 'otp_expired' || code === 'otp_disabled') return 'invalid_code'
+  if (code === 'phone_provider_disabled' || code === 'sms_send_failed') {
+    return 'sms_not_configured'
+  }
+
   const raw = error instanceof Error ? error.message : String(error ?? '')
   const message = raw.toLowerCase()
 
-  if (message.includes('rate limit') || message.includes('too many')) {
+  if (
+    message.includes('rate limit') ||
+    message.includes('too many') ||
+    // GoTrue's own wording for the resend cooldown.
+    message.includes('security purposes')
+  ) {
     return 'rate_limited'
   }
-  if (message.includes('expired')) return 'expired_code'
   if (
     message.includes('sms provider') ||
     message.includes('phone provider') ||
@@ -152,7 +184,9 @@ export function classifyError(error: unknown): VerificationError {
   ) {
     return 'sms_not_configured'
   }
-  if (message.includes('invalid') || message.includes('token')) return 'invalid_code'
+  if (message.includes('expired') || message.includes('invalid') || message.includes('token')) {
+    return 'invalid_code'
+  }
 
   return 'invalid_code'
 }
@@ -175,17 +209,32 @@ export async function sendEmailCode(email: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * Starts phone verification by attaching the number to the signed-in camper.
+ *
+ * NOT signInWithOtp. That is a sign-in: it mints a separate phone-only
+ * account, the signup trigger gives that account a profile of its own, and
+ * verifyOtp then hands the browser a session belonging to it — so verifying
+ * your number signed you out of yourself, into an empty account whose email
+ * was blank, and left your own phone_verified false forever. The phantom
+ * profiles reached the admin roster with status 'active', which is the
+ * predicate transfer_admin uses to decide who may receive administration.
+ *
+ * updateUser sends the same OTP but keeps the caller's identity, mirroring
+ * what sendEmailCode already does for the address.
+ */
 export async function sendPhoneCode(phone: string): Promise<void> {
   if (!smsConfigured()) {
     throw new Error('Unsupported phone provider')
   }
 
-  const { error } = await supabase.auth.signInWithOtp({ phone })
+  const { error } = await supabase.auth.updateUser({ phone })
   if (error) throw error
 }
 
+/** Confirms the pending number change — not a phone sign-in. */
 export async function verifyPhoneCode(phone: string, token: string): Promise<void> {
-  const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' })
+  const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'phone_change' })
   if (error) throw error
 }
 

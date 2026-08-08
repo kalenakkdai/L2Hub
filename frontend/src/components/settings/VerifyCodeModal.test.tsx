@@ -138,9 +138,20 @@ describe('VerifyCodeModal', () => {
 
   describe('errors', () => {
     it.each([
-      ['Invalid token', 'That code is not right. Check the digits and try again.'],
-      ['Token has expired', 'That code has expired. Send a new one.'],
+      // Supabase answers a wrong code and an expired one with the same body,
+      // so both land on the one message that is true of either.
+      ['Invalid token', 'That code is not right, or it has expired. Check it, or send a new one.'],
+      [
+        'Token has expired or is invalid',
+        'That code is not right, or it has expired. Check it, or send a new one.',
+      ],
       ['Email rate limit exceeded', 'Too many attempts. Wait a moment before trying again.'],
+      // GoTrue's actual wording for the resend cooldown, which matches none of
+      // the phrases the old classifier looked for.
+      [
+        'For security purposes, you can only request this after 4 seconds.',
+        'Too many attempts. Wait a moment before trying again.',
+      ],
     ])('surfaces %s', async (thrown, expected) => {
       const user = userEvent.setup()
       const verify = vi.fn(async () => {
