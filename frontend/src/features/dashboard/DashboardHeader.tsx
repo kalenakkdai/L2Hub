@@ -1,7 +1,6 @@
 import { useCountUp } from '../../components/ui/useCountUp'
 import { useLevelConfetti } from './useLevelConfetti'
 import { greetingFor } from './greeting'
-import { longDateTime } from './formatDate'
 import type { HeaderStats } from './types'
 
 type DashboardHeaderProps = {
@@ -41,8 +40,12 @@ function Stat({
 }
 
 /**
- * Sticky page header: where you are in time, who you are, and the three
- * numbers that summarise your standing.
+ * Sticky page header: who you are, and the three numbers that summarise your
+ * standing.
+ *
+ * The date and clock that used to sit above the greeting are gone. They were
+ * the least useful thing on the page — every device already shows the time —
+ * and they pushed the greeting down for no return.
  */
 export function DashboardHeader({ firstName, stats }: DashboardHeaderProps) {
   const points = useCountUp(stats.points)
@@ -51,7 +54,6 @@ export function DashboardHeader({ firstName, stats }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-border-divider bg-surface px-4 pt-6 pb-5 sm:px-6 lg:px-10">
       <div className="min-w-0">
-        <div className="mb-1.5 text-[13px] text-ink-subtle">{longDateTime()}</div>
         <h1 className="text-display font-bold text-ink">{greetingFor(firstName)}</h1>
       </div>
 

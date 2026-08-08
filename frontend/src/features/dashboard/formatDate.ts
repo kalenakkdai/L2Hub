@@ -50,17 +50,6 @@ export function dateStamp(iso: string): string {
     .toUpperCase()
 }
 
-/** "Thursday, August 7 · 4:30 PM" — the line above the greeting. */
-export function longDateTime(now: Date = new Date()): string {
-  const day = now.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  })
-  const time = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  return `${day} · ${time}`
-}
-
 /**
  * "18h 42m" until an event starts.
  *

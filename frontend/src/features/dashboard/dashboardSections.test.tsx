@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { ActivityFeed } from './ActivityFeed'
 import { AttentionList } from './AttentionList'
 import { CalendarRail } from './CalendarRail'
+import { DashboardHeader } from './DashboardHeader'
 import { GradesPanel } from './GradesPanel'
 import { NextEventCard } from './NextEventCard'
 import { ProgressPanel } from './ProgressPanel'
@@ -184,6 +185,35 @@ describe('ActivityFeed', () => {
   })
 })
 
+describe('DashboardHeader', () => {
+  beforeEach(() => sessionStorage.clear())
+
+  const stats = { points: 1200, level: 4, openCount: 3 }
+
+  it('leads with the greeting and no date or clock above it', () => {
+    render(<DashboardHeader firstName="Brittany" stats={stats} />)
+
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toHaveTextContent(/Brittany[.?]$/)
+
+    // The date line is gone: every device already shows the time, and it only
+    // pushed the greeting down. Match a weekday or a clock, in any locale
+    // spelling this test can reasonably anticipate.
+    expect(screen.queryByText(/\d{1,2}:\d{2}/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday/),
+    ).not.toBeInTheDocument()
+  })
+
+  it('still shows the three standing numbers', () => {
+    render(<DashboardHeader firstName="Brittany" stats={stats} />)
+
+    expect(screen.getByText('Points')).toBeInTheDocument()
+    expect(screen.getByText('Level')).toBeInTheDocument()
+    expect(screen.getByText('Open')).toBeInTheDocument()
+  })
+})
+
 describe('greeting', () => {
   beforeEach(() => sessionStorage.clear())
 
@@ -196,11 +226,45 @@ describe('greeting', () => {
     expect(blockFor(hour)).toBe(expected)
   })
 
-  it('is a short phrase, the first name, and a full stop', () => {
+  it('is a short phrase, the first name, and its own punctuation', () => {
     const greeting = greetingFor('Brittany', new Date('2026-08-06T13:00:00'))
 
-    // e.g. "Afternoon, Brittany." — and nothing after it.
-    expect(greeting).toMatch(/^[A-Za-z ]+, Brittany\.$/)
+    // e.g. "Afternoon, Brittany." or "Almost caught up, Brittany?"
+    expect(greeting).toMatch(/^[A-Z][A-Za-z ]*, Brittany[.?]$/)
+  })
+
+  it('ends a question with a question mark, not a full stop', () => {
+    // 02:00 is the late block, where the phrases ask rather than state.
+    // "Still up, Brittany." reads as an observation about the camper.
+    const seen = new Set<string>()
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      sessionStorage.clear()
+      seen.add(greetingFor('Brittany', new Date('2026-08-06T02:00:00')))
+    }
+
+    const questions = [...seen].filter((line) => line.endsWith('?'))
+    expect(questions.length).toBeGreaterThan(0)
+    for (const line of questions) {
+      expect(line).not.toContain('.')
+    }
+    expect(seen).toContain('Still up, Brittany?')
+  })
+
+  it('greets in a complete, capitalised sentence in every block', () => {
+    // Guards the whole table at once: a phrase added without a mark, or in
+    // lower case, fails here rather than shipping onto the dashboard.
+    for (const hour of [8, 13, 19, 2]) {
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        sessionStorage.clear()
+        const greeting = greetingFor('Brittany', new Date(2026, 7, 6, hour))
+
+        expect(greeting).toMatch(/^[A-Z]/)
+        expect(greeting).toMatch(/[.?]$/)
+        expect(greeting).toContain(', Brittany')
+        // One terminal mark, and nothing doubled up.
+        expect(greeting.match(/[.?]/g)).toHaveLength(1)
+      }
+    }
   })
 
   it('holds the same greeting for the whole session', () => {
@@ -211,8 +275,9 @@ describe('greeting', () => {
   it('drops the name rather than falling back to an email', () => {
     const greeting = greetingFor(null, new Date('2026-08-06T13:00:00'))
 
-    expect(greeting).toMatch(/^[A-Za-z ]+\.$/)
+    expect(greeting).toMatch(/^[A-Z][A-Za-z ]*[.?]$/)
     expect(greeting).not.toContain('@')
+    expect(greeting).not.toContain(',')
   })
 
   it('still greets when sessionStorage is unavailable', () => {

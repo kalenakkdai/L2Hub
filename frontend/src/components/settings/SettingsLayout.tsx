@@ -12,13 +12,22 @@ type SettingsLayoutProps = {
   description?: string
   sections: SettingsSection[]
   children: ReactNode
+  /** Rendered in the left column under the title, e.g. the avatar picker. */
+  aside?: ReactNode
   /** Extra links rendered under the section list, e.g. the other settings page. */
   footerLinks?: { to: string; label: string }[]
 }
 
 /**
- * Two-column settings shell: section links on the left, content on the right,
- * collapsing to a single column with a horizontal section bar under 768px.
+ * Two-column settings shell: identity and section links on the left, content
+ * on the right, collapsing to a single column with a horizontal section bar
+ * under 768px.
+ *
+ * Everything in the left column shares one text origin — the title, the
+ * description, the section links, and anything passed as `aside` all start at
+ * the same x. The title and description used to sit flush against the column
+ * edge while the links were inset by their own padding, so the heading hung a
+ * few pixels to the left of the list it introduced.
  *
  * Deliberately plain. Settings is a place people come to change something and
  * leave; nothing here animates beyond the verification check.
@@ -28,6 +37,7 @@ export function SettingsLayout({
   description,
   sections,
   children,
+  aside,
   footerLinks,
 }: SettingsLayoutProps) {
   const [active, setActive] = useState(sections[0]?.id ?? '')
@@ -57,12 +67,18 @@ export function SettingsLayout({
 
   return (
     <div className="flex flex-col gap-6 md:flex-row md:gap-10">
-      <div className="md:w-52 md:shrink-0">
+      <div className="md:w-60 md:shrink-0">
         <div className="md:sticky md:top-24">
-          <h1 className="text-title font-semibold text-ink">{title}</h1>
-          {description && <p className="mt-1 text-[13px] text-ink-subtle">{description}</p>}
+          {/* px-3 matches the section links below, so the whole column shares
+              one left edge. */}
+          <h1 className="px-3 text-title font-semibold text-ink">{title}</h1>
+          {description && (
+            <p className="mt-1 px-3 text-[13px] text-ink-subtle">{description}</p>
+          )}
 
-          <nav aria-label={`${title} sections`} className="mt-4">
+          {aside && <div className="mt-5">{aside}</div>}
+
+          <nav aria-label={`${title} sections`} className="mt-5">
             {/* Horizontal and scrollable on phones, vertical from md. */}
             <ul className="-mx-1 flex gap-1 overflow-x-auto pb-1 md:mx-0 md:flex-col md:overflow-visible md:pb-0">
               {sections.map((section) => (

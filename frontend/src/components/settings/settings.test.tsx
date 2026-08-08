@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConfirmDialog, Toggle, VerificationChip } from './primitives'
+import { AvatarField } from './AvatarField'
 import { DangerZone } from './DangerZone'
 import { NotificationsGrid } from './NotificationsGrid'
+import { ProfileSection } from './ProfileSection'
+import { SettingsLayout } from './SettingsLayout'
 import {
   applyAccentColor,
   applyAppearance,
@@ -195,6 +199,78 @@ describe('NotificationsGrid', () => {
 
     expect(save).toHaveBeenCalledWith({ notifications_paused: true })
     expect(saveNow).toHaveBeenCalled()
+  })
+})
+
+describe('avatar placement', () => {
+  const account = {
+    id: 'u1',
+    email: 'brittany@example.edu',
+    full_name: 'Brittany Lu',
+    role: 'member',
+    status: 'active',
+    created_at: '2026-08-01T00:00:00Z',
+    roles: [],
+    permissions: [],
+    committees: [],
+  } as never
+
+  it('renders the avatar picker in the settings sidebar', () => {
+    render(
+      <MemoryRouter>
+        <SettingsLayout
+          title="My settings"
+          sections={[{ id: 'profile', label: 'Profile' }]}
+          aside={<AvatarField avatarUrl={null} fallback="Brittany" onChange={() => {}} />}
+        >
+          <p>content</p>
+        </SettingsLayout>
+      </MemoryRouter>,
+    )
+
+    const upload = screen.getByRole('button', { name: /Upload/ })
+    const sidebar = screen.getByRole('heading', { level: 1 }).parentElement
+    expect(sidebar).toContainElement(upload)
+
+    // The section list it sits above is in the same column.
+    expect(sidebar).toContainElement(screen.getByRole('link', { name: 'Profile' }))
+  })
+
+  it('no longer puts the avatar inside the Profile card', () => {
+    renderWithQuery(
+      <ProfileSection
+        profile={profile()}
+        account={account}
+        status="idle"
+        save={() => {}}
+        saveNow={() => {}}
+      />,
+    )
+
+    // It was one 40px circle among a grid of text inputs; it now lives in the
+    // sidebar at a size where you can see what you uploaded.
+    expect(screen.queryByRole('button', { name: /Upload|Replace/ })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Display name')).toBeInTheDocument()
+  })
+
+  it('shows the initial until a photo is set', () => {
+    render(<AvatarField avatarUrl={null} fallback="brittany@example.edu" onChange={() => {}} />)
+
+    expect(screen.getByText('B')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument()
+  })
+
+  it('offers Replace and Remove once a photo is set', () => {
+    render(
+      <AvatarField
+        avatarUrl="https://example.test/a.png"
+        fallback="Brittany"
+        onChange={() => {}}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Replace/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Remove/ })).toBeInTheDocument()
   })
 })
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Field, FIELD_CLASS, SettingsCard } from './primitives'
-import { AvatarField } from './AvatarField'
 import { roleLabel } from '../../api/auth'
 import type { CurrentUser } from '../../api/auth'
 import type { SaveStatus } from '../../hooks/useProfile'
@@ -37,9 +36,12 @@ const PRONOUN_OPTIONS = [
 const OTHER = '__other__'
 
 /**
- * Name, pronouns, grade, avatar. Roles and committees are shown but not
- * editable — changing them is an officer action, and saying so here saves
- * someone hunting for a control that was never going to be there.
+ * Name, pronouns, grade. The avatar lives in the settings sidebar, where it
+ * can be shown at a size worth looking at.
+ *
+ * Roles and committees are shown but not editable — changing them is an
+ * officer action, and saying so here saves someone hunting for a control that
+ * was never going to be there.
  */
 export function ProfileSection({
   profile,
@@ -154,15 +156,6 @@ export function ProfileSection({
             ))}
           </select>
         </Field>
-
-        <AvatarField
-          avatarUrl={profile.avatar_url}
-          fallback={profile.full_name ?? profile.email}
-          onChange={(url) => {
-            save({ avatar_url: url })
-            saveNow()
-          }}
-        />
       </div>
 
       <div className="mt-5 border-t border-border-divider pt-4">

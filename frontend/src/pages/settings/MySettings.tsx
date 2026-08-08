@@ -6,6 +6,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { SettingsLayout, type SettingsSection } from '../../components/settings/SettingsLayout'
 import { AccountSection } from '../../components/settings/AccountSection'
 import { AppearanceSection } from '../../components/settings/AppearanceSection'
+import { AvatarField } from '../../components/settings/AvatarField'
 import { ContactSection } from '../../components/settings/ContactSection'
 import { DangerZone } from '../../components/settings/DangerZone'
 import { NotificationsGrid } from '../../components/settings/NotificationsGrid'
@@ -47,6 +48,18 @@ export function MySettings() {
         title="My settings"
         description="Changes save as you make them."
         sections={SECTIONS}
+        aside={
+          profile && (
+            <AvatarField
+              avatarUrl={profile.avatar_url}
+              fallback={profile.full_name ?? profile.email}
+              onChange={(url) => {
+                save({ avatar_url: url })
+                saveNow()
+              }}
+            />
+          )
+        }
         footerLinks={
           account.permissions?.includes('settings.view')
             ? [{ to: '/settings/campsite', label: 'Campsite settings' }]

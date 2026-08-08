@@ -1,9 +1,15 @@
 /**
  * Rotating greetings — the one bit of whimsy on the dashboard.
  *
- * Each greeting is a short phrase, the name, and a full stop: "Afternoon,
- * Brittany.", "Almost caught up, Brittany." Nothing follows it, because the
- * header already carries the numbers a further sentence would have restated.
+ * Each greeting is a short phrase, the name, and the punctuation that phrase
+ * actually calls for: "Afternoon, Brittany." but "Still up, Brittany?".
+ * Nothing follows it, because the header already carries the numbers a
+ * further sentence would have restated.
+ *
+ * The mark travels with the phrase rather than being appended by the
+ * formatter. Every greeting used to end in a full stop, which turned the
+ * questions among them into flat statements — "Still up, Brittany." reads as
+ * an observation about the camper rather than a note of solidarity.
  *
  * A phrase is chosen once per session per time-of-day block and then held, so
  * the page does not reword itself on every re-render. The choice lives in
@@ -12,11 +18,34 @@
 
 type Block = 'morning' | 'afternoon' | 'evening' | 'late'
 
-const GREETINGS: Record<Block, string[]> = {
-  morning: ['Morning', 'Good morning', 'Bright and early', 'Early start'],
-  afternoon: ['Afternoon', 'Good afternoon', 'Almost caught up', 'Midday'],
-  evening: ['Evening', 'Good evening', 'Winding down', 'Nice work today'],
-  late: ['Working late', 'Still up', 'Late one', 'Past midnight'],
+/** A phrase and the mark that ends it — '?' where the phrase asks something. */
+type Greeting = { phrase: string; mark: '.' | '?' }
+
+const GREETINGS: Record<Block, Greeting[]> = {
+  morning: [
+    { phrase: 'Morning', mark: '.' },
+    { phrase: 'Good morning', mark: '.' },
+    { phrase: 'Bright and early', mark: '.' },
+    { phrase: 'Early start', mark: '.' },
+  ],
+  afternoon: [
+    { phrase: 'Afternoon', mark: '.' },
+    { phrase: 'Good afternoon', mark: '.' },
+    { phrase: 'Almost caught up', mark: '?' },
+    { phrase: 'Midday', mark: '.' },
+  ],
+  evening: [
+    { phrase: 'Evening', mark: '.' },
+    { phrase: 'Good evening', mark: '.' },
+    { phrase: 'Winding down', mark: '?' },
+    { phrase: 'Nice work today', mark: '.' },
+  ],
+  late: [
+    { phrase: 'Working late', mark: '?' },
+    { phrase: 'Still up', mark: '?' },
+    { phrase: 'Late one', mark: '.' },
+    { phrase: 'Past midnight', mark: '.' },
+  ],
 }
 
 export function blockFor(hour: number): Block {
@@ -56,7 +85,9 @@ function stableIndex(block: Block, length: number): number {
 export function greetingFor(firstName: string | null, now: Date = new Date()): string {
   const block = blockFor(now.getHours())
   const options = GREETINGS[block]
-  const phrase = options[stableIndex(block, options.length)]
+  const { phrase, mark } = options[stableIndex(block, options.length)]
 
-  return firstName ? `${phrase}, ${firstName}.` : `${phrase}.`
+  // The name goes inside the sentence, so the mark stays at the end whether
+  // or not there is one: "Still up, Brittany?" and "Still up?".
+  return firstName ? `${phrase}, ${firstName}${mark}` : `${phrase}${mark}`
 }
