@@ -53,7 +53,7 @@ export function CommitteesPage() {
         <div className="overflow-hidden rounded-card border border-border-subtle bg-surface">
           <div className="flex items-center gap-3.5 border-b border-border-divider bg-surface-sunken px-5 py-2.5 text-[11.5px] font-semibold tracking-[0.04em] text-ink-subtle uppercase">
             <span className="flex-1">Committee</span>
-            <span className="hidden w-[170px] sm:block">Committee lead</span>
+            <span className="hidden w-[170px] sm:block">Committee head</span>
             <span className="w-[110px] text-right">Campers</span>
           </div>
 
@@ -71,7 +71,7 @@ export function CommitteesPage() {
                   {/* The trail fills the gap, tying the name to its figures. */}
                   <span aria-hidden="true" className="dotted-trail hidden h-px flex-1 sm:block" />
                   <span className="hidden w-[170px] text-[13.5px] text-ink-muted sm:block">
-                    {committee.lead ?? 'No committee lead yet'}
+                    {committee.head ?? 'No committee head yet'}
                   </span>
                   <span className="ml-auto w-[110px] text-right font-mono text-[13px] text-ink-subtle sm:ml-0">
                     {committee.camperCount} campers

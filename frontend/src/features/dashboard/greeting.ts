@@ -1,38 +1,22 @@
 /**
  * Rotating greetings — the one bit of whimsy on the dashboard.
  *
- * A greeting is chosen once per session per time-of-day block and then held,
- * so the page does not reword itself on every re-render. The choice is stored
- * in sessionStorage rather than state so it also survives a refresh.
+ * Each greeting is a short phrase, the name, and a full stop: "Afternoon,
+ * Brittany.", "Almost caught up, Brittany." Nothing follows it, because the
+ * header already carries the numbers a further sentence would have restated.
+ *
+ * A phrase is chosen once per session per time-of-day block and then held, so
+ * the page does not reword itself on every re-render. The choice lives in
+ * sessionStorage so it also survives a refresh.
  */
 
 type Block = 'morning' | 'afternoon' | 'evening' | 'late'
 
 const GREETINGS: Record<Block, string[]> = {
-  morning: [
-    'Good morning, {name}',
-    'Morning, {name}. Your committee is already up.',
-    'Morning, {name}. Three things need you.',
-    'Good morning, {name}. Quad setup at 7.',
-  ],
-  afternoon: [
-    'Good afternoon, {name}',
-    'Afternoon, {name}. Two items still open.',
-    'Afternoon, {name}. Almost caught up.',
-    'Hi {name}. The Quad is busy today.',
-  ],
-  evening: [
-    'Good evening, {name}',
-    'Evening, {name}. One thing left today.',
-    'Evening, {name}. The Campsite is quiet.',
-    'Evening, {name}. Nice work today.',
-  ],
-  late: [
-    'Working late, {name}',
-    'Still up, {name}?',
-    'Working late, {name}. Prep can wait.',
-    'Late one, {name}. This can keep until tomorrow.',
-  ],
+  morning: ['Morning', 'Good morning', 'Bright and early', 'Early start'],
+  afternoon: ['Afternoon', 'Good afternoon', 'Almost caught up', 'Midday'],
+  evening: ['Evening', 'Good evening', 'Winding down', 'Nice work today'],
+  late: ['Working late', 'Still up', 'Late one', 'Past midnight'],
 }
 
 export function blockFor(hour: number): Block {
@@ -42,7 +26,7 @@ export function blockFor(hour: number): Block {
   return 'late'
 }
 
-/** Picks a stable index for this session, falling back to the first line. */
+/** Picks a stable index for this session, falling back to the first phrase. */
 function stableIndex(block: Block, length: number): number {
   const key = `quad.greeting.${block}`
 
@@ -62,8 +46,17 @@ function stableIndex(block: Block, length: number): number {
   }
 }
 
-export function greetingFor(name: string, now: Date = new Date()): string {
+/**
+ * Greets by first name.
+ *
+ * Pass null when the camper has not told us their name. The phrase then
+ * stands on its own rather than falling back to an email address, which is
+ * an identifier and not a way to address a person.
+ */
+export function greetingFor(firstName: string | null, now: Date = new Date()): string {
   const block = blockFor(now.getHours())
   const options = GREETINGS[block]
-  return options[stableIndex(block, options.length)].replace('{name}', name)
+  const phrase = options[stableIndex(block, options.length)]
+
+  return firstName ? `${phrase}, ${firstName}.` : `${phrase}.`
 }

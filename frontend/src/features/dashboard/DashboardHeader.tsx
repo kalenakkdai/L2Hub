@@ -5,7 +5,8 @@ import { longDateTime } from './formatDate'
 import type { HeaderStats } from './types'
 
 type DashboardHeaderProps = {
-  name: string
+  /** Null when the camper has not given a name; the greeting drops it. */
+  firstName: string | null
   stats: HeaderStats
 }
 
@@ -43,8 +44,7 @@ function Stat({
  * Sticky page header: where you are in time, who you are, and the three
  * numbers that summarise your standing.
  */
-export function DashboardHeader({ name, stats }: DashboardHeaderProps) {
-  const firstName = name.trim().split(/\s+/)[0]
+export function DashboardHeader({ firstName, stats }: DashboardHeaderProps) {
   const points = useCountUp(stats.points)
   const levelRef = useLevelConfetti<HTMLDivElement>(stats.level)
 

@@ -10,7 +10,7 @@ export type CommitteeSummary = {
   id: string
   name: string
   /** Null when nobody leads it yet. */
-  lead: string | null
+  head: string | null
   email: string
   camperCount: number
   /** Whether the signed-in camper belongs to this committee. */
@@ -22,7 +22,7 @@ export type CommitteeMember = {
   name: string
   /** Elected position, when they hold one. */
   position: string | null
-  isLead: boolean
+  isHead: boolean
 }
 
 export type CommitteeTask = {

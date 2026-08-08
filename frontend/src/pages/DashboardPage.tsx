@@ -22,7 +22,7 @@ export function DashboardPage() {
   const dashboard = useDashboard()
 
   if (me.shell) return me.shell
-  const { profile, name, committee } = me
+  const { profile, name, firstName, committee } = me
 
   const data = dashboard.data
 
@@ -57,7 +57,7 @@ export function DashboardPage() {
   return (
     <AppShell
       {...shellProps}
-      header={<DashboardHeader name={name} stats={data.stats} />}
+      header={<DashboardHeader firstName={firstName} stats={data.stats} />}
       rail={
         <DashboardRail
           committee={data.committeeSnapshot}

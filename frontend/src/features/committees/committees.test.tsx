@@ -41,7 +41,7 @@ describe('CommitteesPage', () => {
     mockProfile()
   })
 
-  it('lists every committee with its lead and camper count', async () => {
+  it('lists every committee with its head and camper count', async () => {
     renderWithProviders(<CommitteesPage />)
 
     expect(await screen.findByRole('heading', { name: 'Committees' })).toBeInTheDocument()
@@ -53,11 +53,11 @@ describe('CommitteesPage', () => {
     expect(screen.getByText('14 campers')).toBeInTheDocument()
   })
 
-  it('says so when a committee has no lead yet', async () => {
+  it('says so when a committee has no head yet', async () => {
     renderWithProviders(<CommitteesPage />)
     await screen.findByRole('heading', { name: 'Committees' })
 
-    expect(screen.getByText('No committee lead yet')).toBeInTheDocument()
+    expect(screen.getByText('No committee head yet')).toBeInTheDocument()
   })
 
   it('marks the committees the camper belongs to', async () => {
@@ -109,13 +109,13 @@ describe('CommitteeDetailPage', () => {
     expect(screen.getByText(detail.events[0].title)).toBeInTheDocument()
   })
 
-  it('names the committee lead in the roster', async () => {
+  it('names the committee head in the roster', async () => {
     renderDetail('activities')
     await screen.findByRole('heading', { name: 'Activities', level: 1 })
 
-    // The header subline also says "Committee lead <name>", so scope to the roster.
+    // The header subline also says "Committee head <name>", so scope to the roster.
     const roster = screen.getByRole('region', { name: 'Campers' })
-    expect(within(roster).getByText(/Committee lead/)).toBeInTheDocument()
+    expect(within(roster).getByText(/Committee head/)).toBeInTheDocument()
   })
 
   it('reports how many campers are not listed', async () => {
@@ -153,13 +153,13 @@ describe('CommitteeDetailPage', () => {
 })
 
 describe('committee fixture', () => {
-  it('puts the lead first and never duplicates a camper', () => {
+  it('puts the head first and never duplicates a camper', () => {
     for (const committee of SAMPLE_COMMITTEES) {
       const detail = sampleCommitteeDetail(committee.id)!
       const names = detail.members.map((member) => member.name)
 
       expect(new Set(names).size).toBe(names.length)
-      if (committee.lead) expect(detail.members[0].name).toBe(committee.lead)
+      if (committee.head) expect(detail.members[0].name).toBe(committee.head)
     }
   })
 

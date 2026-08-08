@@ -196,13 +196,23 @@ describe('greeting', () => {
     expect(blockFor(hour)).toBe(expected)
   })
 
-  it('includes the name', () => {
-    expect(greetingFor('Ada', new Date('2026-08-06T08:00:00'))).toContain('Ada')
+  it('is a short phrase, the first name, and a full stop', () => {
+    const greeting = greetingFor('Brittany', new Date('2026-08-06T13:00:00'))
+
+    // e.g. "Afternoon, Brittany." — and nothing after it.
+    expect(greeting).toMatch(/^[A-Za-z ]+, Brittany\.$/)
   })
 
   it('holds the same greeting for the whole session', () => {
     const now = new Date('2026-08-06T08:00:00')
     expect(greetingFor('Ada', now)).toBe(greetingFor('Ada', now))
+  })
+
+  it('drops the name rather than falling back to an email', () => {
+    const greeting = greetingFor(null, new Date('2026-08-06T13:00:00'))
+
+    expect(greeting).toMatch(/^[A-Za-z ]+\.$/)
+    expect(greeting).not.toContain('@')
   })
 
   it('still greets when sessionStorage is unavailable', () => {

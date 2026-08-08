@@ -173,7 +173,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
     {
       id: 'a3',
       kind: 'committee',
-      description: 'Added to the Tech committee as committee lead',
+      description: 'Added to the Tech committee as committee head',
       occurredAt: hoursFromNow(-30),
     },
     {

@@ -21,18 +21,18 @@ function daysFromNow(days: number, hour: number): string {
 }
 
 export const SAMPLE_COMMITTEES: CommitteeSummary[] = [
-  { id: 'activities', name: 'Activities', lead: 'Kalena Dai', email: 'activities@msjhs.org', camperCount: 14, isMine: true },
-  { id: 'community', name: 'Community', lead: 'Daniel Okafor', email: 'community@msjhs.org', camperCount: 11, isMine: false },
-  { id: 'elections', name: 'Elections', lead: null, email: 'elections@msjhs.org', camperCount: 7, isMine: false },
-  { id: 'fundraising', name: 'Fundraising', lead: 'Ethan Brooks', email: 'fundraising@msjhs.org', camperCount: 12, isMine: false },
-  { id: 'gtac', name: 'GTAC', lead: 'Naomi Chen', email: 'gtac@msjhs.org', camperCount: 9, isMine: false },
-  { id: 'hcmc', name: 'HCMC', lead: 'Jordan Reyes', email: 'hcmc@msjhs.org', camperCount: 10, isMine: false },
-  { id: 'publicity', name: 'Publicity', lead: 'Ava Lindqvist', email: 'publicity@msjhs.org', camperCount: 13, isMine: false },
-  { id: 'store', name: 'Student Store', lead: 'Marcus Bell', email: 'store@msjhs.org', camperCount: 8, isMine: false },
-  { id: 'star', name: 'STAR', lead: 'Sofia Duarte', email: 'star@msjhs.org', camperCount: 9, isMine: false },
-  { id: 'sports', name: 'Sports', lead: 'Tyler Nakamura', email: 'sports@msjhs.org', camperCount: 11, isMine: false },
-  { id: 'tech', name: 'Tech', lead: 'Kalena Dai', email: 'tech@msjhs.org', camperCount: 6, isMine: true },
-  { id: 'media', name: 'Videography/Photography', lead: 'Ruby Alvarez', email: 'media@msjhs.org', camperCount: 10, isMine: false },
+  { id: 'activities', name: 'Activities', head: 'Kalena Dai', email: 'activities@msjhs.org', camperCount: 14, isMine: true },
+  { id: 'community', name: 'Community', head: 'Daniel Okafor', email: 'community@msjhs.org', camperCount: 11, isMine: false },
+  { id: 'elections', name: 'Elections', head: null, email: 'elections@msjhs.org', camperCount: 7, isMine: false },
+  { id: 'fundraising', name: 'Fundraising', head: 'Ethan Brooks', email: 'fundraising@msjhs.org', camperCount: 12, isMine: false },
+  { id: 'gtac', name: 'GTAC', head: 'Naomi Chen', email: 'gtac@msjhs.org', camperCount: 9, isMine: false },
+  { id: 'hcmc', name: 'HCMC', head: 'Jordan Reyes', email: 'hcmc@msjhs.org', camperCount: 10, isMine: false },
+  { id: 'publicity', name: 'Publicity', head: 'Ava Lindqvist', email: 'publicity@msjhs.org', camperCount: 13, isMine: false },
+  { id: 'store', name: 'Student Store', head: 'Marcus Bell', email: 'store@msjhs.org', camperCount: 8, isMine: false },
+  { id: 'star', name: 'STAR', head: 'Sofia Duarte', email: 'star@msjhs.org', camperCount: 9, isMine: false },
+  { id: 'sports', name: 'Sports', head: 'Tyler Nakamura', email: 'sports@msjhs.org', camperCount: 11, isMine: false },
+  { id: 'tech', name: 'Tech', head: 'Kalena Dai', email: 'tech@msjhs.org', camperCount: 6, isMine: true },
+  { id: 'media', name: 'Videography/Photography', head: 'Ruby Alvarez', email: 'media@msjhs.org', camperCount: 10, isMine: false },
 ]
 
 const ROSTER: { name: string; position: string | null }[] = [
@@ -54,26 +54,26 @@ const ROSTER: { name: string; position: string | null }[] = [
   { name: 'Zara Haddad', position: null },
 ]
 
-/** Derives a stable roster for a committee, lead first. */
+/** Derives a stable roster for a committee, head first. */
 function rosterFor(committee: CommitteeSummary, index: number, limit: number): CommitteeMember[] {
-  const lead = committee.lead
-    ? (ROSTER.find((person) => person.name === committee.lead) ?? null)
+  const head = committee.head
+    ? (ROSTER.find((person) => person.name === committee.head) ?? null)
     : null
-  const rest = ROSTER.filter((person) => person.name !== lead?.name)
+  const rest = ROSTER.filter((person) => person.name !== head?.name)
 
   const picked: typeof ROSTER = []
-  for (let i = 0; picked.length < limit - (lead ? 1 : 0) && i < rest.length; i++) {
+  for (let i = 0; picked.length < limit - (head ? 1 : 0) && i < rest.length; i++) {
     const candidate = rest[(index * 5 + i * 3) % rest.length]
     if (!picked.includes(candidate)) picked.push(candidate)
   }
 
-  const all = lead ? [lead, ...picked] : picked
+  const all = head ? [head, ...picked] : picked
 
   return all.slice(0, limit).map((person) => ({
     id: `${committee.id}-${person.name.toLowerCase().replace(/\s+/g, '-')}`,
     name: person.name,
     position: person.position,
-    isLead: person.name === lead?.name,
+    isHead: person.name === head?.name,
   }))
 }
 

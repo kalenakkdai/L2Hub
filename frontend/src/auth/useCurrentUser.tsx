@@ -8,7 +8,16 @@ import { useSignOutOnExpiry } from './useSignOutOnExpiry'
 
 type Ready = {
   profile: CurrentUser
+  /** Display name — the full name, or the email when none was given. */
   name: string
+  /**
+   * First name, or null when the camper has not told us one.
+   *
+   * Deliberately not derived from the email: a mailbox handle is an
+   * identifier, not a way to address someone. Callers greet without a name
+   * instead, and the signup form collects a real one.
+   */
+  firstName: string | null
   /** The camper's committee, from their role assignments. Null if unscoped. */
   committee: string | null
   /** Null once the profile has loaded. */
@@ -18,9 +27,15 @@ type Ready = {
 type NotReady = {
   profile: null
   name: string
+  firstName: null
   committee: null
   /** What the page should render instead of itself. */
   shell: ReactElement
+}
+
+function firstNameOf(profile: CurrentUser): string | null {
+  const full = profile.full_name?.trim()
+  return full ? (full.split(/\s+/)[0] ?? null) : null
 }
 
 /**
@@ -60,6 +75,7 @@ export function useCurrentUser(): Ready | NotReady {
     return {
       profile: null,
       name: '',
+      firstName: null,
       committee: null,
       shell: <FullPageMessage>Loading your profile…</FullPageMessage>,
     }
@@ -70,6 +86,7 @@ export function useCurrentUser(): Ready | NotReady {
     return {
       profile: null,
       name: '',
+      firstName: null,
       committee: null,
       shell: <FullPageMessage>Signing you out…</FullPageMessage>,
     }
@@ -81,6 +98,7 @@ export function useCurrentUser(): Ready | NotReady {
     return {
       profile: null,
       name: '',
+      firstName: null,
       committee: null,
       shell: (
         <FullPageMessage>
@@ -102,6 +120,7 @@ export function useCurrentUser(): Ready | NotReady {
   return {
     profile: meQuery.data,
     name: meQuery.data.full_name ?? meQuery.data.email,
+    firstName: firstNameOf(meQuery.data),
     committee: committeeOf(meQuery.data),
     shell: null,
   }

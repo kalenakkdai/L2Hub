@@ -40,7 +40,7 @@ function Roster({ committee }: { committee: CommitteeDetail }) {
             <span className="text-sm font-medium text-ink">{member.name}</span>
             <span className="ml-auto text-right text-[13px] text-ink-subtle">
               {member.position ? `${member.position} · ` : ''}
-              {member.isLead ? 'Committee lead' : 'Camper'}
+              {member.isHead ? 'Committee head' : 'Camper'}
             </span>
           </li>
         ))}
@@ -83,7 +83,7 @@ export function CommitteeDetailPage() {
           {data && (
             <p className="mt-1.5 text-[13.5px] text-ink-subtle">
               {data.camperCount} campers ·{' '}
-              {data.lead ? `Committee lead ${data.lead}` : 'No committee lead yet'} ·{' '}
+              {data.head ? `Committee head ${data.head}` : 'No committee head yet'} ·{' '}
               {data.email}
             </p>
           )}

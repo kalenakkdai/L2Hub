@@ -23,6 +23,7 @@ import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
 import { CommitteesPage } from './features/committees/CommitteesPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
+import { SignUpPage } from './pages/SignUpPage'
 import {
   EventGradebookPage,
   GradeAssignmentPage,
@@ -67,6 +68,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
       <Route
         path="/dashboard"
         element={

@@ -3,7 +3,12 @@ import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { AuthContext, type AuthStatus, type SignOutReason } from './authContext'
+import {
+  AuthContext,
+  type AuthStatus,
+  type SignOutReason,
+  type SignUpDetails,
+} from './authContext'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -51,6 +56,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient])
 
+  const signUp = useCallback(async (details: SignUpDetails) => {
+    const firstName = details.firstName.trim()
+    const lastName = details.lastName.trim()
+
+    const { data, error } = await supabase.auth.signUp({
+      email: details.email,
+      password: details.password,
+      options: {
+        // The auth.users trigger reads full_name from here and writes it to
+        // profiles, so the name is captured at the moment of signup rather
+        // than left for someone to fill in later.
+        data: {
+          full_name: `${firstName} ${lastName}`.trim(),
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
+    })
+
+    if (error) throw error
+    setSessionExpired(false)
+
+    // Supabase returns a user with no session when email confirmation is on.
+    return { needsConfirmation: Boolean(data.user) && !data.session }
+  }, [])
+
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
@@ -77,8 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSessionExpired = useCallback(() => setSessionExpired(false), [])
 
   const value = useMemo(
-    () => ({ session, status, sessionExpired, signIn, signOut, clearSessionExpired }),
-    [session, status, sessionExpired, signIn, signOut, clearSessionExpired],
+    () => ({
+      session,
+      status,
+      sessionExpired,
+      signIn,
+      signUp,
+      signOut,
+      clearSessionExpired,
+    }),
+    [session, status, sessionExpired, signIn, signUp, signOut, clearSessionExpired],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -67,6 +67,12 @@ export function createSupabaseMock(initialSession: Session | null = null) {
         return { data: { session: next, user: next.user }, error: null }
       }),
 
+      signUp: vi.fn(async () => {
+        const next = makeSession()
+        emit('SIGNED_IN', next)
+        return { data: { session: next, user: next.user }, error: null }
+      }),
+
       signOut: vi.fn(async () => {
         emit('SIGNED_OUT', null)
         return { error: null }
