@@ -1,112 +1,161 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * A snowy owl that perches around the night sky and flies to the next perch as
- * the page is scrolled. Decorative: hidden from assistive tech and never
- * intercepts pointer events.
+ * A snowy owl that glides along a path through the night sky, tracking the
+ * scroll position frame by frame. Decorative: hidden from assistive tech and
+ * never intercepts pointer events.
  *
- * Perches are expressed as percentages of the backdrop layer, so the owl stays
- * inside the content column on every screen size.
+ * Waypoints are percentages of the backdrop layer, so the owl stays inside the
+ * content column on every screen size.
  */
 
-type Perch = { x: number; y: number }
+type Point = { x: number; y: number }
 
-export const PERCHES: Perch[] = [
-  { x: 74, y: 10 },
-  { x: 20, y: 26 },
+export const WAYPOINTS: Point[] = [
+  { x: 72, y: 12 },
+  { x: 22, y: 28 },
   { x: 66, y: 46 },
-  { x: 26, y: 66 },
+  { x: 24, y: 64 },
   { x: 70, y: 82 },
 ]
 
-const FLIGHT_MS = 1200
+const OWL_SIZE = 116
+/** How long the owl keeps flapping after the page stops moving. */
+const GLIDE_OUT_MS = 420
+/** A hop between waypoints when the page is too short to scroll. */
+const ROAM_MS = 5000
 
-/**
- * Maps how far the page is scrolled onto a perch index. A page too short to
- * scroll keeps the owl on the first perch rather than dividing by zero.
- */
-export function perchIndexFor(scrollTop: number, scrollable: number): number {
-  if (scrollable <= 0) return 0
-  const progress = Math.min(1, Math.max(0, scrollTop / scrollable))
-  return Math.round(progress * (PERCHES.length - 1))
+/** Eases each segment so the owl slows into a waypoint and accelerates away. */
+function smoothstep(t: number): number {
+  return t * t * (3 - 2 * t)
 }
 
-function perchForScroll(): number {
-  const doc = document.documentElement
-  return perchIndexFor(doc.scrollTop, doc.scrollHeight - doc.clientHeight)
+/**
+ * Fraction of the page that has been scrolled. A page too short to scroll sits
+ * at zero rather than dividing by zero.
+ */
+export function scrollProgress(scrollTop: number, scrollable: number): number {
+  if (scrollable <= 0) return 0
+  return Math.min(1, Math.max(0, scrollTop / scrollable))
+}
+
+/**
+ * Position along the waypoint path for a given progress, interpolated rather
+ * than snapped so the owl tracks the scroll wheel continuously.
+ */
+export function owlPosition(progress: number): Point {
+  const clamped = Math.min(1, Math.max(0, progress))
+  const scaled = clamped * (WAYPOINTS.length - 1)
+  const index = Math.min(WAYPOINTS.length - 2, Math.floor(scaled))
+  const eased = smoothstep(scaled - index)
+  const from = WAYPOINTS[index]
+  const to = WAYPOINTS[index + 1]
+
+  return {
+    x: from.x + (to.x - from.x) * eased,
+    y: from.y + (to.y - from.y) * eased,
+  }
 }
 
 export function Owl() {
-  const [index, setIndex] = useState(0)
+  const anchorRef = useRef<HTMLDivElement | null>(null)
   const [flying, setFlying] = useState(false)
   const [facingLeft, setFacingLeft] = useState(false)
-  const previousIndex = useRef(0)
+  const [roaming, setRoaming] = useState(false)
+  const lastX = useRef(WAYPOINTS[0].x)
+
+  // Position is written straight to the node instead of through state: scroll
+  // fires every frame, and re-rendering React that often to move one element
+  // is wasted work.
+  const moveTo = (progress: number) => {
+    const anchor = anchorRef.current
+    if (!anchor) return
+
+    const { x, y } = owlPosition(progress)
+    anchor.style.left = `${x}%`
+    anchor.style.top = `${y}%`
+
+    // Face the direction of travel, ignoring jitter so the owl does not
+    // flicker while hovering around one spot.
+    if (Math.abs(x - lastX.current) > 0.35) {
+      setFacingLeft(x < lastX.current)
+      lastX.current = x
+    }
+  }
 
   useEffect(() => {
     let frame = 0
+    let stopTimer = 0
+
+    const read = () => {
+      const doc = document.documentElement
+      const scrollable = doc.scrollHeight - doc.clientHeight
+      setRoaming(scrollable <= 8)
+      if (scrollable <= 8) return
+
+      moveTo(scrollProgress(doc.scrollTop, scrollable))
+      // Wings beat while the page moves and settle once it stops.
+      setFlying(true)
+      window.clearTimeout(stopTimer)
+      stopTimer = window.setTimeout(() => setFlying(false), GLIDE_OUT_MS)
+    }
 
     const onScroll = () => {
-      // Scroll fires far more often than the owl needs to move, so collapse
-      // bursts into one read per frame.
+      // Scroll fires faster than the screen refreshes, so collapse bursts into
+      // one read per frame.
       if (frame) return
       frame = window.requestAnimationFrame(() => {
         frame = 0
-        setIndex(perchForScroll())
+        read()
       })
     }
 
-    onScroll()
+    read()
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onScroll)
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
       if (frame) window.cancelAnimationFrame(frame)
+      window.clearTimeout(stopTimer)
     }
   }, [])
 
   useEffect(() => {
-    // Short pages never scroll, so the owl would be stuck on its first perch.
-    // Let it roam on a timer instead, and yield to scrolling the moment the
-    // page grows tall enough to drive it.
+    if (!roaming) return
+
+    // Short pages never scroll, so the owl would be stuck at the first
+    // waypoint. Let it hop along the path on its own instead.
+    let step = 0
     const timer = window.setInterval(() => {
-      const doc = document.documentElement
-      if (doc.scrollHeight - doc.clientHeight > 8) return
-      setIndex((current) => (current + 1) % PERCHES.length)
-    }, 6000)
+      step = (step + 1) % WAYPOINTS.length
+      moveTo(step / (WAYPOINTS.length - 1))
+      setFlying(true)
+      window.setTimeout(() => setFlying(false), 1200)
+    }, ROAM_MS)
 
     return () => window.clearInterval(timer)
-  }, [])
+  }, [roaming])
 
-  useEffect(() => {
-    if (previousIndex.current === index) return
-
-    // Face the direction of travel so the owl never flies backwards.
-    setFacingLeft(PERCHES[index].x < PERCHES[previousIndex.current].x)
-    previousIndex.current = index
-    setFlying(true)
-
-    const timer = window.setTimeout(() => setFlying(false), FLIGHT_MS)
-    return () => window.clearTimeout(timer)
-  }, [index])
-
-  const perch = PERCHES[index]
+  const bodyClass = ['owl-body', flying ? 'owl-body-flying' : '']
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <>
       <div
         aria-hidden="true"
-        className="owl-perch pointer-events-none fixed inset-0 z-20 lg:left-64"
+        className="pointer-events-none fixed inset-0 z-20 lg:left-64"
       >
         <div
-          className="owl-anchor absolute"
-          style={{ left: `${perch.x}%`, top: `${perch.y}%` }}
+          ref={anchorRef}
+          className={roaming ? 'owl-anchor owl-anchor-roaming' : 'owl-anchor'}
+          style={{ left: `${WAYPOINTS[0].x}%`, top: `${WAYPOINTS[0].y}%` }}
         >
-          <div className={flying ? 'owl-body owl-body-flying' : 'owl-body'}>
+          <div className={bodyClass}>
             <svg
-              className="owl-svg"
-              width="64"
-              height="64"
+              width={OWL_SIZE}
+              height={OWL_SIZE}
               viewBox="0 0 64 64"
               style={{ transform: facingLeft ? 'scaleX(-1)' : undefined }}
             >
@@ -164,22 +213,33 @@ export function Owl() {
 
       <style>{`
         .owl-anchor {
+          position: absolute;
           /* Percentages place the owl's centre, not its corner. */
-          margin-left: -32px;
-          margin-top: -32px;
+          margin-left: -${OWL_SIZE / 2}px;
+          margin-top: -${OWL_SIZE / 2}px;
+          /* Just enough easing to smooth scroll jitter without lagging behind
+           * the wheel. */
           transition:
-            left ${FLIGHT_MS}ms cubic-bezier(0.45, 0, 0.25, 1),
-            top ${FLIGHT_MS}ms cubic-bezier(0.45, 0, 0.25, 1);
+            left 120ms linear,
+            top 120ms linear;
+        }
+
+        /* Roaming hops are a real flight between two points, not a scroll
+         * nudge, so they get a proper glide. */
+        .owl-anchor-roaming {
+          transition:
+            left 1200ms cubic-bezier(0.45, 0, 0.25, 1),
+            top 1200ms cubic-bezier(0.45, 0, 0.25, 1);
         }
 
         .owl-body {
           animation: owlBob 3.6s ease-in-out infinite;
-          filter: drop-shadow(0 4px 10px rgb(5 9 15 / 0.55));
+          filter: drop-shadow(0 6px 14px rgb(5 9 15 / 0.55));
         }
 
         /* Mid-flight the owl leans into the direction it is travelling. */
         .owl-body-flying {
-          animation: owlSwoop ${FLIGHT_MS}ms ease-in-out;
+          animation: owlSwoop 900ms ease-in-out infinite;
         }
 
         .owl-wing {
@@ -202,14 +262,12 @@ export function Owl() {
 
         @keyframes owlBob {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
+          50% { transform: translateY(-6px); }
         }
 
         @keyframes owlSwoop {
-          0% { transform: translateY(0) rotate(0deg); }
-          35% { transform: translateY(-14px) rotate(-9deg); }
-          70% { transform: translateY(-6px) rotate(6deg); }
-          100% { transform: translateY(0) rotate(0deg); }
+          0%, 100% { transform: translateY(0) rotate(-3deg); }
+          50% { transform: translateY(-10px) rotate(4deg); }
         }
 
         @keyframes owlGlide {
@@ -227,9 +285,9 @@ export function Owl() {
           95% { transform: scaleY(0.1); }
         }
 
-        /* The global reduced-motion rule stops the flapping and the flight
-         * tween, so the owl simply sits on the perch for the current scroll
-         * position instead of animating between them. */
+        /* The global reduced-motion rule stops the flapping and the position
+         * tween, so the owl simply sits at the point on the path for the
+         * current scroll position instead of animating toward it. */
         @media (prefers-reduced-motion: reduce) {
           .owl-body,
           .owl-wing,
