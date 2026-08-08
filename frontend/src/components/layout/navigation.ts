@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   MessagesSquare,
   Settings2,
+  SlidersHorizontal,
+  UserCog,
   Users,
   UsersRound,
 } from 'lucide-react'
@@ -88,7 +90,19 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Tools', to: '/tools', icon: Settings2 },
       { label: 'Resources', to: '/resources', icon: BookOpen },
+      // Hidden from campers entirely. Advisers see it and get a read-only
+      // page; only settings.edit holders can change anything.
+      {
+        label: 'Campsite settings',
+        to: '/settings/campsite',
+        icon: SlidersHorizontal,
+        permission: 'settings.view',
+      },
     ],
+  },
+  {
+    title: 'You',
+    items: [{ label: 'My settings', to: '/settings', icon: UserCog }],
   },
 ]
 
@@ -96,6 +110,8 @@ export const NAV_SECTIONS: NavSection[] = [
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
   '/committees',
+  '/settings',
+  '/settings/campsite',
   '/grades',
   '/admin/users',
   '/events',

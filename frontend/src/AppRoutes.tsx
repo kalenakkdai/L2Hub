@@ -24,6 +24,8 @@ import { CommitteesPage } from './features/committees/CommitteesPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
 import { SignUpPage } from './pages/SignUpPage'
+import { MySettings } from './pages/settings/MySettings'
+import { CampsiteSettings } from './pages/settings/CampsiteSettings'
 import {
   EventGradebookPage,
   GradeAssignmentPage,
@@ -82,6 +84,22 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <UsersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <MySettings />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings/campsite"
+        element={
+          <RequireAuth>
+            <CampsiteSettings />
           </RequireAuth>
         }
       />
