@@ -31,7 +31,7 @@ export const SAMPLE_COMMITTEES: CommitteeSummary[] = [
   { id: 'store', name: 'Student Store', head: 'Marcus Bell', email: 'store@msjhs.org', camperCount: 8, isMine: false },
   { id: 'star', name: 'STAR', head: 'Sofia Duarte', email: 'star@msjhs.org', camperCount: 9, isMine: false },
   { id: 'sports', name: 'Sports', head: 'Tyler Nakamura', email: 'sports@msjhs.org', camperCount: 11, isMine: false },
-  { id: 'tech', name: 'Tech', head: 'Kalena Dai', email: 'tech@msjhs.org', camperCount: 6, isMine: true },
+  { id: 'tech', name: 'Tech', head: 'Kalena Dai', email: 'tech@msjhs.org', camperCount: 5, isMine: true },
   { id: 'media', name: 'Videography/Photography', head: 'Ruby Alvarez', email: 'media@msjhs.org', camperCount: 10, isMine: false },
 ]
 
@@ -102,7 +102,8 @@ const EVENTS: Record<string, CommitteeDetail['events']> = {
   ],
 }
 
-const MAX_SHOWN = 6
+/** At most five campers are listed per camp; the rest roll into a count. */
+const MAX_SHOWN = 5
 
 export function sampleCommitteeDetail(id: string): CommitteeDetail | null {
   const index = SAMPLE_COMMITTEES.findIndex((committee) => committee.id === id)

@@ -14,11 +14,24 @@ Frontend checks are convenience only. Every API route must call
 | President | `president` | 100 | Second super-admin; same permission bundle as AC. |
 | ASBO | `asbo` | 80 | Broad operational access; no private/anonymous feedback; no grades.edit. |
 | Committee Head | `committee_head` | 50 | Scoped to committees they lead. |
+| Class Officer | `class_officer` | 25 | Senior/Junior Class Officers. Edit Class Officers fundraiser and homecoming plans. |
+| Class Advisor | `class_advisor` | 20 | Faculty advisors (two per class). View Class Officers progress only. |
 | Member | `member` | 10 | Own profile, assignments, submissions, grades. |
 
 There are no role aliases and no profile role enum. Protected system roles
 cannot be deleted. President and AC are both `is_superadmin` for assignment
 and committee access.
+
+### Class Officers platform
+
+| Capability | President | AC | ASBO | Class Officer | Class Advisor | Committee Head | Member |
+|------------|-----------|----|------|---------------|---------------|----------------|--------|
+| `class_officers.view` | Yes | Yes | Yes | Yes | Yes | No | No |
+| `class_officers.manage` | Yes | Yes | Yes | Yes | No | No | No |
+
+Class Advisors intentionally do not inherit the Member baseline — their only
+platform job is watching Class Officers progress (plus `notifications.view_own`
+so the shell bell works).
 
 ## Scope model
 
@@ -115,6 +128,23 @@ Route: `/admin/users` (API: `GET /admin/users`)
 | `spirit.head@l2hub.local` | Member + Spirit Committee Head |
 | `community.member@l2hub.local` | Community Member |
 | `spirit.member@l2hub.local` | Spirit Member |
+| `senior.advisor1@l2hub.local` / `senior.advisor2@l2hub.local` | Senior Class Advisors (view only) |
+| `junior.advisor1@l2hub.local` / `junior.advisor2@l2hub.local` | Junior Class Advisors (view only) |
+| `sco@l2hub.local` | Senior Class Officer |
+| `jco@l2hub.local` | Junior Class Officer |
+
+Local Supabase Auth login (email/password) is wired up for one account per role.
+The password for every seeded account is `l2hubdev`:
+
+| Role | Login email |
+|------|-------------|
+| Member | `community.member@l2hub.local` |
+| Committee Head | `community.head@l2hub.local` |
+| Class Advisor (view-only) | `senior.advisor1@l2hub.local` |
+| Class Officer | `sco@l2hub.local` |
+| ASBO | `asbo@l2hub.local` |
+| AC | `ac@l2hub.local` |
+| President | `president@l2hub.local` |
 
 ## Key code paths
 

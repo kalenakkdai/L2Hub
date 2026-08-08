@@ -3,6 +3,8 @@ import { apiFetch } from './client'
 /** Mirrors backend system role slugs (with legacy aliases accepted by API). */
 export type UserRole =
   | 'member'
+  | 'class_advisor'
+  | 'class_officer'
   | 'committee_head'
   | 'asbo'
   | 'ac'
@@ -58,6 +60,8 @@ export function fetchDashboard(): Promise<DashboardPayload> {
 
 const ROLE_LABELS: Record<string, string> = {
   member: 'Member',
+  class_advisor: 'Class Advisor',
+  class_officer: 'Class Officer',
   committee_head: 'Committee Head',
   asbo: 'ASBO',
   ac: 'AC',

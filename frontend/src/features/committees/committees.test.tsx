@@ -122,8 +122,8 @@ describe('CommitteeDetailPage', () => {
     renderDetail('activities')
     await screen.findByRole('heading', { name: 'Activities', level: 1 })
 
-    // 14 campers, 6 shown.
-    expect(screen.getByText('and 8 more campers')).toBeInTheDocument()
+    // 14 campers, 5 shown (max per camp).
+    expect(screen.getByText('and 9 more campers')).toBeInTheDocument()
   })
 
   it('says the roster is complete when it is', async () => {

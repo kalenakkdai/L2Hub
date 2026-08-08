@@ -119,13 +119,31 @@ def test_seeded_profiles_have_member_baseline_and_normalized_primary_role(
 
     users = seed_development_users(db_session)
 
+    # Class advisors are deliberately view-only: they never receive the Member
+    # baseline, so exclude them from that invariant.
+    advisor_keys = {
+        "senior_advisor_1",
+        "senior_advisor_2",
+        "junior_advisor_1",
+        "junior_advisor_2",
+    }
+    primary_by_key = {
+        "community_head": "committee_head",
+        "spirit_head": "committee_head",
+        "community_member": "member",
+        "spirit_member": "member",
+        "senior_advisor_1": "class_advisor",
+        "senior_advisor_2": "class_advisor",
+        "junior_advisor_1": "class_advisor",
+        "junior_advisor_2": "class_advisor",
+        "senior_class_officer": "class_officer",
+        "junior_class_officer": "class_officer",
+    }
+
     for expected, profile in users.items():
         context = authz.build_auth_context(db_session, profile)
-        assert "member" in {role["slug"] for role in context.roles}
-        expected_primary = {
-            "community_head": "committee_head",
-            "spirit_head": "committee_head",
-            "community_member": "member",
-            "spirit_member": "member",
-        }.get(expected, expected)
+        role_slugs = {role["slug"] for role in context.roles}
+        if expected not in advisor_keys:
+            assert "member" in role_slugs
+        expected_primary = primary_by_key.get(expected, expected)
         assert authz.primary_role_slug(context) == expected_primary

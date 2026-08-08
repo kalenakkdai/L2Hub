@@ -1,7 +1,8 @@
 """Protected system roles and default permission bundles.
 
 Hierarchy ranks (higher = more privileged):
-  PRESIDENT = 100, AC = 100, ASBO = 80, COMMITTEE_HEAD = 50, MEMBER = 10
+  PRESIDENT = 100, AC = 100, ASBO = 80, COMMITTEE_HEAD = 50,
+  CLASS_OFFICER = 25, CLASS_ADVISOR = 20, MEMBER = 10
 
 President and AC are peer super-admins with identical permission bundles.
 """
@@ -14,6 +15,8 @@ ROLE_PRESIDENT: Final = "president"
 ROLE_AC: Final = "ac"
 ROLE_ASBO: Final = "asbo"
 ROLE_COMMITTEE_HEAD: Final = "committee_head"
+ROLE_CLASS_OFFICER: Final = "class_officer"
+ROLE_CLASS_ADVISOR: Final = "class_advisor"
 ROLE_MEMBER: Final = "member"
 
 SYSTEM_ROLES: Final[tuple[tuple[str, str, int, bool], ...]] = (
@@ -21,6 +24,8 @@ SYSTEM_ROLES: Final[tuple[tuple[str, str, int, bool], ...]] = (
     ("AC", ROLE_AC, 100, False),
     ("ASBO", ROLE_ASBO, 80, True),
     ("Committee Head", ROLE_COMMITTEE_HEAD, 50, True),
+    ("Class Officer", ROLE_CLASS_OFFICER, 25, True),
+    ("Class Advisor", ROLE_CLASS_ADVISOR, 20, True),
     ("Member", ROLE_MEMBER, 10, True),
 )
 
@@ -42,6 +47,23 @@ MEMBER_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.PLANNING_CREATE,
         pk.PLANNING_ASSIGN,
         pk.KNOWLEDGE_VIEW,
+    }
+)
+
+# Faculty advisors watch Class Officers progress only. notifications.view_own
+# keeps the AppShell bell from 403ing.
+CLASS_ADVISOR_PERMISSIONS: Final[frozenset[str]] = frozenset(
+    {
+        pk.CLASS_OFFICERS_VIEW,
+        pk.NOTIFICATIONS_VIEW_OWN,
+    }
+)
+
+CLASS_OFFICER_PERMISSIONS: Final[frozenset[str]] = frozenset(
+    {
+        *MEMBER_PERMISSIONS,
+        pk.CLASS_OFFICERS_VIEW,
+        pk.CLASS_OFFICERS_MANAGE,
     }
 )
 
@@ -105,6 +127,8 @@ PRESIDENT_PERMISSIONS: Final[frozenset[str]] = AC_PERMISSIONS
 
 ROLE_PERMISSION_BUNDLES: Final[dict[str, frozenset[str]]] = {
     ROLE_MEMBER: MEMBER_PERMISSIONS,
+    ROLE_CLASS_ADVISOR: CLASS_ADVISOR_PERMISSIONS,
+    ROLE_CLASS_OFFICER: CLASS_OFFICER_PERMISSIONS,
     ROLE_COMMITTEE_HEAD: COMMITTEE_HEAD_PERMISSIONS,
     ROLE_ASBO: ASBO_PERMISSIONS,
     ROLE_AC: AC_PERMISSIONS,
