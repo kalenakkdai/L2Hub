@@ -15,12 +15,14 @@ import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useProfile } from '../../hooks/useProfile'
 import { leaveCampsite } from '../../api/campsite'
 import { useAuth } from '../../auth/useAuth'
+import { AttendancePasskeySettings } from '../../features/attendance/components/AttendancePasskeySettings'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'contact', label: 'Contact' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'appearance', label: 'Appearance' },
+  { id: 'attendance-passkey', label: 'Attendance passkey' },
   { id: 'account', label: 'Account' },
   { id: 'danger', label: 'Danger zone' },
 ]
@@ -114,6 +116,8 @@ export function MySettings() {
               save={save}
               saveNow={saveNow}
             />
+
+            <AttendancePasskeySettings />
 
             <AccountSection profile={profile} />
 

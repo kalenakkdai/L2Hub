@@ -13,6 +13,7 @@ export const EVENT_TYPES = [
   'points_awarded',
   'level_up',
   'wrapped_activity',
+  'whereabouts_ping',
 ] as const
 
 export const CHANNELS = ['email', 'sms', 'in_app'] as const
@@ -37,6 +38,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   points_awarded: 'Points awarded',
   level_up: 'Level up',
   wrapped_activity: 'Event Wrapped updates',
+  whereabouts_ping: 'Whereabouts pings',
 }
 
 /**
@@ -51,11 +53,15 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
  * They stay in EVENT_TYPES because the column still accepts them and campers
  * may already hold rows from when the grid did show them.
  */
-export const SOURCED_EVENT_TYPES: NotificationEventType[] = ['wrapped_activity']
+export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
+  'wrapped_activity',
+  'whereabouts_ping',
+]
 
 /** What each offered row actually gates, for the grid's own description. */
 export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, string>> = {
   wrapped_activity: 'When an Event Wrapped is requested, finishes generating, or is published',
+  whereabouts_ping: 'When Jan or a committee head sends you a return or pickup message',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

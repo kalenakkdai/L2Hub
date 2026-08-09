@@ -33,6 +33,23 @@ Class Advisors intentionally do not inherit the Member baseline — their only
 platform job is watching Class Officers progress (plus `notifications.view_own`
 so the shell bell works).
 
+
+### Attendance and whereabouts
+
+| Capability | President | AC | ASBO | Committee Head | Member |
+|------------|-----------|----|------|----------------|--------|
+| `attendance.view_all` | Yes | Yes | Yes | No | No |
+| `attendance.manage_all` | Yes | Yes | Yes | No | No |
+| `attendance.view_committee` | Yes | Yes | Yes | Led committees only | No |
+| `attendance.manage_committee` | Yes | Yes | Yes | Led committees only | No |
+
+The scanner, protected student-ID/parent-contact setup, daily close, and manual
+edits require `attendance.manage_all`. Committee heads only use the whereabouts
+map, and its backend response is filtered to members of committees they lead.
+Passkey enrollment is a separate self-only operation: an authenticated student
+can register a public-key credential only for their own profile after an
+operator enrolls their student ID. See `docs/attendance.md`.
+
 ## Scope model
 
 Permissions resolve with optional context:

@@ -58,6 +58,24 @@ class Settings(BaseSettings):
     # Empty → backend/.local-storage. Absolute or ~ paths are fine.
     storage_local_root: str = ""
 
+    # Daily Leadership attendance. All timing and penalties are computed on the
+    # server in this timezone; browser clocks are display-only.
+    attendance_timezone: str = "America/Los_Angeles"
+    attendance_class_start: str = "08:00"
+    attendance_class_end: str = "08:50"
+    attendance_id_pepper: str = "local-development-only-change-me"
+    webauthn_rp_id: str = "localhost"
+    webauthn_origin: str = "http://localhost:5173"
+
+    # Optional SMTP delivery for under-80% parent alerts. When unset, alerts
+    # remain in the durable outbox instead of being falsely marked sent.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_use_tls: bool = True
+
     model_config = SettingsConfigDict(
         env_file=(ENV_FILE, ENV_FILE_LOCAL),
         env_file_encoding="utf-8",

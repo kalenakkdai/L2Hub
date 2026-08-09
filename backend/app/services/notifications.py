@@ -36,6 +36,7 @@ EVENT_TYPES = (
     "points_awarded",
     "level_up",
     "wrapped_activity",
+    "whereabouts_ping",
 )
 
 #: The event types something in this codebase actually emits.
@@ -49,7 +50,7 @@ EVENT_TYPES = (
 #:
 #: The list is mirrored in frontend/src/hooks/useNotificationPrefs.ts. When an
 #: emitter lands, both sides change together.
-SOURCED_EVENT_TYPES = frozenset({"wrapped_activity"})
+SOURCED_EVENT_TYPES = frozenset({"wrapped_activity", "whereabouts_ping"})
 
 #: Notification `type` values mapped onto the preference rows a camper can
 #: actually see in the settings grid.
@@ -67,6 +68,7 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "wrapped.request": "wrapped_activity",
     "wrapped.generated": "wrapped_activity",
     "wrapped.published": "wrapped_activity",
+    "whereabouts.ping": "whereabouts_ping",
     "task.assigned": "task_assigned",
     "task.due_soon": "task_due_soon",
     "task.overdue": "task_overdue",

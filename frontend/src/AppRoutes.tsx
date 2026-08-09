@@ -3,6 +3,10 @@ import { HomeRedirect } from './components/HomeRedirect'
 import { RequireAuth } from './components/RequireAuth'
 import { UsersPage } from './features/admin/users/UsersPage'
 import {
+  AttendancePage,
+  WhereaboutsMapPage,
+} from './features/attendance'
+import {
   AgendaPage,
   DebriefsPage,
   EventSummaryPage,
@@ -94,6 +98,22 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <UsersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/attendance"
+        element={
+          <RequireAuth>
+            <AttendancePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/whereabouts"
+        element={
+          <RequireAuth>
+            <WhereaboutsMapPage />
           </RequireAuth>
         }
       />

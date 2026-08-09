@@ -1,5 +1,15 @@
 """ORM model exports."""
 
+from app.models.attendance import (
+    AttendanceDay,
+    AttendanceIdentity,
+    AttendancePasskey,
+    AttendancePasskeyChallenge,
+    AttendanceRecord,
+    ParentAlert,
+    WhereaboutsEntry,
+    WhereaboutsPing,
+)
 from app.models.event_summary import (
     DebriefParticipant,
     Event,
@@ -22,6 +32,11 @@ from app.models.rbac import (
 )
 
 __all__ = [
+    "AttendanceDay",
+    "AttendanceIdentity",
+    "AttendancePasskey",
+    "AttendancePasskeyChallenge",
+    "AttendanceRecord",
     "AuditLog",
     "Committee",
     "CommitteeMembership",
@@ -32,10 +47,13 @@ __all__ = [
     "EventSummaryRequest",
     "Notification",
     "NotificationPreference",
+    "ParentAlert",
     "Permission",
     "PermissionOverride",
     "Profile",
     "Role",
     "RolePermission",
     "UserRoleAssignment",
+    "WhereaboutsEntry",
+    "WhereaboutsPing",
 ]
