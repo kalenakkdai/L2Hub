@@ -110,6 +110,11 @@ SETTINGS_EDIT: Final = "settings.edit"
 CLASS_OFFICERS_VIEW: Final = "class_officers.view"
 CLASS_OFFICERS_MANAGE: Final = "class_officers.manage"
 
+# note taker (Otter-style meeting capture)
+NOTE_TAKER_VIEW: Final = "note_taker.view"
+NOTE_TAKER_RECORD: Final = "note_taker.record"
+NOTE_TAKER_MANAGE: Final = "note_taker.manage"
+
 # admin
 ADMIN_SETTINGS: Final = "admin.settings"
 ADMIN_AUDIT: Final = "admin.audit"
@@ -184,6 +189,9 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
         "Edit Class Officers fundraiser and homecoming plans",
         "class_officers",
     ),
+    (NOTE_TAKER_VIEW, "View own Note Taker meeting sessions", "note_taker"),
+    (NOTE_TAKER_RECORD, "Record and upload Note Taker sessions", "note_taker"),
+    (NOTE_TAKER_MANAGE, "View any Note Taker session", "note_taker"),
     (NOTIFICATIONS_VIEW_OWN, "View own notifications", "notifications"),
     (SETTINGS_VIEW, "View Campsite settings", "admin"),
     (SETTINGS_EDIT, "Edit Campsite settings", "admin"),
@@ -201,6 +209,8 @@ SELF_SCOPED_PERMISSIONS: Final[frozenset[str]] = frozenset(
         DEBRIEF_SUBMIT,
         DEBRIEF_VIEW_OWN,
         GRADES_VIEW_OWN,
+        NOTE_TAKER_VIEW,
+        NOTE_TAKER_RECORD,
     }
 )
 

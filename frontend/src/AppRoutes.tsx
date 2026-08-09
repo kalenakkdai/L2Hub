@@ -30,12 +30,19 @@ import {
   HomecomingPage,
   MockClassOfficersDataProvider,
 } from './features/class-officers'
+import {
+  NoteTakerLayout,
+  NoteTakerListPage,
+  NoteTakerNewPage,
+  NoteTakerSessionPage,
+} from './features/note-taker'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
 import { CommitteesPage } from './features/committees/CommitteesPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
 import { SignUpPage } from './pages/SignUpPage'
+import { ToolsPage } from './pages/ToolsPage'
 import { MySettings } from './pages/settings/MySettings'
 import { CampsiteSettings } from './pages/settings/CampsiteSettings'
 import {
@@ -204,6 +211,26 @@ export function AppRoutes() {
         <Route index element={<ClassOfficersOverviewPage />} />
         <Route path="fundraiser" element={<FundraiserPage />} />
         <Route path="homecoming" element={<HomecomingPage />} />
+      </Route>
+      <Route
+        path="/tools"
+        element={
+          <RequireAuth>
+            <ToolsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/note-taker"
+        element={
+          <RequireAuth>
+            <NoteTakerLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<NoteTakerListPage />} />
+        <Route path="new" element={<NoteTakerNewPage />} />
+        <Route path=":sessionId" element={<NoteTakerSessionPage />} />
       </Route>
       <Route
         path="/events/:eventId/summary"

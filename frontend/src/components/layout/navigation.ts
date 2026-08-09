@@ -6,6 +6,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   MessagesSquare,
+  Mic,
   MapPinned,
   ScanLine,
   Settings2,
@@ -114,7 +115,6 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: MapPinned,
         permission: 'attendance.view_committee',
       },
-      { label: 'Tools', to: '/tools', icon: Settings2 },
       { label: 'Resources', to: '/resources', icon: BookOpen },
       // Hidden from campers entirely. Advisers see it and get a read-only
       // page; only settings.edit holders can change anything.
@@ -123,6 +123,18 @@ export const NAV_SECTIONS: NavSection[] = [
         to: '/settings/campsite',
         icon: SlidersHorizontal,
         permission: 'settings.view',
+      },
+    ],
+  },
+  {
+    title: 'Tools',
+    items: [
+      { label: 'All tools', to: '/tools', icon: Settings2 },
+      {
+        label: 'Note Taker',
+        to: '/note-taker',
+        icon: Mic,
+        permission: 'note_taker.view',
       },
     ],
   },
@@ -144,6 +156,9 @@ export const IMPLEMENTED_ROUTES = new Set([
   '/event-planning',
   '/attendance',
   '/whereabouts',
+  '/tools',
+  '/note-taker',
+  '/note-taker/new',
   '/class-officers',
   '/class-officers/fundraiser',
   '/class-officers/homecoming',

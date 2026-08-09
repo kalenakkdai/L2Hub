@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # Empty → backend/.local-storage. Absolute or ~ paths are fine.
     storage_local_root: str = ""
 
+    # Optional Whisper fallback when an upload has no browser transcript.
+    whisper_model: str = "base"
+    whisper_device: str = "cpu"
+
     # Daily Leadership attendance. All timing and penalties are computed on the
     # server in this timezone; browser clocks are display-only.
     attendance_timezone: str = "America/Los_Angeles"

@@ -33,6 +33,16 @@ Class Advisors intentionally do not inherit the Member baseline — their only
 platform job is watching Class Officers progress (plus `notifications.view_own`
 so the shell bell works).
 
+### Note Taker
+
+| Capability | President | AC | ASBO | Class Officer | Class Advisor | Committee Head | Member |
+|------------|-----------|----|------|---------------|---------------|----------------|--------|
+| `note_taker.view` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
+| `note_taker.record` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
+| `note_taker.manage` | Yes | Yes | Yes | No | No | No | No |
+
+Members see their own meetings. `note_taker.manage` lets ops open any session.
+See `docs/note-taker.md` for Chrome Web Speech setup (Whisper is optional fallback).
 
 ### Attendance and whereabouts
 

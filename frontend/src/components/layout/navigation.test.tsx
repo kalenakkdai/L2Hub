@@ -18,6 +18,9 @@ const { supabase } = await import('../../lib/supabase')
 const { AuthProvider } = await import('../../auth/AuthProvider')
 const { Sidebar } = await import('./Sidebar')
 const { MobileNavigation } = await import('./MobileNavigation')
+const { NAV_SECTIONS, IMPLEMENTED_ROUTES, filterNavSections } = await import(
+  './navigation'
+)
 
 const mock = supabase as unknown as SupabaseMock
 
@@ -30,6 +33,32 @@ function renderChrome(ui: React.ReactElement, route = '/dashboard') {
     </QueryClientProvider>,
   )
 }
+
+describe('Tools section', () => {
+  const tools = NAV_SECTIONS.find((section) => section.title === 'Tools')
+
+  it('holds Note Taker rather than the Work section', () => {
+    expect(tools?.items.map((item) => item.label)).toContain('Note Taker')
+
+    const work = NAV_SECTIONS.find((section) => section.title === 'Work')
+    expect(work?.items.map((item) => item.label)).not.toContain('Note Taker')
+  })
+
+  it('points at routes that exist, so neither row reads as "coming soon"', () => {
+    for (const item of tools?.items ?? []) {
+      expect(IMPLEMENTED_ROUTES.has(item.to)).toBe(true)
+    }
+  })
+
+  it('hides Note Taker from campers without note_taker.view', () => {
+    const [filtered] = filterNavSections(
+      [tools!],
+      ['something.else'],
+      undefined,
+    )
+    expect(filtered.items.map((item) => item.label)).not.toContain('Note Taker')
+  })
+})
 
 describe('Sidebar', () => {
   beforeEach(() => mock.__setSession(makeSession()))

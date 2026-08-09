@@ -1,6 +1,7 @@
 # Web framework
 fastapi
 uvicorn[standard]
+python-multipart
 
 # Data validation and settings
 pydantic
@@ -19,3 +20,6 @@ webauthn
 pytest
 httpx
 ruff
+
+# Note Taker — local speech-to-text (also needs ffmpeg on PATH)
+openai-whisper

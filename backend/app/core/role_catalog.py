@@ -47,6 +47,8 @@ MEMBER_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.PLANNING_CREATE,
         pk.PLANNING_ASSIGN,
         pk.KNOWLEDGE_VIEW,
+        pk.NOTE_TAKER_VIEW,
+        pk.NOTE_TAKER_RECORD,
     }
 )
 

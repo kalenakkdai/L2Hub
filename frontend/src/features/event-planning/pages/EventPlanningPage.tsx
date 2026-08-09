@@ -7,6 +7,7 @@ import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { useQuery } from '@tanstack/react-query'
 import { PlanStatusBadge } from '../components/PlanStatusBadge'
 import { PlanningRagPanel } from '../components/PlanningRagPanel'
+import { EventCampfireBoard } from '../../note-taker'
 import {
   useEventPlans,
   usePlanningAuth,
@@ -55,6 +56,10 @@ export function EventPlanningPage() {
           enable a plan before people can accept their assignments.
         </p>
       </header>
+
+      <div className="mb-4">
+        <EventCampfireBoard permissions={me.permissions} />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="space-y-4">

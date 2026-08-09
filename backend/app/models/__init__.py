@@ -19,6 +19,12 @@ from app.models.event_summary import (
     Notification,
     NotificationPreference,
 )
+from app.models.note_taker import (
+    MeetingNote,
+    MeetingSession,
+    MeetingSessionEventLink,
+    MeetingTranscript,
+)
 from app.models.profile import Profile
 from app.models.rbac import (
     AuditLog,
@@ -45,6 +51,10 @@ __all__ = [
     "EventAgenda",
     "EventSummary",
     "EventSummaryRequest",
+    "MeetingNote",
+    "MeetingSession",
+    "MeetingSessionEventLink",
+    "MeetingTranscript",
     "Notification",
     "NotificationPreference",
     "ParentAlert",
