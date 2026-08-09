@@ -6,6 +6,7 @@ import { GradeSummary } from '../components/GradeSummary'
 import { GradeTable } from '../components/GradeTable'
 import { GradeTrend } from '../components/GradeTrend'
 import { GradesTabs } from '../components/GradesTabs'
+import { SyllabusPanel } from '../components/SyllabusPanel'
 import { TheoreticalGradesPanel } from '../components/TheoreticalGradesPanel'
 import {
   EmptyGradesState,
@@ -17,6 +18,7 @@ import type { GradebookFilters, GradebookSortField, GradebookTab } from '../type
 import {
   countEntriesByTab,
   filterEntriesByTab,
+  isAssignmentGradebookTab,
   parseGradebookTab,
 } from '../utils/tabs'
 
@@ -90,11 +92,10 @@ export function GradesPage() {
     [gradebookQuery.data?.entries],
   )
 
-  const tabEntries = useMemo(
-    () =>
-      filterEntriesByTab(gradebookQuery.data?.entries ?? [], tab),
-    [gradebookQuery.data?.entries, tab],
-  )
+  const tabEntries = useMemo(() => {
+    if (!isAssignmentGradebookTab(tab)) return []
+    return filterEntriesByTab(gradebookQuery.data?.entries ?? [], tab)
+  }, [gradebookQuery.data?.entries, tab])
 
   return (
     <div>
@@ -106,7 +107,7 @@ export function GradesPage() {
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <p className="text-xs text-ink-subtle">
-            Your assignments, submissions, and completion history.
+            Your assignments, submissions, completion history, and syllabus.
           </p>
           {userQuery.data ? (
             <p className="text-xs text-ink-subtle">
@@ -146,50 +147,60 @@ export function GradesPage() {
             onChange={(nextTab: GradebookTab) => updateParam('tab', nextTab)}
           />
 
-          <GradeFilters
-            query={query}
-            sort={sort}
-            onQueryChange={setQuery}
-            onSortChange={(value) => updateParam('sort', value)}
-          />
-
           <div
             role="tabpanel"
             id={`grades-panel-${tab}`}
             aria-labelledby={`grades-tab-${tab}`}
           >
-            {gradebookQuery.data.entries.length === 0 ? (
-              <EmptyGradesState title="No gradebook assignments yet." />
-            ) : tabEntries.length === 0 ? (
-              <EmptyGradesState
-                title={
-                  urlQuery.trim()
-                    ? 'No assignments match your search in this tab.'
-                    : tab === 'upcoming'
-                      ? 'No upcoming assignments.'
-                      : tab === 'missing'
-                        ? 'No missing assignments.'
-                        : 'No completed assignments yet.'
-                }
-              />
+            {tab === 'syllabus' ? (
+              <SyllabusPanel />
             ) : (
-              <GradeTable
-                entries={tabEntries}
-                sort={sort}
-                categories={gradebookQuery.data.categories}
-              />
+              <div className="space-y-3">
+                <GradeFilters
+                  query={query}
+                  sort={sort}
+                  onQueryChange={setQuery}
+                  onSortChange={(value) => updateParam('sort', value)}
+                />
+
+                {gradebookQuery.data.entries.length === 0 ? (
+                  <EmptyGradesState title="No gradebook assignments yet." />
+                ) : tabEntries.length === 0 ? (
+                  <EmptyGradesState
+                    title={
+                      urlQuery.trim()
+                        ? 'No assignments match your search in this tab.'
+                        : tab === 'upcoming'
+                          ? 'No upcoming assignments.'
+                          : tab === 'missing'
+                            ? 'No missing assignments.'
+                            : 'No completed assignments yet.'
+                    }
+                  />
+                ) : (
+                  <GradeTable
+                    entries={tabEntries}
+                    sort={sort}
+                    categories={gradebookQuery.data.categories}
+                  />
+                )}
+              </div>
             )}
           </div>
 
-          <GradeTrend entries={gradebookQuery.data.entries} />
+          {tab !== 'syllabus' ? (
+            <>
+              <GradeTrend entries={gradebookQuery.data.entries} />
 
-          <TheoreticalGradesPanel
-            entries={gradebookQuery.data.entries}
-            categories={gradebookQuery.data.categories ?? []}
-            actualWeightedPercent={
-              gradebookQuery.data.summary.weightedPercent ?? null
-            }
-          />
+              <TheoreticalGradesPanel
+                entries={gradebookQuery.data.entries}
+                categories={gradebookQuery.data.categories ?? []}
+                actualWeightedPercent={
+                  gradebookQuery.data.summary.weightedPercent ?? null
+                }
+              />
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>

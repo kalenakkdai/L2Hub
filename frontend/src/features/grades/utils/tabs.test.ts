@@ -27,10 +27,11 @@ describe('parseGradebookTab', () => {
     expect(parseGradebookTab('nope')).toBe('upcoming')
   })
 
-  it('accepts the three grades tabs', () => {
+  it('accepts the grades tabs including syllabus', () => {
     expect(parseGradebookTab('missing')).toBe('missing')
     expect(parseGradebookTab('completed')).toBe('completed')
     expect(parseGradebookTab('upcoming')).toBe('upcoming')
+    expect(parseGradebookTab('syllabus')).toBe('syllabus')
   })
 })
 

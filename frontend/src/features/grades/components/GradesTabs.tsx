@@ -1,12 +1,13 @@
-import type { GradebookTab } from '../types'
+import type { AssignmentGradebookTab, GradebookTab } from '../types'
 import {
   GRADEBOOK_TABS,
   gradebookTabLabel,
+  isAssignmentGradebookTab,
 } from '../utils/tabs'
 
 export interface GradesTabsProps {
   active: GradebookTab
-  counts: Record<GradebookTab, number>
+  counts: Record<AssignmentGradebookTab, number>
   onChange: (tab: GradebookTab) => void
 }
 
@@ -35,13 +36,11 @@ export function GradesTabs({ active, counts, onChange }: GradesTabsProps) {
             onClick={() => onChange(tab)}
           >
             {gradebookTabLabel(tab)}
-            <span
-              className={`ml-1.5 tabular-nums ${
-                selected ? 'text-ink-subtle' : 'text-ink-subtle'
-              }`}
-            >
-              {counts[tab]}
-            </span>
+            {isAssignmentGradebookTab(tab) ? (
+              <span className="ml-1.5 tabular-nums text-ink-subtle">
+                {counts[tab]}
+              </span>
+            ) : null}
           </button>
         )
       })}

@@ -1,13 +1,26 @@
-import type { GradebookEntry, GradebookTab } from '../types'
+import type { AssignmentGradebookTab, GradebookEntry, GradebookTab } from '../types'
 
-export const GRADEBOOK_TABS: GradebookTab[] = [
+export const ASSIGNMENT_TABS: AssignmentGradebookTab[] = [
   'upcoming',
   'missing',
   'completed',
 ]
 
+export const GRADEBOOK_TABS: GradebookTab[] = [...ASSIGNMENT_TABS, 'syllabus']
+
+export function isAssignmentGradebookTab(
+  tab: GradebookTab,
+): tab is AssignmentGradebookTab {
+  return tab === 'upcoming' || tab === 'missing' || tab === 'completed'
+}
+
 export function parseGradebookTab(value: string | null): GradebookTab {
-  if (value === 'missing' || value === 'completed' || value === 'upcoming') {
+  if (
+    value === 'missing' ||
+    value === 'completed' ||
+    value === 'upcoming' ||
+    value === 'syllabus'
+  ) {
     return value
   }
   return 'upcoming'
@@ -21,14 +34,16 @@ export function gradebookTabLabel(tab: GradebookTab): string {
       return 'Completed'
     case 'upcoming':
       return 'Upcoming'
+    case 'syllabus':
+      return 'Syllabus'
   }
 }
 
 /**
- * Buckets an entry into the Grades page tabs.
+ * Buckets an entry into the Grades page assignment tabs.
  * Every status maps to exactly one tab so nothing disappears from the list.
  */
-export function gradebookTabFor(entry: GradebookEntry): GradebookTab {
+export function gradebookTabFor(entry: GradebookEntry): AssignmentGradebookTab {
   switch (entry.status) {
     case 'missing':
       return 'missing'
@@ -47,14 +62,14 @@ export function gradebookTabFor(entry: GradebookEntry): GradebookTab {
 
 export function filterEntriesByTab(
   entries: GradebookEntry[],
-  tab: GradebookTab,
+  tab: AssignmentGradebookTab,
 ): GradebookEntry[] {
   return entries.filter((entry) => gradebookTabFor(entry) === tab)
 }
 
 export function countEntriesByTab(
   entries: GradebookEntry[],
-): Record<GradebookTab, number> {
+): Record<AssignmentGradebookTab, number> {
   return {
     missing: filterEntriesByTab(entries, 'missing').length,
     completed: filterEntriesByTab(entries, 'completed').length,

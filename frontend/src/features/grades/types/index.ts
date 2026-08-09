@@ -50,7 +50,11 @@ export interface GradeCommitteeRef {
   name: string
 }
 
-export type GradebookTab = 'missing' | 'completed' | 'upcoming'
+/** Tabs that bucket assignment rows. */
+export type AssignmentGradebookTab = 'missing' | 'completed' | 'upcoming'
+
+/** Grades page tabs, including the syllabus reference panel. */
+export type GradebookTab = AssignmentGradebookTab | 'syllabus'
 
 /**
  * Anonymized class distribution for one assignment.

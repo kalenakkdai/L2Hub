@@ -15,14 +15,14 @@ import type { GradebookDataProvider } from '../api/contracts'
 import type { GradebookEntry, GradebookOverview } from '../types'
 import { formatScore } from '../utils/format'
 
-async function openTab(name: 'Missing' | 'Completed' | 'Upcoming') {
+async function openTab(name: 'Missing' | 'Completed' | 'Upcoming' | 'Syllabus') {
   const user = userEvent.setup()
   await user.click(await screen.findByRole('tab', { name: new RegExp(name) }))
   return user
 }
 
 describe('GradesPage', () => {
-  it('renders Upcoming, Missing, and Completed tabs with counts', async () => {
+  it('renders Upcoming, Missing, Completed, and Syllabus tabs', async () => {
     renderWithGradebook(<GradesPage />)
     const upcoming = await screen.findByRole('tab', { name: /^Upcoming/ })
     expect(upcoming).toHaveAttribute('aria-selected', 'true')
@@ -32,6 +32,30 @@ describe('GradesPage', () => {
     )
     expect(screen.getByRole('tab', { name: /^Completed/ })).toHaveTextContent(
       '3',
+    )
+    expect(screen.getByRole('tab', { name: /^Syllabus$/ })).toBeInTheDocument()
+  })
+
+  it('opens the syllabus with attendance, levels, and site manual sections', async () => {
+    renderWithGradebook(<GradesPage />)
+    const user = await openTab('Syllabus')
+    expect(
+      await screen.findByRole('heading', { name: 'Leadership 2 syllabus' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('tab', { name: 'Attendance', selected: true }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Attendance policy/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Levels' }))
+    expect(screen.getByText(/Class levels system/)).toBeInTheDocument()
+    expect(screen.getByText(/get to level/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Site manual' }))
+    expect(screen.getByText(/L2 Hub site manual/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard',
     )
   })
 

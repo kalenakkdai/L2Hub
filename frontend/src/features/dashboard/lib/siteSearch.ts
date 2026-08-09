@@ -16,7 +16,7 @@ export type SiteSearchHit = {
 /** Extra phrases people type that are not already in the nav label. */
 const ALIASES: Record<string, string[]> = {
   '/dashboard': ['home', 'overview', 'main'],
-  '/grades': ['gradebook', 'scores', 'assignments', 'rubric'],
+  '/grades': ['gradebook', 'scores', 'assignments', 'rubric', 'syllabus'],
   '/admin/users': ['users', 'people', 'roster', 'members', 'campers'],
   '/committees': ['teams', 'groups'],
   '/events': ['wrapped', 'happening', 'calendar', 'fall rally'],
