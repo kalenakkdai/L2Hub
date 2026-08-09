@@ -7,20 +7,24 @@ import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { useAttendanceCommands, useWhereabouts } from '../hooks'
 import type { WhereaboutsEntry } from '../types'
+import campusMap from '../assets/msjhs-campus-map.png'
 
 type Point = { x: number; y: number; label: string }
 
-/** Schematic campus destinations, not GPS coordinates. */
+/**
+ * Declared destinations plotted on the MSJHS campus map. Coordinates are
+ * percentages of the map image (schematic building locations), not GPS.
+ */
 const DESTINATIONS: Record<string, Point> = {
-  classroom: { x: 24, y: 32, label: 'Leadership classroom' },
-  bathroom: { x: 38, y: 28, label: 'Bathroom' },
-  office: { x: 50, y: 18, label: 'Main office' },
-  student_store: { x: 64, y: 30, label: 'Student store' },
-  library: { x: 78, y: 24, label: 'Library' },
-  gym: { x: 79, y: 70, label: 'Gym' },
-  cafeteria: { x: 54, y: 67, label: 'Cafeteria' },
-  parking_lot: { x: 15, y: 78, label: 'Parking lot' },
-  other: { x: 42, y: 82, label: 'Other destination' },
+  classroom: { x: 26, y: 40, label: 'Leadership classroom' },
+  bathroom: { x: 60, y: 44, label: 'Bathroom' },
+  office: { x: 38, y: 79, label: 'Main office' },
+  student_store: { x: 40, y: 69, label: 'Student store' },
+  library: { x: 37, y: 60, label: 'Library' },
+  gym: { x: 42, y: 42, label: 'Gymnasium' },
+  cafeteria: { x: 55, y: 43, label: 'Snack bar / kitchen' },
+  parking_lot: { x: 16, y: 39, label: 'Parking lot' },
+  other: { x: 66, y: 62, label: 'Other destination' },
 }
 
 function initials(name: string): string {
@@ -113,46 +117,14 @@ export function WhereaboutsMapPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
             <section
               aria-label="MSJHS campus map"
-              className="relative aspect-[16/10] min-h-[440px] overflow-hidden rounded-card border border-border-subtle bg-[#e9efe5] shadow-card"
+              className="relative aspect-[887/678] min-h-[440px] overflow-hidden rounded-card border border-border-subtle bg-white shadow-card"
             >
-              <svg
-                viewBox="0 0 100 62.5"
-                className="absolute inset-0 h-full w-full"
-                aria-hidden="true"
-              >
-                <rect width="100" height="62.5" fill="#dbe8d4" />
-                <path
-                  d="M0 48 C20 43 32 51 49 46 S76 42 100 48 V62.5 H0Z"
-                  fill="#b8d3ad"
-                />
-                <g fill="#f4eee1" stroke="#9c8f7a" strokeWidth="0.45">
-                  <rect x="14" y="10" width="27" height="18" rx="1" />
-                  <rect x="45" y="6" width="20" height="15" rx="1" />
-                  <rect x="69" y="9" width="22" height="18" rx="1" />
-                  <rect x="18" y="34" width="25" height="13" rx="1" />
-                  <rect x="48" y="34" width="19" height="15" rx="1" />
-                  <rect x="72" y="35" width="21" height="16" rx="1" />
-                </g>
-                <g
-                  fill="#53655b"
-                  fontSize="2.1"
-                  textAnchor="middle"
-                  fontWeight="600"
-                >
-                  <text x="27.5" y="19.5">CLASSROOMS</text>
-                  <text x="55" y="14">OFFICE</text>
-                  <text x="80" y="19">LIBRARY / STORE</text>
-                  <text x="30.5" y="41.5">STUDENT CENTER</text>
-                  <text x="57.5" y="42">CAFETERIA</text>
-                  <text x="82.5" y="43.5">GYM</text>
-                </g>
-                <path
-                  d="M7 31 H93 M44 3 V56 M68 3 V56"
-                  stroke="#eef2eb"
-                  strokeWidth="2.6"
-                  fill="none"
-                />
-              </svg>
+              <img
+                src={campusMap}
+                alt="Mission San Jose High School campus map"
+                className="absolute inset-0 h-full w-full object-contain"
+                draggable={false}
+              />
 
               {plotted.map(({ entry, point }) => (
                 <button
