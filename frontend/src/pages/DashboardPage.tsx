@@ -57,7 +57,13 @@ export function DashboardPage() {
   return (
     <AppShell
       {...shellProps}
-      header={<DashboardHeader firstName={firstName} stats={data.stats} />}
+      header={
+        <DashboardHeader
+          firstName={firstName}
+          stats={data.stats}
+          permissions={profile.permissions}
+        />
+      }
       rail={
         <DashboardRail
           committee={data.committeeSnapshot}

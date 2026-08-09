@@ -13,6 +13,10 @@ import { SAMPLE_DASHBOARD } from './fixtures/sampleDashboard'
 import { blockFor, greetingFor } from './greeting'
 import { countdown, dayLabel, relativeTime } from './formatDate'
 
+vi.mock('../../hooks/useCampsiteModules', () => ({
+  useCampsiteChrome: () => ({ data: { modulesEnabled: {} } }),
+}))
+
 const renderInRouter = (ui: React.ReactElement) =>
   render(<MemoryRouter>{ui}</MemoryRouter>)
 
@@ -191,7 +195,7 @@ describe('DashboardHeader', () => {
   const stats = { points: 1200, level: 4, openCount: 3 }
 
   it('leads with the greeting and no date or clock above it', () => {
-    render(<DashboardHeader firstName="Brittany" stats={stats} />)
+    renderInRouter(<DashboardHeader firstName="Brittany" stats={stats} />)
 
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toHaveTextContent(/Brittany[.?]$/)
@@ -206,11 +210,24 @@ describe('DashboardHeader', () => {
   })
 
   it('still shows the three standing numbers', () => {
-    render(<DashboardHeader firstName="Brittany" stats={stats} />)
+    renderInRouter(<DashboardHeader firstName="Brittany" stats={stats} />)
 
     expect(screen.getByText('Points')).toBeInTheDocument()
     expect(screen.getByText('Level')).toBeInTheDocument()
     expect(screen.getByText('Open')).toBeInTheDocument()
+  })
+
+  it('offers a page search field under the greeting', () => {
+    renderInRouter(
+      <DashboardHeader
+        firstName="Brittany"
+        stats={stats}
+        permissions={['note_taker.view']}
+      />,
+    )
+
+    expect(screen.getByRole('search')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Search pages' })).toBeInTheDocument()
   })
 })
 
