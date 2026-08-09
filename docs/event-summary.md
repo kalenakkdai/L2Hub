@@ -4,6 +4,22 @@ Flagship pipeline for post-event Wrapped experiences: request → approve →
 generate → publish, plus agenda drafts, live debrief bubbles, and
 notifications.
 
+## Events tab lifecycle
+
+AC approval/enablement in Event Planning promotes the plan into the shared
+Events catalog through `POST /events/from-plan`. Promotion is idempotent by
+plan id and creates an `active` event with an all-day scheduled window.
+
+An approved event appears under **Happening now** immediately, even when its
+date is in the future. It stays there until both conditions are true:
+
+1. the scheduled event date/window has passed; and
+2. Wrapped status is `generated`, `published`, or `archived`.
+
+This keeps active post-event debrief work visible instead of moving the event
+to Previous before Wrapped is ready. Scheduled but unapproved events remain
+under Upcoming.
+
 ## Status machine
 
 ```

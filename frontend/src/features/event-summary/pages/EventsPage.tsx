@@ -298,8 +298,8 @@ export function EventsPage() {
           <div className="space-y-5">
             <EventBlock
               title="Happening now"
-              description="Events inside their scheduled window."
-              emptyText="Nothing is running right now."
+              description="Approved events stay here through their date until Wrapped is generated."
+              emptyText="No approved events are active right now."
               events={grouped.current}
               highlight={grouped.current.length > 0}
               {...shared}
@@ -307,8 +307,7 @@ export function EventsPage() {
 
             <EventBlock
               title="Upcoming"
-              description="Scheduled events that have not started."
-              emptyText="No upcoming events scheduled."
+              description="Scheduled events still waiting for approval or their start."              emptyText="No upcoming events scheduled."
               events={grouped.upcoming}
               {...shared}
             />

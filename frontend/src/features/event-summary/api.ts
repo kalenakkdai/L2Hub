@@ -122,6 +122,18 @@ export function fetchEvents() {
   return apiFetch<{ events: EventListItem[] }>('/events')
 }
 
+/** Promote an approved Event Planning record into the Events catalog. */
+export function promoteApprovedPlan(input: {
+  planId: string
+  title: string
+  eventDate: string
+}): Promise<EventListItem> {
+  return apiFetch<EventListItem>('/events/from-plan', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
 export function fetchEvent(eventRef: string) {
   return apiFetch<EventListItem>(`/events/${eventRef}`)
 }

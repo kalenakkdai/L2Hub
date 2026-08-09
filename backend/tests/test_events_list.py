@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy import select
@@ -38,12 +38,62 @@ def test_events_list_exposes_the_scheduled_window(client, make_token, seeded, db
     assert maze["endsAt"].startswith("2026-09-18T20:00")
 
 
-def test_events_without_a_scheduled_window_serialize_as_null(client, make_token, seeded):
+def test_undated_events_serialize_as_null(client, make_token, seeded):
     """Undated events must not break the list; the UI falls back to status."""
     headers = auth_header(make_token, seeded["president"].id)
     events = client.get("/events", headers=headers).json()["events"]
 
     assert events, "expected seeded events"
-    for event in events:
+    undated = [event for event in events if event["slug"].startswith("maze-day")]
+    assert undated
+    for event in undated:
         assert event["startsAt"] is None
         assert event["endsAt"] is None
+
+
+def test_seed_promotes_enabled_fall_rally_into_events(client, make_token, seeded):
+    headers = auth_header(make_token, seeded["president"].id)
+    events = client.get("/events", headers=headers).json()["events"]
+    rally = next(event for event in events if event["name"] == "Fall Rally")
+
+    assert rally["eventStatus"] == "active"
+    assert rally["startsAt"].startswith("2026-09-12")
+    assert rally["summaryStatus"] == "not_requested"
+
+
+def test_approved_plan_promotion_is_idempotent(
+    client, make_token, seeded, db_session
+):
+    headers = auth_header(make_token, seeded["president"].id)
+    payload = {
+        "planId": "plan-spring-fair",
+        "title": "Spring Fair 2027",
+        "eventDate": date(2027, 4, 20).isoformat(),
+    }
+
+    first = client.post("/events/from-plan", headers=headers, json=payload)
+    second = client.post("/events/from-plan", headers=headers, json=payload)
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert first.json()["id"] == second.json()["id"]
+    assert first.json()["name"] == "Spring Fair"
+    assert first.json()["eventStatus"] == "active"
+    count = db_session.scalar(
+        select(Event).where(Event.slug == first.json()["slug"])
+    )
+    assert count is not None
+
+
+def test_member_cannot_promote_a_plan(client, make_token, seeded):
+    headers = auth_header(make_token, seeded["community_member"].id)
+    response = client.post(
+        "/events/from-plan",
+        headers=headers,
+        json={
+            "planId": "not-approved",
+            "title": "Nope",
+            "eventDate": "2027-01-01",
+        },
+    )
+    assert response.status_code == 403

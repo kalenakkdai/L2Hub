@@ -204,6 +204,7 @@ def _ensure_membership(
 SEED_EVENT_IDS = {
     "maze_2025": uuid.UUID("33333333-3333-4333-8333-333333333333"),
     "maze_2026": uuid.UUID("44444444-4444-4444-8444-444444444444"),
+    "fall_rally_2026": uuid.UUID("55555555-5555-4555-8555-555555555555"),
 }
 
 
@@ -217,6 +218,8 @@ def seed_events(db: Session, committees: dict[str, Committee]) -> dict[str, Even
             2025,
             "complete",
             committees["community"].id,
+            None,
+            None,
         ),
         (
             "maze_2026",
@@ -225,9 +228,21 @@ def seed_events(db: Session, committees: dict[str, Committee]) -> dict[str, Even
             2026,
             "complete",
             committees["community"].id,
+            None,
+            None,
+        ),
+        (
+            "fall_rally_2026",
+            "Fall Rally",
+            "event-plan-4c7953f5fc2853429cfac21324fafd5d",
+            2026,
+            "active",
+            committees["spirit"].id,
+            datetime(2026, 9, 12, tzinfo=UTC),
+            datetime(2026, 9, 13, tzinfo=UTC),
         ),
     )
-    for key, name, slug, year, status, committee_id in specs:
+    for key, name, slug, year, status, committee_id, starts_at, ends_at in specs:
         event = db.get(Event, SEED_EVENT_IDS[key])
         if event is None:
             event = Event(
@@ -237,6 +252,8 @@ def seed_events(db: Session, committees: dict[str, Committee]) -> dict[str, Even
                 year=year,
                 status=status,
                 managing_committee_id=committee_id,
+                starts_at=starts_at,
+                ends_at=ends_at,
             )
             db.add(event)
             db.flush()

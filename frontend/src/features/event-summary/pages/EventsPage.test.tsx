@@ -89,7 +89,12 @@ describe('Events page blocks', () => {
         endsAt: '2026-08-07T18:00:00Z',
       }),
       event({ slug: 'later', name: 'Homecoming', startsAt: '2026-10-01T15:00:00Z' }),
-      event({ slug: 'done', name: 'Maze Day', eventStatus: 'complete' }),
+      event({
+        slug: 'done',
+        name: 'Maze Day',
+        eventStatus: 'complete',
+        summaryStatus: 'published',
+      }),
     ])
     renderWithProviders(<EventsPage />)
 
@@ -100,20 +105,42 @@ describe('Events page blocks', () => {
   })
 
   it('explains an empty block instead of leaving a blank card', async () => {
-    mockApi([event({ slug: 'done', name: 'Maze Day', eventStatus: 'complete' })])
+    mockApi([
+      event({
+        slug: 'done',
+        name: 'Maze Day',
+        eventStatus: 'complete',
+        summaryStatus: 'published',
+      }),
+    ])
     renderWithProviders(<EventsPage />)
 
     await screen.findByText('Maze Day 2026')
-    expect(within(block('Happening now')).getByText('Nothing is running right now.')).toBeInTheDocument()
+    expect(
+      within(block('Happening now')).getByText(
+        'No approved events are active right now.',
+      ),
+    ).toBeInTheDocument()
     expect(within(block('Upcoming')).getByText('No upcoming events scheduled.')).toBeInTheDocument()
   })
 
   it('keeps prior-year events reachable behind an Earlier years toggle', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     mockApi([
-      event({ slug: 'old', name: 'Maze Day', year: 2025, eventStatus: 'complete' }),
-      event({ slug: 'new', name: 'Rally', year: 2026, eventStatus: 'complete' }),
-    ])
+      event({
+        slug: 'old',
+        name: 'Maze Day',
+        year: 2025,
+        eventStatus: 'complete',
+        summaryStatus: 'published',
+      }),
+      event({
+        slug: 'new',
+        name: 'Rally',
+        year: 2026,
+        eventStatus: 'complete',
+        summaryStatus: 'published',
+      }),    ])
     renderWithProviders(<EventsPage />)
 
     await screen.findByText('Rally 2026')

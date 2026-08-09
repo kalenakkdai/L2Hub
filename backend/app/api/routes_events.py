@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -22,6 +23,12 @@ router = APIRouter(tags=["events"])
 
 class RequestBody(BaseModel):
     note: str | None = None
+
+
+class PromoteEventPlanBody(BaseModel):
+    planId: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=200)
+    eventDate: date
 
 
 def _get_event(db: DbSession, event_ref: str) -> Event:
@@ -52,6 +59,21 @@ def list_events(profile: CurrentProfile, db: DbSession) -> dict:
         select(Event).options(selectinload(Event.summary)).order_by(Event.year.desc())
     ).all()
     return {"events": [summary_service.event_list_item(event) for event in events]}
+
+
+@router.post("/events/from-plan", status_code=status.HTTP_201_CREATED)
+def promote_event_plan(
+    body: PromoteEventPlanBody, profile: CurrentProfile, db: DbSession
+) -> dict:
+    """Publish an AC-enabled planning record into the Events catalog."""
+    event = summary_service.promote_event_plan(
+        db,
+        profile,
+        plan_id=body.planId,
+        title=body.title,
+        event_date=body.eventDate,
+    )
+    return summary_service.event_list_item(event)
 
 
 @router.get("/events/{event_ref}")

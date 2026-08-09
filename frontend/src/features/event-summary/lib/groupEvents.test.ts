@@ -58,12 +58,72 @@ describe('eventPhase', () => {
     expect(eventPhase(closing, NOW)).toBe('current')
   })
 
-  it('lets an explicit complete status override a future window', () => {
-    const phase = eventPhase(
-      event({ eventStatus: 'complete', startsAt: '2026-09-01T15:00:00Z' }),
-      NOW,
-    )
-    expect(phase).toBe('finished')
+  it('puts an approved future event into current immediately', () => {
+    expect(
+      eventPhase(
+        event({
+          eventStatus: 'active',
+          startsAt: '2026-09-01T15:00:00Z',
+          endsAt: '2026-09-02T00:00:00Z',
+        }),
+        NOW,
+      ),
+    ).toBe('current')
+  })
+
+  it('keeps an approved event current after its date while Wrapped is missing', () => {
+    expect(
+      eventPhase(
+        event({
+          eventStatus: 'active',
+          startsAt: '2026-08-01T15:00:00Z',
+          endsAt: '2026-08-02T00:00:00Z',
+          summaryStatus: 'not_requested',
+        }),
+        NOW,
+      ),
+    ).toBe('current')
+  })
+
+  it('keeps an approved event current when Wrapped is generated before its date', () => {
+    expect(
+      eventPhase(
+        event({
+          eventStatus: 'active',
+          startsAt: '2026-09-01T15:00:00Z',
+          endsAt: '2026-09-02T00:00:00Z',
+          summaryStatus: 'generated',
+        }),
+        NOW,
+      ),
+    ).toBe('current')
+  })
+
+  it('finishes an approved event only after its date and Wrapped generation', () => {
+    expect(
+      eventPhase(
+        event({
+          eventStatus: 'active',
+          startsAt: '2026-08-01T15:00:00Z',
+          endsAt: '2026-08-02T00:00:00Z',
+          summaryStatus: 'generated',
+        }),
+        NOW,
+      ),
+    ).toBe('finished')
+  })
+
+  it('keeps a manually completed event current until Wrapped is generated', () => {
+    expect(
+      eventPhase(
+        event({
+          eventStatus: 'complete',
+          endsAt: '2026-08-01T17:00:00Z',
+          summaryStatus: 'pending_approval',
+        }),
+        NOW,
+      ),
+    ).toBe('current')
   })
 
   it('assumes an undated event is still ahead of us', () => {
@@ -83,7 +143,12 @@ describe('groupEvents', () => {
   it('splits events into current, upcoming, and previous-this-year', () => {
     const current = event({ slug: 'now', startsAt: '2026-08-07T09:00:00Z', endsAt: '2026-08-07T17:00:00Z' })
     const upcoming = event({ slug: 'soon', startsAt: '2026-09-01T15:00:00Z' })
-    const previous = event({ slug: 'done', eventStatus: 'complete', year: 2026 })
+    const previous = event({
+      slug: 'done',
+      eventStatus: 'complete',
+      year: 2026,
+      summaryStatus: 'published',
+    })
 
     const grouped = groupEvents([previous, upcoming, current], NOW)
 
@@ -94,8 +159,18 @@ describe('groupEvents', () => {
   })
 
   it('keeps finished events from prior years out of the this-year block', () => {
-    const thisYear = event({ slug: 'this-year', eventStatus: 'complete', year: 2026 })
-    const lastYear = event({ slug: 'last-year', eventStatus: 'complete', year: 2025 })
+    const thisYear = event({
+      slug: 'this-year',
+      eventStatus: 'complete',
+      year: 2026,
+      summaryStatus: 'published',
+    })
+    const lastYear = event({
+      slug: 'last-year',
+      eventStatus: 'complete',
+      year: 2025,
+      summaryStatus: 'published',
+    })
 
     const grouped = groupEvents([lastYear, thisYear], NOW)
 
@@ -105,8 +180,8 @@ describe('groupEvents', () => {
 
   it('never drops an event on the floor', () => {
     const events = [
-      event({ slug: 'a', eventStatus: 'complete', year: 2024 }),
-      event({ slug: 'b', eventStatus: 'complete', year: 2026 }),
+      event({ slug: 'a', eventStatus: 'complete', year: 2024, summaryStatus: 'published' }),
+      event({ slug: 'b', eventStatus: 'complete', year: 2026, summaryStatus: 'published' }),
       event({ slug: 'c', startsAt: '2026-12-01T15:00:00Z' }),
       event({ slug: 'd', startsAt: '2026-08-07T09:00:00Z', endsAt: '2026-08-07T18:00:00Z' }),
       event({ slug: 'e' }),
@@ -138,9 +213,18 @@ describe('groupEvents', () => {
 
   it('orders finished events most recent first', () => {
     const events = [
-      event({ slug: 'january', eventStatus: 'complete', endsAt: '2026-01-15T20:00:00Z' }),
-      event({ slug: 'june', eventStatus: 'complete', endsAt: '2026-06-15T20:00:00Z' }),
-    ]
+      event({
+        slug: 'january',
+        eventStatus: 'complete',
+        endsAt: '2026-01-15T20:00:00Z',
+        summaryStatus: 'published',
+      }),
+      event({
+        slug: 'june',
+        eventStatus: 'complete',
+        endsAt: '2026-06-15T20:00:00Z',
+        summaryStatus: 'published',
+      }),    ]
 
     const grouped = groupEvents(events, NOW)
 

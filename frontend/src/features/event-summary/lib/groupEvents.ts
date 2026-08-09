@@ -26,17 +26,29 @@ function timestamp(value: string | null | undefined): number | null {
 /**
  * Decides which phase an event is in.
  *
- * An explicit `complete` status always wins: an adviser closing an event out
- * early should move it off the upcoming list immediately. Otherwise the
- * scheduled window decides, and an event with no window at all is assumed to
- * still be ahead of us.
+ * Approved (`active`) events enter Happening now immediately. They stay there
+ * through planning, the event date, and debrief work; they become finished
+ * only after the scheduled date is over AND Wrapped has been generated.
+ * `complete` uses the same closeout rule so manually ending the event does not
+ * make it disappear while the class still owes its Wrapped.
  */
 export function eventPhase(event: EventListItem, now: Date): Phase {
-  if (event.eventStatus === 'complete') return 'finished'
-
   const at = now.getTime()
   const startsAt = timestamp(event.startsAt)
   const endsAt = timestamp(event.endsAt)
+  const wrappedGenerated = ['generated', 'published', 'archived'].includes(
+    event.summaryStatus,
+  )
+  const datePassed =
+    endsAt !== null
+      ? at > endsAt
+      : startsAt !== null
+        ? at > startsAt
+        : true
+
+  if (event.eventStatus === 'active' || event.eventStatus === 'complete') {
+    return datePassed && wrappedGenerated ? 'finished' : 'current'
+  }
 
   if (startsAt !== null && at < startsAt) return 'upcoming'
   if (endsAt !== null && at > endsAt) return 'finished'

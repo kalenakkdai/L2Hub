@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,6 +31,58 @@ provider = DeterministicEventSummaryProvider()
 def _utcnow() -> datetime:
     return datetime.now(UTC)
 
+
+def promote_event_plan(
+    db: Session,
+    user: Profile,
+    *,
+    plan_id: str,
+    title: str,
+    event_date: date,
+) -> Event:
+    """Idempotently promote an approved planning record into Events.
+
+    The stable source slug avoids requiring a schema bridge while Event
+    Planning still uses its provider seam. Approved plans are `active`: the
+    frontend keeps them in Happening now until the scheduled date has passed
+    and Wrapped exists.
+    """
+    authz.require_permission(db, user, pk.EVENTS_CREATE)
+    cleaned_plan_id = plan_id.strip()
+    cleaned_title = title.strip()
+    if not cleaned_plan_id or not cleaned_title:
+        raise ValueError("Plan id and title are required.")
+
+    source_key = uuid.uuid5(uuid.NAMESPACE_URL, f"l2hub:event-plan:{cleaned_plan_id}")
+    slug = f"event-plan-{source_key.hex}"
+    starts_at = datetime.combine(event_date, time.min, tzinfo=UTC)
+    ends_at = starts_at + timedelta(days=1)
+    # Events render the year separately; avoid "Fall Rally 2026 2026".
+    name = re.sub(rf"\s+{event_date.year}\s*$", "", cleaned_title).strip()
+
+    event = db.scalar(select(Event).where(Event.slug == slug))
+    if event is None:
+        event = Event(
+            id=uuid.uuid4(),
+            name=name,
+            slug=slug,
+            year=event_date.year,
+            status="active",
+            starts_at=starts_at,
+            ends_at=ends_at,
+            created_at=_utcnow(),
+        )
+        db.add(event)
+    else:
+        event.name = name
+        event.year = event_date.year
+        event.starts_at = starts_at
+        event.ends_at = ends_at
+        if event.status != "complete":
+            event.status = "active"
+    db.commit()
+    db.refresh(event)
+    return event
 
 def get_or_create_summary(db: Session, event: Event) -> EventSummary:
     if event.summary is not None:

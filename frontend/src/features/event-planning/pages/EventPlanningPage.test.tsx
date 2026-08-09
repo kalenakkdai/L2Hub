@@ -14,6 +14,26 @@ import {
   createAcPlanningAuthProvider,
 } from '../api/mockPlanningAdapter'
 
+const promoteApprovedPlan = vi.hoisted(() =>
+  vi.fn(async () => ({
+    id: 'promoted-event',
+    name: 'Maze Day',
+    slug: 'event-plan-maze',
+    year: 2026,
+    eventStatus: 'active',
+    startsAt: '2026-10-18T00:00:00Z',
+    endsAt: '2026-10-19T00:00:00Z',
+    summaryStatus: 'not_requested',
+    managingCommitteeId: null,
+    wrappedPresentedAt: null,
+  })),
+)
+
+vi.mock('../../event-summary/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../event-summary/api')>()),
+  promoteApprovedPlan,
+}))
+
 vi.mock('../../../api/auth', () => ({
   fetchCurrentUser: async () => ({
     id: 'mem-kalena',
@@ -117,6 +137,11 @@ describe('EventPlanDetailPage', () => {
     await user.click(screen.getByTestId('enable-plan-button'))
     await waitFor(() => {
       expect(screen.getByText('Enabled')).toBeInTheDocument()
+    })
+    expect(promoteApprovedPlan).toHaveBeenCalledWith({
+      planId: 'plan-maze',
+      title: 'Maze Day 2026',
+      eventDate: '2026-10-18',
     })
   })
 })

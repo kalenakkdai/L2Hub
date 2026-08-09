@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { promoteApprovedPlan } from '../../event-summary/api'
 import { useEventPlanningContext } from '../context/EventPlanningProvider'
 import type {
   AssignToPlanInput,
@@ -90,8 +91,23 @@ export function usePlanningCommands(planId?: string) {
     onSuccess: invalidate,
   })
   const enablePlan = useMutation({
-    mutationFn: (id: string) => dataProvider.enablePlan(id),
-    onSuccess: invalidate,
+    mutationFn: async (id: string) => {
+      const plan = await dataProvider.enablePlan(id)
+      if (!plan.eventDate) {
+        throw new Error('Set an event date before approving this plan.')
+      }
+      // Approval is the bridge from planning into the shared Events catalog.
+      await promoteApprovedPlan({
+        planId: plan.id,
+        title: plan.title,
+        eventDate: plan.eventDate,
+      })
+      return plan
+    },
+    onSuccess: async () => {
+      await invalidate()
+      await queryClient.invalidateQueries({ queryKey: ['events'] })
+    },
   })
   const assign = useMutation({
     mutationFn: ({
