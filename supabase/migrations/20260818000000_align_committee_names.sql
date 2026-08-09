@@ -1,7 +1,7 @@
--- Seed the default L2 Hub committees.
+-- Align default L2 Hub committees with the Leadership 2 roster names.
 --
--- Idempotent: unique slug conflict leaves the existing row unchanged.
--- Safe to re-run after partial applies or local seed fixtures.
+-- Idempotent: inserts missing slugs, updates display names for known slugs.
+-- Contact emails live in the app fixture until committees.contact_email lands.
 
 insert into public.committees (slug, name)
 values
@@ -17,4 +17,5 @@ values
     ('sports', 'Sports'),
     ('tech', 'Tech'),
     ('videography_photography', 'Videography/Photography')
-on conflict (slug) do nothing;
+on conflict (slug) do update
+set name = excluded.name;

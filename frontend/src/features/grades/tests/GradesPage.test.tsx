@@ -399,7 +399,7 @@ describe('GradeAssignmentPage', () => {
     expect(
       screen.getByText('Set up thirty minutes earlier.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Community Committee')).toBeInTheDocument()
+    expect(screen.getByText('Community')).toBeInTheDocument()
   })
 
   it('shows the rubric breakdown including default On time', async () => {

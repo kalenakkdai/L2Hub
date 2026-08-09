@@ -26,21 +26,22 @@ export const TENT_HEIGHT = 56
 export const TENT_GAP = 10
 
 /**
- * Leadership committees, mirroring the roster the backend seeds for Event
- * Summary. Callers pass their own list once committees come from the API.
+ * Leadership committees, mirroring the Leadership 2 roster. Callers pass
+ * their own list once committees come from the API.
  */
 export const L2_COMMITTEES = [
-  'Community',
-  'Spirit',
-  'Publicity',
   'Activities',
-  'Fundraising',
-  'Sports',
-  'Tech',
+  'Community',
   'Elections',
+  'Fundraising',
   'GTAC',
   'HCMC',
+  'Publicity',
+  'Student Store',
   'STAR',
+  'Sports',
+  'Tech',
+  'Videography/Photography',
 ]
 
 const TENT_COLORS = [

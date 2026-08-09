@@ -5,6 +5,7 @@ import { ErrorState } from '../../components/ui/ErrorState'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useCommittees } from './useCommittees'
+import { SAMPLE_COMMITTEE_CAMPER_TOTAL } from './fixtures/sampleCommittees'
 
 export function CommitteesPage() {
   // Kept as one object so `shell` narrows `profile` to non-null below.
@@ -16,7 +17,9 @@ export function CommitteesPage() {
 
   const header = (
     <header className="sticky top-0 z-10 border-b border-border-divider bg-surface px-4 pt-6 pb-5 sm:px-6 lg:px-10">
-      <p className="mb-1.5 text-[13px] text-ink-subtle">L2 Campsite · 28 campers</p>
+      <p className="mb-1.5 text-[13px] text-ink-subtle">
+        L2 Campsite · {SAMPLE_COMMITTEE_CAMPER_TOTAL} campers
+      </p>
       <h1 className="text-display font-bold text-ink">Committees</h1>
     </header>
   )

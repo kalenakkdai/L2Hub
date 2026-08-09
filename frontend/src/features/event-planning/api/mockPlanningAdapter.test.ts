@@ -48,16 +48,16 @@ describe('MockEventPlanningDataProvider', () => {
     ])
     const withCommittee = await data.assign(created.id, {
       targetType: 'committee',
-      committeeId: 'com-spirit',
+      committeeId: 'com-sports',
       roleLabel: 'Game leads',
     })
-    expect(withCommittee.assignments[0]?.committeeName).toBe('Spirit')
+    expect(withCommittee.assignments[0]?.committeeName).toBe('Sports')
     const withPerson = await data.assign(created.id, {
       targetType: 'individual',
       memberId: 'mem-taylor',
       roleLabel: 'Scorekeeper',
     })
-    expect(withPerson.assignments.at(-1)?.memberName).toBe('Taylor Kim')
+    expect(withPerson.assignments.at(-1)?.memberName).toBe('Stephanie Leung')
   })
 
   it('auto-generates a Winter Ball–style agenda every time a plan is created', async () => {
@@ -98,7 +98,7 @@ describe('MockEventPlanningDataProvider', () => {
     const reports = await data.listAnonymousReports('plan-rally')
     expect(reports).toHaveLength(1)
     expect(reports[0]).toMatchObject({
-      subjectMemberName: 'Avery Chen',
+      subjectMemberName: 'Jennifer Li',
       category: 'not_doing_work',
     })
     expect(reports[0].attachments).toHaveLength(1)

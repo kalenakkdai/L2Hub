@@ -177,19 +177,19 @@ const debriefContent: EventDebriefSubmissionContent = {
   committeeRatings: [
     {
       committeeId: 'com-community',
-      committeeName: 'Community Committee',
+      committeeName: 'Community',
       rating: 5,
       maxRating: 5,
     },
     {
       committeeId: 'com-spirit',
-      committeeName: 'Spirit Committee',
+      committeeName: 'Spirit',
       rating: 4,
       maxRating: 5,
     },
     {
       committeeId: 'com-publicity',
-      committeeName: 'Publicity Committee',
+      committeeName: 'Publicity',
       rating: null,
       maxRating: 5,
     },

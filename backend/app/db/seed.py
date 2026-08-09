@@ -27,7 +27,38 @@ from app.models.profile import Profile
 SEED_COMMITTEE_IDS = {
     "community": uuid.UUID("11111111-1111-4111-8111-111111111111"),
     "spirit": uuid.UUID("22222222-2222-4222-8222-222222222222"),
+    "activities": uuid.UUID("12121212-1212-4121-8121-121212121212"),
+    "elections": uuid.UUID("13131313-1313-4131-8131-131313131313"),
+    "fundraising": uuid.UUID("14141414-1414-4141-8141-141414141414"),
+    "gtac": uuid.UUID("15151515-1515-4151-8151-151515151515"),
+    "hcmc": uuid.UUID("16161616-1616-4161-8161-161616161616"),
+    "publicity": uuid.UUID("17171717-1717-4171-8171-171717171717"),
+    "student_store": uuid.UUID("18181818-1818-4181-8181-181818181818"),
+    "star": uuid.UUID("19191919-1919-4191-8191-191919191919"),
+    "sports": uuid.UUID("1a1a1a1a-1a1a-41a1-81a1-1a1a1a1a1a1a"),
+    "tech": uuid.UUID("1b1b1b1b-1b1b-41b1-81b1-1b1b1b1b1b1b"),
+    "videography_photography": uuid.UUID(
+        "1c1c1c1c-1c1c-41c1-81c1-1c1c1c1c1c1c"
+    ),
 }
+
+# Display names for the twelve Leadership 2 committees, plus the legacy Spirit
+# committee still referenced by Fall Rally seed events.
+SEED_COMMITTEES: tuple[tuple[str, str], ...] = (
+    ("activities", "Activities"),
+    ("community", "Community"),
+    ("elections", "Elections"),
+    ("fundraising", "Fundraising"),
+    ("gtac", "GTAC"),
+    ("hcmc", "HCMC"),
+    ("publicity", "Publicity"),
+    ("student_store", "Student Store"),
+    ("star", "STAR"),
+    ("sports", "Sports"),
+    ("tech", "Tech"),
+    ("videography_photography", "Videography/Photography"),
+    ("spirit", "Spirit"),
+)
 
 SEED_USER_IDS = {
     "ac": uuid.UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
@@ -108,7 +139,7 @@ def seed_permissions_and_roles(db: Session) -> dict[str, Role]:
 
 def seed_committees(db: Session) -> dict[str, Committee]:
     result: dict[str, Committee] = {}
-    for slug, name in (("community", "Community Committee"), ("spirit", "Spirit Committee")):
+    for slug, name in SEED_COMMITTEES:
         committee = db.scalar(select(Committee).where(Committee.slug == slug))
         if committee is None:
             committee = Committee(
@@ -117,6 +148,8 @@ def seed_committees(db: Session) -> dict[str, Committee]:
                 name=name,
             )
             db.add(committee)
+        else:
+            committee.name = name
         result[slug] = committee
     db.flush()
     return result

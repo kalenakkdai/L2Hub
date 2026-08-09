@@ -3,7 +3,11 @@ import { screen, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { makeSession, type SupabaseMock } from '../../test/supabaseMock'
 import { renderWithProviders } from '../../test/renderWithProviders'
-import { SAMPLE_COMMITTEES, sampleCommitteeDetail } from './fixtures/sampleCommittees'
+import {
+  SAMPLE_COMMITTEES,
+  SAMPLE_COMMITTEE_CAMPER_TOTAL,
+  sampleCommitteeDetail,
+} from './fixtures/sampleCommittees'
 
 vi.mock('../../lib/supabase', async () => {
   const { createSupabaseMock } =
@@ -41,23 +45,22 @@ describe('CommitteesPage', () => {
     mockProfile()
   })
 
-  it('lists every committee with its head and camper count', async () => {
+  it('lists every committee with its head, email roster size, and real names', async () => {
     renderWithProviders(<CommitteesPage />)
 
     expect(await screen.findByRole('heading', { name: 'Committees' })).toBeInTheDocument()
+    expect(
+      screen.getByText(`L2 Campsite · ${SAMPLE_COMMITTEE_CAMPER_TOTAL} campers`),
+    ).toBeInTheDocument()
 
     // Scope to <main>: the sidebar's nav entries are list items too.
     const rows = within(screen.getByRole('main')).getAllByRole('listitem')
     expect(rows).toHaveLength(SAMPLE_COMMITTEES.length)
     expect(screen.getByText('Activities')).toBeInTheDocument()
-    expect(screen.getByText('14 campers')).toBeInTheDocument()
-  })
-
-  it('says so when a committee has no head yet', async () => {
-    renderWithProviders(<CommitteesPage />)
-    await screen.findByRole('heading', { name: 'Committees' })
-
-    expect(screen.getByText('No committee head yet')).toBeInTheDocument()
+    expect(screen.getByText('Videography/Photography')).toBeInTheDocument()
+    expect(screen.getByText('Jennifer Li')).toBeInTheDocument()
+    expect(screen.getAllByText('4 campers').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('5 campers')).toHaveLength(3)
   })
 
   it('marks the committees the camper belongs to', async () => {
@@ -75,6 +78,10 @@ describe('CommitteesPage', () => {
     expect(screen.getByRole('link', { name: /Activities/ })).toHaveAttribute(
       'href',
       '/committees/activities',
+    )
+    expect(screen.getByRole('link', { name: /Student Store/ })).toHaveAttribute(
+      'href',
+      '/committees/student_store',
     )
   })
 })
@@ -94,16 +101,19 @@ describe('CommitteeDetailPage', () => {
       { route: `/committees/${id}` },
     )
 
-  it('shows the roster, tasks, and events', async () => {
+  it('shows the roster, committee email, tasks, and events', async () => {
     renderDetail('activities')
 
     expect(
       await screen.findByRole('heading', { name: 'Activities', level: 1 }),
     ).toBeInTheDocument()
+    expect(screen.getByText(/msjateam@gmail.com/)).toBeInTheDocument()
 
     const detail = sampleCommitteeDetail('activities')!
     const roster = screen.getByRole('region', { name: 'Campers' })
     expect(within(roster).getAllByRole('listitem')).toHaveLength(detail.members.length)
+    expect(within(roster).getByText('Jennifer Li')).toBeInTheDocument()
+    expect(within(roster).getByText('Prahlad Vangeepuram Canchi')).toBeInTheDocument()
 
     expect(screen.getByText(detail.tasks[0].title)).toBeInTheDocument()
     expect(screen.getByText(detail.events[0].title)).toBeInTheDocument()
@@ -118,19 +128,13 @@ describe('CommitteeDetailPage', () => {
     expect(within(roster).getByText(/Committee head/)).toBeInTheDocument()
   })
 
-  it('reports how many campers are not listed', async () => {
-    renderDetail('activities')
-    await screen.findByRole('heading', { name: 'Activities', level: 1 })
-
-    // 14 campers, 5 shown (max per camp).
-    expect(screen.getByText('and 9 more campers')).toBeInTheDocument()
-  })
-
-  it('says the roster is complete when it is', async () => {
+  it('says the roster is complete when every camper is listed', async () => {
     renderDetail('tech')
     await screen.findByRole('heading', { name: 'Tech', level: 1 })
 
     expect(screen.getByText('That is the whole committee.')).toBeInTheDocument()
+    expect(screen.getByText(/msjhtechteam@gmail.com/)).toBeInTheDocument()
+    expect(screen.getByText('Luis He')).toBeInTheDocument()
   })
 
   it('shows empty states for a committee with no tasks or events', async () => {
@@ -153,7 +157,25 @@ describe('CommitteeDetailPage', () => {
 })
 
 describe('committee fixture', () => {
-  it('puts the head first and never duplicates a camper', () => {
+  it('uses the real Leadership 2 emails and puts the head first', () => {
+    expect(SAMPLE_COMMITTEES.map((committee) => committee.name)).toEqual([
+      'Activities',
+      'Community',
+      'Elections',
+      'Fundraising',
+      'GTAC',
+      'HCMC',
+      'Publicity',
+      'Student Store',
+      'STAR',
+      'Sports',
+      'Tech',
+      'Videography/Photography',
+    ])
+    expect(SAMPLE_COMMITTEES.find((c) => c.id === 'sports')?.email).toBe(
+      'l2sportscommittee@gmail.com',
+    )
+
     for (const committee of SAMPLE_COMMITTEES) {
       const detail = sampleCommitteeDetail(committee.id)!
       const names = detail.members.map((member) => member.name)
