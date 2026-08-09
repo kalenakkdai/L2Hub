@@ -6,11 +6,14 @@ import uuid
 
 from fastapi import APIRouter
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentProfile, DbSession
 from app.core import permission_keys as pk
 from app.models import Committee
+from app.models.work import Task
 from app.services import authorization as authz
+from app.services import work
 
 router = APIRouter(prefix="/committees", tags=["committees"])
 
@@ -47,8 +50,14 @@ def read_committee_tasks(
             code="committee_scope_denied",
             message="You do not have access to this committee.",
         )
+    tasks = db.scalars(
+        select(Task)
+        .options(selectinload(Task.assignee))
+        .where(Task.committee_id == committee.id)
+        .order_by(Task.due_on.is_(None), Task.due_on, Task.created_at)
+    ).all()
     return {
         "committee_id": str(committee.id),
         "committee_slug": committee.slug,
-        "tasks": [],
+        "tasks": [work.task_payload(task) for task in tasks],
     }

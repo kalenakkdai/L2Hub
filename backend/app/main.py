@@ -11,6 +11,7 @@ from app.api.routes_grades import router as grades_router
 from app.api.routes_note_taker import router as note_taker_router
 from app.api.routes_storage import router as storage_router
 from app.api.routes_users import router as users_router
+from app.api.routes_work import router as work_router
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -33,6 +34,7 @@ app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(note_taker_router)
 app.include_router(storage_router)
+app.include_router(work_router)
 
 
 @app.get("/health")

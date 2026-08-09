@@ -1,17 +1,19 @@
 import {
-  BookOpen,
   BookOpenCheck,
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
+  Inbox,
   LayoutDashboard,
   MessagesSquare,
   Mic,
   MapPinned,
   ScanLine,
+  Send,
   Settings2,
   SlidersHorizontal,
   Sparkles,
+  SquareKanban,
   UserCog,
   Users,
   UsersRound,
@@ -76,6 +78,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: ClipboardList,
         badge: { kind: 'count', value: 3, tone: 'accent' },
       },
+      { label: 'Inbox', to: '/inbox', icon: Inbox },
       {
         label: 'Committees',
         to: '/committees',
@@ -115,7 +118,25 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: MapPinned,
         permission: 'attendance.view_committee',
       },
-      { label: 'Resources', to: '/resources', icon: BookOpen },
+      // The board and the request log replaced the Tools and Resources
+      // placeholders. Tools came back as its own section below, with a real
+      // page behind it; Resources never had one.
+      //
+      // Both are readable by the whole class — tasks.view_all and
+      // requests.view_all are in the Member baseline. The keys stay on the
+      // items so the rows follow the grants if that ever changes.
+      {
+        label: 'L2 Board',
+        to: '/board',
+        icon: SquareKanban,
+        permission: 'tasks.view_all',
+      },
+      {
+        label: 'Requests',
+        to: '/requests',
+        icon: Send,
+        permission: 'requests.view_all',
+      },
       // Hidden from campers entirely. Advisers see it and get a read-only
       // page; only settings.edit holders can change anything.
       {
@@ -147,6 +168,9 @@ export const NAV_SECTIONS: NavSection[] = [
 /** Routes that exist today. Anything else renders as "coming soon". */
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
+  '/board',
+  '/requests',
+  '/inbox',
   '/committees',
   '/settings',
   '/settings/campsite',

@@ -36,6 +36,7 @@ from app.models.rbac import (
     RolePermission,
     UserRoleAssignment,
 )
+from app.models.work import CommitteeRequest, Task
 
 __all__ = [
     "AttendanceDay",
@@ -46,6 +47,7 @@ __all__ = [
     "AuditLog",
     "Committee",
     "CommitteeMembership",
+    "CommitteeRequest",
     "DebriefParticipant",
     "Event",
     "EventAgenda",
@@ -63,6 +65,7 @@ __all__ = [
     "Profile",
     "Role",
     "RolePermission",
+    "Task",
     "UserRoleAssignment",
     "WhereaboutsEntry",
     "WhereaboutsPing",

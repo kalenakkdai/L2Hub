@@ -60,6 +60,36 @@ Passkey enrollment is a separate self-only operation: an authenticated student
 can register a public-key credential only for their own profile after an
 operator enrolls their student ID. See `docs/attendance.md`.
 
+### L2 Board and cross-committee requests
+
+| Capability | President | AC | ASBO | Class Officer | Committee Head | Member |
+|------------|-----------|----|------|---------------|----------------|--------|
+| `tasks.view_all` — the L2 Board at `/board` | Yes | Yes | Yes | Yes | Yes | Yes |
+| `requests.view_all` — the cross-org log at `/requests` | Yes | Yes | Yes | Yes | Yes | Yes |
+| `requests.view_own_committee` | Yes | Yes | Yes | Yes | Yes | Yes |
+| `requests.create` | Yes | Yes | Yes | Yes | Yes | Yes |
+| `requests.manage_own_committee` — accept, decline, complete | Yes | Yes | Yes | Own committee | Own committee | Own committee |
+| `tasks.manage_committee` — add and edit that committee's tasks | Yes | Yes | Yes | Own committee | Own committee | Own committee |
+| `tasks.manage_all` | Yes | Yes | Yes | No | No | No |
+| `requests.manage_all` — act for a committee you are not in | Yes | Yes | Yes | No | No | No |
+
+The two tabs replaced the Tools and Resources placeholders. **Reading is open
+to the whole class** — that is the point of both. The board only helps if
+everyone can see what each committee is up to, and the request log only stops
+work getting lost if the people doing the work can read it.
+
+**Writing is not open.** A camper adds tasks to, and answers requests sent to,
+the committees they are actually in. Those are the committee-scoped keys, and
+they resolve against `user_roles.committee_id` / committee membership.
+
+`view_all` and `manage_all` are deliberately separate for this reason. Everyone
+sees every request; only platform ops can answer one that was sent to a
+committee they are not in.
+
+Class Advisors hold none of these. Their bundle is a deliberate minimum
+(`class_officers.view` plus `notifications.view_own`) and they are not in the
+operational loop the board describes.
+
 ## Scope model
 
 Permissions resolve with optional context:

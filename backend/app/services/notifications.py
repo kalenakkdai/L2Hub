@@ -36,21 +36,26 @@ EVENT_TYPES = (
     "points_awarded",
     "level_up",
     "wrapped_activity",
+    "committee_request",
     "whereabouts_ping",
 )
 
 #: The event types something in this codebase actually emits.
 #:
 #: The rest of EVENT_TYPES describes a product that does not exist yet: there
-#: is no tasks table and no points ledger, so nothing can raise task_assigned,
-#: task_due_soon, task_overdue, points_awarded or level_up, and no code path
-#: creates an event or announces to a committee. A switch that gates nothing
-#: is worse than a missing switch, because it tells a camper they have made a
-#: choice, so the settings grid offers only these.
+#: is no points ledger, so nothing can raise points_awarded or level_up, and
+#: no code path creates an event or announces to a committee. A switch that
+#: gates nothing is worse than a missing switch, because it tells a camper
+#: they have made a choice, so the settings grid offers only these.
+#:
+#: task_due_soon and task_overdue stay unsourced: tasks carry a due date now,
+#: but nothing sweeps them on a schedule, so no deadline notice is ever raised.
 #:
 #: The list is mirrored in frontend/src/hooks/useNotificationPrefs.ts. When an
 #: emitter lands, both sides change together.
-SOURCED_EVENT_TYPES = frozenset({"wrapped_activity", "whereabouts_ping"})
+SOURCED_EVENT_TYPES = frozenset(
+    {"wrapped_activity", "whereabouts_ping", "task_assigned", "committee_request"}
+)
 
 #: Notification `type` values mapped onto the preference rows a camper can
 #: actually see in the settings grid.
@@ -59,8 +64,9 @@ SOURCED_EVENT_TYPES = frozenset({"wrapped_activity", "whereabouts_ping"})
 #: offered a switch for it, so nobody has chosen to turn it off, and silently
 #: dropping it would lose information a camper never declined.
 #:
-#: The task_*, event_* and points_* entries have no emitter today. They are
-#: kept as the contract those emitters should meet, not as live routing.
+#: The task.due_soon, task.overdue, event.* and points.* entries have no
+#: emitter today. They are kept as the contract those emitters should meet,
+#: not as live routing.
 TYPE_TO_EVENT_TYPE: dict[str, str] = {
     # All three stages of the Wrapped lifecycle share one preference. They go
     # to the same people, about the same event, and a camper who wants one
@@ -70,6 +76,12 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "wrapped.published": "wrapped_activity",
     "whereabouts.ping": "whereabouts_ping",
     "task.assigned": "task_assigned",
+    # Every stage of a cross-committee request shares one preference: someone
+    # who wants to know they were asked also wants to know the answer.
+    "request.received": "committee_request",
+    "request.accepted": "committee_request",
+    "request.declined": "committee_request",
+    "request.completed": "committee_request",
     "task.due_soon": "task_due_soon",
     "task.overdue": "task_overdue",
     "event.created": "event_created",

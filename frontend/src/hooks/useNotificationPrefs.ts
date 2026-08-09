@@ -13,6 +13,7 @@ export const EVENT_TYPES = [
   'points_awarded',
   'level_up',
   'wrapped_activity',
+  'committee_request',
   'whereabouts_ping',
 ] as const
 
@@ -38,6 +39,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   points_awarded: 'Points awarded',
   level_up: 'Level up',
   wrapped_activity: 'Event Wrapped updates',
+  committee_request: 'Committee requests',
   whereabouts_ping: 'Whereabouts pings',
 }
 
@@ -46,9 +48,11 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
  *
  * Mirrors SOURCED_EVENT_TYPES in backend/app/services/notifications.py. Every
  * other entry in EVENT_TYPES describes a feature that does not exist: there is
- * no tasks table and no points ledger, and nothing emits an event-created or
- * committee-announcement notification. Rendering a switch for those would
- * promise a camper a choice that changes nothing, so they are not shown.
+ * no points ledger, and nothing emits an event-created or committee-
+ * announcement notification. Tasks carry a due date but nothing sweeps them on
+ * a schedule, so no deadline notice is ever raised either. Rendering a switch
+ * for those would promise a camper a choice that changes nothing, so they are
+ * not shown.
  *
  * They stay in EVENT_TYPES because the column still accepts them and campers
  * may already hold rows from when the grid did show them.
@@ -56,12 +60,17 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
 export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'wrapped_activity',
   'whereabouts_ping',
+  'task_assigned',
+  'committee_request',
 ]
 
 /** What each offered row actually gates, for the grid's own description. */
 export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, string>> = {
   wrapped_activity: 'When an Event Wrapped is requested, finishes generating, or is published',
   whereabouts_ping: 'When Jan or a committee head sends you a return or pickup message',
+  task_assigned: 'When someone puts a task on the L2 Board with your name on it',
+  committee_request:
+    'When another committee asks yours for something, and when they answer yours',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

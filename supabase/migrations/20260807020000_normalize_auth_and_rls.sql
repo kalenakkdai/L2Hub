@@ -290,6 +290,7 @@ begin
 end;
 $$;
 
+-- Widened by 20260808005000 when the Class Officer roles arrived.
 alter table public.roles
     drop constraint if exists roles_slug_canonical;
 alter table public.roles

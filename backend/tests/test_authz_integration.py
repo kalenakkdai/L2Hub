@@ -28,13 +28,22 @@ def test_asbo_grades_all_ok_feedback_forbidden(client, make_token, seeded):
     assert anonymous.status_code == 403
 
 
-def test_committee_head_scoped_tasks(client, make_token, seeded):
-    headers = auth_header(make_token, seeded["community_head"].id)
-    own = client.get("/committees/community/tasks", headers=headers)
-    assert own.status_code == 200
-    other = client.get("/committees/spirit/tasks", headers=headers)
-    assert other.status_code == 403
-    assert other.json()["detail"]["code"] == "committee_scope_denied"
+def test_every_camper_reads_every_committees_tasks(client, make_token, seeded):
+    """tasks.view_all is in the Member baseline, so the board is open to all.
+
+    This reverses the original rule, which scoped even a Committee Head to
+    their own committee's task list. The L2 Board exists so the whole class can
+    see what each committee is working on; a camper who cannot read Spirit's
+    column cannot use it.
+
+    Reading is the part that opened up. Writing did not — see
+    tests/test_board_and_requests.py, where a head is still refused when adding
+    a task to a committee they are not in.
+    """
+    for who in ("community_member", "community_head", "ac"):
+        headers = auth_header(make_token, seeded[who].id)
+        assert client.get("/committees/community/tasks", headers=headers).status_code == 200, who
+        assert client.get("/committees/spirit/tasks", headers=headers).status_code == 200, who
 
 
 def test_committee_head_grades_all_forbidden(client, make_token, seeded):

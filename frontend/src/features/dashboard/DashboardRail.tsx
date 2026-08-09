@@ -1,7 +1,8 @@
-import { BookOpen, Calendar, CircleAlert, GraduationCap, UsersRound } from 'lucide-react'
+import { Calendar, CircleAlert, GraduationCap, Inbox, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ProgressBar } from '../../components/ui/ProgressBar'
+import { RequestsWidget } from '../work/RequestsWidget'
 import { dateStamp, timeOfDay } from './formatDate'
 import type { CommitteeSnapshot, LiveDebrief, UpcomingItem } from './types'
 
@@ -99,7 +100,7 @@ function DebriefBubbles({ debrief }: { debrief: LiveDebrief }) {
 }
 
 const QUICK_LINKS: { label: string; to: string; icon: LucideIcon }[] = [
-  { label: 'Resources', to: '/resources', icon: BookOpen },
+  { label: 'Inbox', to: '/inbox', icon: Inbox },
   { label: 'Calendar', to: '/events', icon: Calendar },
   { label: 'Committees', to: '/committees', icon: UsersRound },
   { label: 'Grades', to: '/grades', icon: GraduationCap },
@@ -123,6 +124,10 @@ export function DashboardRail({ committee, debrief, upcoming }: DashboardRailPro
           <CommitteeCard snapshot={committee} />
         </RailSection>
       )}
+
+      {/* Where everyone who is not leadership works the request flow: the
+          cross-org /requests page is gated, this is not. */}
+      <RequestsWidget />
 
       {debrief && (
         <RailSection

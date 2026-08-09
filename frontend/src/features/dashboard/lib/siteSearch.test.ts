@@ -39,11 +39,13 @@ describe('searchSiteDestinations', () => {
   })
 
   it('marks unimplemented routes without dropping them from discovery', () => {
-    const hits = searchSiteDestinations('resources', member)
-    const resources = hits.find((hit) => hit.to === '/resources')
-    expect(resources).toEqual(
+    // Resources used to be the example here; it has a real page now (the
+    // request log). My tasks is the remaining placeholder.
+    const hits = searchSiteDestinations('tasks', member)
+    const tasks = hits.find((hit) => hit.to === '/tasks')
+    expect(tasks).toEqual(
       expect.objectContaining({
-        label: 'Resources',
+        label: 'My tasks',
         implemented: false,
       }),
     )

@@ -2,6 +2,7 @@ import { filterNavSections, NAV_SECTIONS } from './navigation'
 import { useCampsiteChrome } from '../../hooks/useCampsiteModules'
 import { NavItem } from './NavItem'
 import { NotificationBell } from './NotificationBell'
+import { useInboxBadge } from './useInboxBadge'
 import { UserMenu } from './UserMenu'
 import { Wordmark } from './Wordmark'
 
@@ -29,6 +30,7 @@ export function Sidebar({
     chrome.data?.modulesEnabled,
   )
   const showNotifications = permissions?.includes('notifications.view_own') ?? false
+  const inboxBadge = useInboxBadge(showNotifications)
 
   return (
     <div className="on-navy flex h-full w-60 flex-col bg-navy-900 py-5">
@@ -55,7 +57,10 @@ export function Sidebar({
             <ul className="flex flex-col gap-px">
               {section.items.map((item) => (
                 <li key={item.to}>
-                  <NavItem item={item} />
+                  <NavItem
+                    item={item}
+                    badge={item.to === '/inbox' ? inboxBadge : undefined}
+                  />
                 </li>
               ))}
             </ul>
