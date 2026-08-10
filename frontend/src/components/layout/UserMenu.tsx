@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth'
 import { roleLabel } from '../../api/auth'
+import { initials } from '../../lib/initials'
 
 type UserMenuProps = {
   name: string
@@ -8,11 +9,6 @@ type UserMenuProps = {
   /** The camper's committee, when they have one. */
   committee?: string | null
   className?: string
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2)
-  return parts.map((part) => part[0]?.toUpperCase() ?? '').join('') || '?'
 }
 
 /** Identity plus the way out, pinned to the bottom of the navigation. */

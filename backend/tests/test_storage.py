@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,6 +18,7 @@ from app.storage.factory import (
 )
 from app.storage.local import LocalFolderStorage
 from app.storage.protocol import opaque_storage_key
+from app.storage.supabase import SupabaseStorage, SupabaseStorageError
 
 
 @pytest.fixture(autouse=True)
@@ -110,9 +113,7 @@ def test_fastapi_injects_storage_and_smoke_writes_to_folder(
             body = smoke.json()
             assert body["roundTripMatches"] is True
             assert body["exists"] is True
-            assert Path(tmp_path / body["key"]).read_text(encoding="utf-8") == (
-                "hello from di"
-            )
+            assert Path(tmp_path / body["key"]).read_text(encoding="utf-8") == ("hello from di")
     finally:
         fastapi_app.dependency_overrides.pop(deps.get_storage, None)
 
@@ -147,3 +148,148 @@ def test_writes_into_repo_local_storage_folder() -> None:
     assert written.is_file()
     assert written.read_bytes() == b"l2hub local storage ok\n"
     # Leave the file so it is visible under backend/.local-storage/smoke/
+
+
+# ---------------------------------------------------------------------------
+# Supabase Storage backend
+# ---------------------------------------------------------------------------
+#
+# These drive a real httpx.Client through a MockTransport, so request paths,
+# headers, and response handling are exercised end to end at the HTTP layer.
+# What they do not prove is that the live project answers the way the fixture
+# does — the bucket has to exist and the secret key has to be set for that, and
+# neither is true in CI. Treat these as contract tests against the documented
+# Storage API, not as verification against the real project.
+
+
+def _supabase_storage(handler) -> SupabaseStorage:
+    return SupabaseStorage(
+        project_url="https://example.supabase.co",
+        service_key="secret-key",
+        bucket="attachments",
+        transport=httpx.MockTransport(handler),
+    )
+
+
+def test_supabase_put_upserts_and_authenticates() -> None:
+    seen: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = str(request.url)
+        seen["method"] = request.method
+        seen["upsert"] = request.headers.get("x-upsert")
+        seen["auth"] = request.headers.get("authorization")
+        seen["apikey"] = request.headers.get("apikey")
+        seen["content_type"] = request.headers.get("content-type")
+        seen["body"] = request.content
+        return httpx.Response(200, json={"Key": "attachments/note-taker/abc.webm"})
+
+    storage = _supabase_storage(handler)
+    stored = storage.put("note-taker/abc.webm", b"audio", content_type="audio/webm")
+
+    assert seen["method"] == "POST"
+    assert seen["url"] == (
+        "https://example.supabase.co/storage/v1/object/attachments/note-taker/abc.webm"
+    )
+    # POST without upsert is create-only and would 409 on a repeat write, which
+    # the protocol forbids: put() promises overwrite.
+    assert seen["upsert"] == "true"
+    assert seen["auth"] == "Bearer secret-key"
+    assert seen["apikey"] == "secret-key"
+    assert seen["content_type"] == "audio/webm"
+    assert seen["body"] == b"audio"
+    assert stored.key == "note-taker/abc.webm"
+    assert stored.size_bytes == 5
+
+
+def test_supabase_get_round_trip_and_missing_key() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("present.txt"):
+            return httpx.Response(200, content=b"hello")
+        return httpx.Response(404, json={"error": "not_found"})
+
+    storage = _supabase_storage(handler)
+
+    assert storage.get("smoke/present.txt") == b"hello"
+    # Callers already handle FileNotFoundError from the local backend; the
+    # Supabase backend has to raise the same thing rather than an HTTP error.
+    with pytest.raises(FileNotFoundError):
+        storage.get("smoke/absent.txt")
+
+
+def test_supabase_delete_treats_missing_key_as_no_op() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, json={"error": "not_found"})
+
+    _supabase_storage(handler).delete("smoke/gone.txt")
+
+
+def test_supabase_exists_reads_object_info() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert "/object/info/attachments/" in request.url.path
+        found = request.url.path.endswith("here.txt")
+        return httpx.Response(200 if found else 404, json={})
+
+    storage = _supabase_storage(handler)
+    assert storage.exists("smoke/here.txt")
+    assert not storage.exists("smoke/nope.txt")
+
+
+def test_supabase_url_for_returns_absolute_signed_url() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert "/object/sign/attachments/" in request.url.path
+        assert json.loads(request.content)["expiresIn"] == 3600
+        # The API answers with a path relative to /storage/v1.
+        return httpx.Response(
+            200,
+            json={"signedURL": "/object/sign/attachments/smoke/a.txt?token=jwt"},
+        )
+
+    url = _supabase_storage(handler).url_for("smoke/a.txt")
+    assert url == (
+        "https://example.supabase.co/storage/v1/object/sign/attachments/smoke/a.txt?token=jwt"
+    )
+
+
+def test_supabase_surfaces_upload_failures() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(413, text="Payload too large")
+
+    with pytest.raises(SupabaseStorageError, match="413"):
+        _supabase_storage(handler).put("smoke/big.bin", b"x")
+
+
+def test_supabase_rejects_path_traversal() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+        raise AssertionError("request should never be sent")
+
+    storage = _supabase_storage(handler)
+    for bad in ("../secrets.txt", "/leading-slash.txt", "a/../../b.txt", ""):
+        with pytest.raises(ValueError):
+            storage.put(bad, b"x")
+
+
+def test_factory_builds_supabase_storage() -> None:
+    storage = build_storage(
+        Settings(
+            storage_backend="supabase",
+            supabase_url="https://example.supabase.co",
+            supabase_service_key="secret-key",
+            supabase_storage_bucket="attachments",
+        )
+    )
+    assert isinstance(storage, SupabaseStorage)
+    assert storage.bucket == "attachments"
+
+
+def test_factory_refuses_supabase_storage_without_credentials() -> None:
+    # Failing at startup beats failing after a meeting nobody can re-record.
+    with pytest.raises(UnsupportedStorageBackend, match="SUPABASE_SERVICE_KEY"):
+        build_storage(
+            Settings(
+                storage_backend="supabase",
+                supabase_url="https://example.supabase.co",
+                supabase_service_key="",
+            )
+        )

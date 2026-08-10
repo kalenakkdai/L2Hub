@@ -1,0 +1,19 @@
+# Keep the build context small, and keep local secrets out of it entirely —
+# even though the Dockerfile only copies requirements.txt and app/, the context
+# itself is uploaded to the builder.
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.local-storage/
+*.db
+*.db.bak-*
+*.sqlite
+*.sqlite3
+tests/
+scripts/

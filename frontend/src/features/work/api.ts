@@ -73,6 +73,31 @@ export function fetchBoardCommittees() {
   return apiFetch<{ committees: PickerCommittee[] }>('/board/committees')
 }
 
+/** One person on a committee's roster, for the assignee picker. */
+export type BoardCommitteeMember = {
+  id: string
+  name: string
+  position: string | null
+  isHead: boolean
+  avatarUrl: string | null
+}
+
+/**
+ * Who is in a committee.
+ *
+ * Authorized for people who can put work on that committee's board, plus its
+ * own members. Anyone else gets a 403, which the picker renders the same way
+ * as a missing endpoint — see AssigneePicker.
+ */
+export function fetchCommitteeMembers(committeeId: string) {
+  return apiFetch<{
+    committeeId: string
+    committeeSlug: string
+    committeeName: string
+    members: BoardCommitteeMember[]
+  }>(`/committees/${committeeId}/members`)
+}
+
 export type NewTaskInput = {
   committeeId: string
   title: string

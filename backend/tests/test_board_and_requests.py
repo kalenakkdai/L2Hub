@@ -383,3 +383,60 @@ def test_declining_is_recorded_rather_than_left_open(
     stored = db_session.get(CommitteeRequest, uuid.UUID(created["id"]))
     assert stored.status == "declined"
     assert stored.responded_at is not None
+
+
+# ---------------------------------------------------------------------------
+# Assignment rules
+# ---------------------------------------------------------------------------
+
+
+def test_a_task_cannot_be_reassigned_outside_its_committee(
+    client, make_token, seeded, db_session
+):
+    """create_task has always checked this; update_task used to not.
+
+    Listing a task unassigned and then patching an outsider onto it walked
+    straight around the rule, and told them about work on a board they
+    cannot even see.
+    """
+    head = auth_header(make_token, seeded["community_head"].id)
+    task = make_task(client, head)["task"]
+
+    response = client.patch(
+        f"/board/tasks/{task['id']}",
+        json={"assigneeUserId": str(seeded["spirit_member"].id)},
+        headers=head,
+    )
+
+    assert response.status_code == 400
+    assert "not in this committee" in response.text
+    notes = db_session.scalars(
+        select(Notification).where(
+            Notification.recipient_user_id == seeded["spirit_member"].id
+        )
+    ).all()
+    assert list(notes) == []
+
+
+def test_the_add_task_flag_agrees_with_the_write_path(client, make_token, seeded):
+    """A button that 403s is worse than no button.
+
+    canAddTask used to be plain membership while the write additionally
+    required headship, so every plain member was offered "Add task" on their
+    own committee and refused when they used it.
+    """
+    for user_key in ("community_member", "community_head", "asbo"):
+        headers = auth_header(make_token, seeded[user_key].id)
+        board = client.get("/board", headers=headers).json()
+
+        for column in board["committees"]:
+            response = client.post(
+                "/board/tasks",
+                json={"committeeId": column["id"], "title": "Probe"},
+                headers=headers,
+            )
+            expected = 201 if column["canAddTask"] else 403
+            assert response.status_code == expected, (
+                f"{user_key} on {column['name']}: canAddTask="
+                f"{column['canAddTask']} but POST returned {response.status_code}"
+            )

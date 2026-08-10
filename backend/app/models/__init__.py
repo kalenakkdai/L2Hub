@@ -10,6 +10,7 @@ from app.models.attendance import (
     WhereaboutsEntry,
     WhereaboutsPing,
 )
+from app.models.campsite import CampsiteSettings
 from app.models.event_summary import (
     DebriefParticipant,
     Event,
@@ -26,6 +27,7 @@ from app.models.note_taker import (
     MeetingTranscript,
 )
 from app.models.profile import Profile
+from app.models.push import PushSubscription
 from app.models.rbac import (
     AuditLog,
     Committee,
@@ -45,6 +47,7 @@ __all__ = [
     "AttendancePasskeyChallenge",
     "AttendanceRecord",
     "AuditLog",
+    "CampsiteSettings",
     "Committee",
     "CommitteeMembership",
     "CommitteeRequest",
@@ -63,6 +66,7 @@ __all__ = [
     "Permission",
     "PermissionOverride",
     "Profile",
+    "PushSubscription",
     "Role",
     "RolePermission",
     "Task",

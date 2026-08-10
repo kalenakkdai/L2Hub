@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Required for iOS: Safari only delivers web push to a site the camper
+         has added to their home screen, and "display": "standalone" in the
+         manifest is what makes that install behave like an app rather than a
+         bookmark. Without this file the iOS path cannot work at all. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="The Quad" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>L2 Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

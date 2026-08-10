@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from datetime import date
 
@@ -14,9 +15,12 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import CurrentProfile, DbSession
 from app.core import permission_keys as pk
 from app.models import DebriefParticipant, Event, EventAgenda
+from app.push.factory import get_push_sender_singleton
 from app.services import authorization as authz
-from app.services import notifications
+from app.services import event_notify, notifications
 from app.services.event_summary import service as summary_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["events"])
 
@@ -29,6 +33,9 @@ class PromoteEventPlanBody(BaseModel):
     planId: str = Field(min_length=1, max_length=200)
     title: str = Field(min_length=1, max_length=200)
     eventDate: date
+    #: The Crew running this event. Optional: an event with no Crew is a
+    #: Campsite-wide one, and is announced to everybody rather than nobody.
+    crewId: uuid.UUID | None = None
 
 
 def _get_event(db: DbSession, event_ref: str) -> Event:
@@ -72,7 +79,24 @@ def promote_event_plan(
         plan_id=body.planId,
         title=body.title,
         event_date=body.eventDate,
+        committee_id=body.crewId,
     )
+
+    # Announced after promotion has committed, and never allowed to fail the
+    # publish: an event that exists but was not announced is recoverable, an
+    # event that failed to publish because a push service timed out is not.
+    try:
+        event_notify.announce_event(
+            db,
+            event,
+            sender=get_push_sender_singleton(),
+            exclude=profile.id,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("announcing event %s failed", event.id)
+
     return summary_service.event_list_item(event)
 
 

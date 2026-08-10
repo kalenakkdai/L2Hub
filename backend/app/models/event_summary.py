@@ -9,12 +9,14 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +36,11 @@ class Event(Base):
     )
     starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: iCal DESCRIPTION and LOCATION. Both nullable — an event that has never
+    #: been given a location omits the property rather than emitting an empty
+    #: one, which Google Calendar renders as a blank map pin.
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    location: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -157,6 +164,22 @@ class NotificationPreference(Base):
 class Notification(Base):
     __tablename__ = "notifications"
 
+    #: The deadline sweep is level-triggered — it re-reads every open task
+    #: every morning — so without a key it would re-send the same notice
+    #: daily. Both dialect predicates are spelled out so the SQLite test
+    #: database enforces the rule the way Postgres does; a test that cannot
+    #: fail is not a test.
+    __table_args__ = (
+        Index(
+            "notifications_dedupe_key_uidx",
+            "recipient_user_id",
+            "dedupe_key",
+            unique=True,
+            postgresql_where=text("dedupe_key IS NOT NULL"),
+            sqlite_where=text("dedupe_key IS NOT NULL"),
+        ),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     recipient_user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False
@@ -165,6 +188,11 @@ class Notification(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False, default="")
     payload_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Set only by emitters that can fire repeatedly for the same thing. The
+    #: row is its own receipt: a notice suppressed by quiet hours or a
+    #: switched-off preference writes nothing, leaves no key, and is retried
+    #: at the next milestone rather than being silently lost.
+    dedupe_key: Mapped[str | None] = mapped_column(String, nullable=True)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

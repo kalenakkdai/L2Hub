@@ -61,6 +61,47 @@ def writable_committee_ids(db: Session, profile: Profile) -> set[uuid.UUID]:
     return member_committee_ids(profile)
 
 
+def task_writable_committee_ids(db: Session, profile: Profile) -> set[uuid.UUID]:
+    """Committees where `create_task` would actually succeed.
+
+    Mirrors `_require_committee_scope`. This is a different question from
+    `writable_committee_ids`, which answers "who may speak for a committee in
+    the request flow" — a plain member may file a request for their committee
+    but may not put work on its board, because tasks.manage_committee resolves
+    through headship. Two rules, two names: reusing the request one told
+    members they could add a task and then refused them at the write.
+    """
+    if authz.has_permission(db, profile, pk.TASKS_MANAGE_ALL):
+        return {c.id for c in db.scalars(select(Committee)).all()}
+    return {
+        committee_id
+        for committee_id in member_committee_ids(profile)
+        if authz.has_permission(
+            db, profile, pk.TASKS_MANAGE_COMMITTEE, committee_id=committee_id
+        )
+    }
+
+
+def require_assignee_in_committee(
+    db: Session, committee_id: uuid.UUID, assignee_user_id: uuid.UUID
+) -> None:
+    """A task may only be given to someone in the committee that owns it.
+
+    `create_task` has always enforced this. `update_task` did not, so the rule
+    could be walked straight around by listing a task unassigned and then
+    patching an outsider onto it — who was then notified about work on a
+    board they cannot see.
+    """
+    in_committee = db.scalar(
+        select(CommitteeMembership.id).where(
+            CommitteeMembership.user_id == assignee_user_id,
+            CommitteeMembership.committee_id == committee_id,
+        )
+    )
+    if in_committee is None:
+        raise _invalid("That camper is not in this committee.")
+
+
 def _require_committee_scope(
     db: Session,
     profile: Profile,
@@ -178,7 +219,7 @@ def board_payload(db: Session, profile: Profile) -> dict:
         )
 
     mine = member_committee_ids(profile)
-    writable = writable_committee_ids(db, profile)
+    writable = task_writable_committee_ids(db, profile)
 
     return {
         "committees": [
@@ -244,14 +285,7 @@ def create_task(
         raise _invalid("A task needs a title.")
 
     if assignee_user_id is not None:
-        assignee_in_committee = db.scalar(
-            select(CommitteeMembership.id).where(
-                CommitteeMembership.user_id == assignee_user_id,
-                CommitteeMembership.committee_id == committee_id,
-            )
-        )
-        if assignee_in_committee is None:
-            raise _invalid("That camper is not in this committee.")
+        require_assignee_in_committee(db, committee_id, assignee_user_id)
 
     task = Task(
         committee_id=committee_id,
@@ -329,6 +363,9 @@ def update_task(
     if clear_assignee:
         task.assignee_user_id = None
     elif assignee_user_id is not None and assignee_user_id != task.assignee_user_id:
+        # Checked before the assignment and before the notification, so an
+        # outsider is neither recorded as the owner nor told they are.
+        require_assignee_in_committee(db, task.committee_id, assignee_user_id)
         task.assignee_user_id = assignee_user_id
         if assignee_user_id != profile.id:
             notifications.deliver(

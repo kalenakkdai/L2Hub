@@ -5,6 +5,7 @@ import {
   type CommitteeRequest,
   type RequestStatus,
 } from './api'
+import { formatDueDate } from './dueDates'
 
 /**
  * Open is the state that needs someone to act, so it carries the warning tone;
@@ -35,18 +36,6 @@ export function RequestRoute({ request }: { request: CommitteeRequest }) {
       <span>{request.targetCommittee.name}</span>
     </span>
   )
-}
-
-export function formatDueDate(iso: string | null): string | null {
-  if (!iso) return null
-  // The value is a plain date; parsing it as UTC and formatting in the local
-  // zone would shift it a day backwards west of Greenwich.
-  const [year, month, day] = iso.split('-').map(Number)
-  if (!year || !month || !day) return null
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 export function RequestMeta({ request }: { request: CommitteeRequest }) {

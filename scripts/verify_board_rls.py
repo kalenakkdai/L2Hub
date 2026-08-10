@@ -89,6 +89,9 @@ def main(dsn: str) -> int:
         member = cur.fetchone()[0]
         cur.execute("select id from public.profiles where email = 'ac@l2hub.local'")
         ac = cur.fetchone()[0]
+        cur.execute("select id from public.profiles where email = 'asbo@l2hub.local'")
+        asbo_row = cur.fetchone()
+        asbo = asbo_row[0] if asbo_row else None
 
         # Publicity has no seeded camper; the checks need someone on the other
         # side of a request. Created the way signup does, auth.users first.
@@ -226,6 +229,92 @@ def main(dsn: str) -> int:
             as_user(dsn, member, attempt(
                 "delete from public.committee_requests where id = %s", (request_id,))),
             "blocked",
+        ),
+
+        # ------------------------------------------------------------------
+        # Rosters, behind the assignee picker.
+        #
+        # The API is stricter and looser than RLS in different places, because
+        # the backend connects as the table owner and bypasses policies
+        # entirely. These cases pin what direct browser access can see, and
+        # record the one place the two layers deliberately disagree.
+        # ------------------------------------------------------------------
+        (
+            "a plain member sees only their own membership row, not the roster",
+            as_user(dsn, member, counter(
+                "select count(*) from public.committee_memberships"
+                " where committee_id = %s", (community,))),
+            1,
+        ),
+        (
+            "a head reads their own committee's whole roster",
+            as_user(dsn, head, counter(
+                "select count(*) from public.committee_memberships"
+                " where committee_id = %s", (community,))) >= 2,
+            True,
+        ),
+        (
+            "a head cannot read another committee's roster",
+            as_user(dsn, head, counter(
+                "select count(*) from public.committee_memberships"
+                " where committee_id = %s", (publicity,))),
+            0,
+        ),
+        (
+            "leadership reads any roster",
+            as_user(dsn, ac, counter(
+                "select count(*) from public.committee_memberships"
+                " where committee_id = %s", (community,))) >= 2,
+            True,
+        ),
+        (
+            # Known and accepted divergence: ASBO holds tasks.manage_all, so
+            # the API lets it assign work in any committee, but it is denied
+            # users.view and so sees nothing here. Nothing reads this table
+            # from the browser today. If that changes, the policy needs a
+            # committees.view_members branch — not a change to the API.
+            "ASBO reads no roster under RLS, though the API allows it",
+            as_user(dsn, asbo, counter(
+                "select count(*) from public.committee_memberships"
+                " where committee_id = %s", (community,))) if asbo else 0,
+            0,
+        ),
+
+        # ------------------------------------------------------------------
+        # Notifications.
+        #
+        # With a dedupe key on the row, being able to insert a notification
+        # means being able to permanently silence someone else's deadline
+        # reminders by planting their key first. These were hygiene before;
+        # they are a security property now.
+        # ------------------------------------------------------------------
+        (
+            "a camper cannot forge a notification for anyone, including themselves",
+            as_user(dsn, member, attempt(
+                "insert into public.notifications (recipient_user_id, type, title)"
+                " values (%s, 'task.overdue', 'RLS check')", (member,))),
+            "blocked",
+        ),
+        (
+            "a camper cannot plant a dedupe key to silence a reminder",
+            as_user(dsn, member, attempt(
+                "update public.notifications set dedupe_key = 'task:x:overdue'"
+                " where recipient_user_id = %s", (member,))),
+            "blocked",
+        ),
+        (
+            "a camper cannot delete a notification",
+            as_user(dsn, member, attempt(
+                "delete from public.notifications where recipient_user_id = %s",
+                (member,))),
+            "blocked",
+        ),
+        (
+            "a camper can still mark their own notification read",
+            as_user(dsn, member, attempt(
+                "update public.notifications set read_at = now()"
+                " where recipient_user_id = %s", (member,))),
+            "allowed",
         ),
     ]
 

@@ -61,19 +61,24 @@ describe('speechRecognition', () => {
   })
 
   it('accumulates final results into a transcript snapshot', async () => {
-    let instance: FakeSpeechRecognition | null = null
+    // Collected into an array rather than a `let instance` because the
+    // assignment happens inside a class expression's constructor, which the
+    // compiler's flow analysis cannot see: the variable stays narrowed to its
+    // `null` initializer and every property read off it fails to compile.
+    const constructed: FakeSpeechRecognition[] = []
     Object.defineProperty(window, 'SpeechRecognition', {
       configurable: true,
       value: class extends FakeSpeechRecognition {
         constructor() {
           super()
-          instance = this
+          constructed.push(this)
         }
       },
     })
 
     const onInterim = vi.fn()
     const capture = startSpeechCapture({ onInterim })
+    const instance = constructed[0]
     expect(instance?.started).toBe(true)
 
     instance?.emit([{ isFinal: false, transcript: 'hello there' }])

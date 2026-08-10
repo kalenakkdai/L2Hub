@@ -17,6 +17,7 @@ import {
 } from '../bubbleAudio'
 import { placeBubble, statusCounts, submittedPercent } from '../lib/bubbleTank'
 import { fetchLiveParticipants, type LiveParticipant } from '../api'
+import { initials } from '../../../lib/initials'
 
 /**
  * Status still has to be readable at a glance from across the room, so each
@@ -76,14 +77,6 @@ function statusLabel(status: LiveParticipant['status']) {
     default:
       return 'Not started'
   }
-}
-
-function initials(displayName: string): string {
-  return displayName
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
 }
 
 function bubbleStyle(

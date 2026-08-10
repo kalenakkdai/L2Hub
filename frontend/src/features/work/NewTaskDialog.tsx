@@ -2,9 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { createTask, type BoardColumn, type PickerCommittee } from './api'
-
-const FIELD =
-  'w-full rounded-control border border-border-subtle bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-accent-600 focus:outline-none'
+import { AssigneePicker } from './AssigneePicker'
+import { FIELD } from './fieldClass'
 
 type NewTaskDialogProps = {
   committee: BoardColumn
@@ -30,6 +29,7 @@ export function NewTaskDialog({
   const [title, setTitle] = useState('')
   const [details, setDetails] = useState('')
   const [dueOn, setDueOn] = useState('')
+  const [assigneeUserId, setAssigneeUserId] = useState<string | null>(null)
   const [collaborators, setCollaborators] = useState<string[]>([])
   const [confirmingNoHelp, setConfirmingNoHelp] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -50,6 +50,7 @@ export function NewTaskDialog({
         committeeId: committee.id,
         title,
         details,
+        assigneeUserId,
         dueOn: dueOn || null,
         collaboratorCommitteeIds: collaborators,
       }),
@@ -116,6 +117,12 @@ export function NewTaskDialog({
             />
           </label>
 
+          <AssigneePicker
+            committeeId={committee.id}
+            value={assigneeUserId}
+            onChange={setAssigneeUserId}
+          />
+
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-ink">Due</span>
             <input
@@ -124,6 +131,10 @@ export function NewTaskDialog({
               onChange={(e) => setDueOn(e.target.value)}
               className={FIELD}
             />
+            <span className="text-[12.5px] text-ink-subtle">
+              Whoever has this gets a reminder three days before, the day
+              before, and on the day.
+            </span>
           </label>
 
           <fieldset className="rounded-card border border-border-subtle p-3.5">

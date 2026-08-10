@@ -15,6 +15,8 @@ import {
 /** What each notification type is called on the page. */
 const KIND_LABELS: Record<string, string> = {
   'task.assigned': 'Task',
+  'task.due_soon': 'Deadline',
+  'task.overdue': 'Overdue',
   'request.received': 'Request',
   'request.accepted': 'Request',
   'request.declined': 'Request',

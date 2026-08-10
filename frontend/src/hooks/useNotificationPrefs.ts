@@ -49,10 +49,8 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
  * Mirrors SOURCED_EVENT_TYPES in backend/app/services/notifications.py. Every
  * other entry in EVENT_TYPES describes a feature that does not exist: there is
  * no points ledger, and nothing emits an event-created or committee-
- * announcement notification. Tasks carry a due date but nothing sweeps them on
- * a schedule, so no deadline notice is ever raised either. Rendering a switch
- * for those would promise a camper a choice that changes nothing, so they are
- * not shown.
+ * announcement notification. Rendering a switch for those would promise a
+ * camper a choice that changes nothing, so they are not shown.
  *
  * They stay in EVENT_TYPES because the column still accepts them and campers
  * may already hold rows from when the grid did show them.
@@ -61,6 +59,8 @@ export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'wrapped_activity',
   'whereabouts_ping',
   'task_assigned',
+  'task_due_soon',
+  'task_overdue',
   'committee_request',
 ]
 
@@ -69,6 +69,8 @@ export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, stri
   wrapped_activity: 'When an Event Wrapped is requested, finishes generating, or is published',
   whereabouts_ping: 'When Jan or a committee head sends you a return or pickup message',
   task_assigned: 'When someone puts a task on the L2 Board with your name on it',
+  task_due_soon: 'Three days before one of your tasks is due, the day before, and on the day',
+  task_overdue: 'Once, the first morning a task of yours is past its due date',
   committee_request:
     'When another committee asks yours for something, and when they answer yours',
 }
