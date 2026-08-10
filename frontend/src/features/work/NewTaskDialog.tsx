@@ -1,6 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
+import { fetchEvents } from '../event-summary/api'
+import { eventOptionGroups } from '../note-taker/lib/eventOptions'
 import { createTask, type BoardColumn, type PickerCommittee } from './api'
 import { AssigneePicker } from './AssigneePicker'
 import { FIELD } from './fieldClass'
@@ -16,9 +18,10 @@ type NewTaskDialogProps = {
  * Lists a task and, in the same step, says which other committees it needs.
  *
  * The involvement picker is the point: Fundraising books a fundraiser, ticks
- * Publicity, and Publicity has a request waiting before anyone thinks to send
- * a message about it. Leaving it empty is allowed but confirmed once, because
- * forgetting to ask is the failure this page exists to prevent.
+ * Publicity, and Publicity has a request waiting — and a matching row on their
+ * own board — before anyone thinks to send a message about it. Leaving it
+ * empty is allowed but confirmed once, because forgetting to ask is the
+ * failure this page exists to prevent.
  */
 export function NewTaskDialog({
   committee,
@@ -29,10 +32,22 @@ export function NewTaskDialog({
   const [title, setTitle] = useState('')
   const [details, setDetails] = useState('')
   const [dueOn, setDueOn] = useState('')
+  const [eventId, setEventId] = useState('')
   const [assigneeUserId, setAssigneeUserId] = useState<string | null>(null)
   const [collaborators, setCollaborators] = useState<string[]>([])
   const [confirmingNoHelp, setConfirmingNoHelp] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
+
+  const eventsQuery = useQuery({
+    queryKey: ['events'],
+    queryFn: fetchEvents,
+    staleTime: 60_000,
+  })
+
+  const eventGroups = useMemo(
+    () => eventOptionGroups(eventsQuery.data?.events ?? [], new Date()),
+    [eventsQuery.data?.events],
+  )
 
   useEffect(() => titleRef.current?.focus(), [])
 
@@ -44,6 +59,15 @@ export function NewTaskDialog({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
+  // Prefer the caller's own crew's upcoming production when one exists.
+  useEffect(() => {
+    if (eventId || !eventsQuery.data?.events?.length) return
+    const mine = eventsQuery.data.events.find(
+      (event) => event.managingCommitteeId === committee.id,
+    )
+    if (mine) setEventId(mine.id)
+  }, [committee.id, eventId, eventsQuery.data?.events])
+
   const save = useMutation({
     mutationFn: () =>
       createTask({
@@ -52,6 +76,7 @@ export function NewTaskDialog({
         details,
         assigneeUserId,
         dueOn: dueOn || null,
+        eventId: eventId || null,
         collaboratorCommitteeIds: collaborators,
       }),
     onSuccess: () => {
@@ -117,6 +142,30 @@ export function NewTaskDialog({
             />
           </label>
 
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium text-ink">Event</span>
+            <select
+              value={eventId}
+              onChange={(e) => setEventId(e.target.value)}
+              className={FIELD}
+            >
+              <option value="">Not tied to an event</option>
+              {eventGroups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <span className="text-[12.5px] text-ink-subtle">
+              Ties this work to a campsite so every committee sees the same
+              production.
+            </span>
+          </label>
+
           <AssigneePicker
             committeeId={committee.id}
             value={assigneeUserId}
@@ -142,7 +191,8 @@ export function NewTaskDialog({
               Which committees do you need?
             </legend>
             <p className="mb-2.5 text-[12.5px] text-ink-subtle">
-              Each one gets a request from {committee.name}, on the record.
+              Each one gets a request from {committee.name} and a matching
+              task on their board.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {others.map((other) => {

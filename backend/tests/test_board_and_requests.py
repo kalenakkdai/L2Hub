@@ -184,6 +184,15 @@ def test_listing_a_task_fans_out_requests_to_the_committees_it_needs(
     # The trail back to the task is what makes this readable months later.
     assert request["sourceTaskId"] == created["task"]["id"]
 
+    # Publicity (Spirit in seed fixtures) also gets a real board row, not only
+    # a request in the log — that is what "show on their board" means.
+    board = client.get("/board", headers=auth_header(make_token, seeded["ac"].id)).json()
+    spirit_column = next(c for c in board["committees"] if c["id"] == SPIRIT)
+    mirrored = [t for t in spirit_column["tasks"] if t["title"] == "Winter fundraiser"]
+    assert len(mirrored) == 1
+    assert mirrored[0]["originTaskId"] == created["task"]["id"]
+    assert mirrored[0]["fromCommittee"]["id"] == COMMUNITY
+
     # Spirit's whole crew + ASBO hear about it — not just the head.
     spirit_notes = db_session.scalars(
         select(Notification).where(
@@ -224,6 +233,63 @@ def test_fan_out_ignores_the_owning_committee_and_duplicates(
     )
     # Asking yourself is the task itself; asking twice is still one request.
     assert len(created["requests"]) == 1
+
+    board = client.get("/board", headers=auth_header(make_token, seeded["ac"].id)).json()
+    community = next(c for c in board["committees"] if c["id"] == COMMUNITY)
+    # Origin only — no self-mirror.
+    assert len([t for t in community["tasks"] if t.get("originTaskId")]) == 0
+
+
+def test_task_can_link_to_an_event_and_mirrors_carry_it(
+    client, make_token, seeded
+):
+    from app.db.seed import SEED_EVENT_IDS
+
+    maze = str(SEED_EVENT_IDS["maze_2026"])
+    head = auth_header(make_token, seeded["community_head"].id)
+    created = make_task(
+        client,
+        head,
+        title="Maze Day flyer",
+        eventId=maze,
+        collaboratorCommitteeIds=[SPIRIT],
+    )
+    assert created["task"]["event"]["id"] == maze
+    assert created["task"]["event"]["name"] == "Maze Day"
+
+    board = client.get("/board", headers=auth_header(make_token, seeded["ac"].id)).json()
+    spirit = next(c for c in board["committees"] if c["id"] == SPIRIT)
+    mirror = next(t for t in spirit["tasks"] if t["title"] == "Maze Day flyer")
+    assert mirror["event"]["id"] == maze
+    assert mirror["fromCommittee"]["id"] == COMMUNITY
+
+
+def test_calendar_only_events_cannot_be_linked_to_tasks(
+    client, make_token, seeded, db_session
+):
+    from app.models.event_summary import Event
+
+    calendar = Event(
+        name="Soccer",
+        slug="soccer-calendar-only",
+        year=2026,
+        status="calendar",
+    )
+    db_session.add(calendar)
+    db_session.commit()
+
+    head = auth_header(make_token, seeded["community_head"].id)
+    response = client.post(
+        "/board/tasks",
+        json={
+            "committeeId": COMMUNITY,
+            "title": "Not a board event",
+            "eventId": str(calendar.id),
+        },
+        headers=head,
+    )
+    assert response.status_code == 400
+    assert "Calendar-only" in response.json()["detail"]
 
 
 # ---------------------------------------------------------------------------

@@ -46,6 +46,17 @@ class Task(Base):
         ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
     )
     due_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Optional campsite this work is for. Calendar-only rows are refused at
+    # write time — the board is for Leadership productions, not athletics.
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("events.id", ondelete="SET NULL"), nullable=True
+    )
+    # Set on mirrored rows created when another committee is asked for help.
+    # The origin stays on the asking committee's board; this row is the work
+    # the helper committee actually sees and updates.
+    origin_task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True
+    )
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
     )
@@ -57,7 +68,12 @@ class Task(Base):
     )
 
     committee: Mapped[Committee] = relationship("Committee")  # noqa: F821
+    event = relationship("Event")
     assignee = relationship("Profile", foreign_keys=[assignee_user_id])
+    origin_task: Mapped[Task | None] = relationship(
+        remote_side=[id],
+        foreign_keys=[origin_task_id],
+    )
     requests: Mapped[list[CommitteeRequest]] = relationship(
         back_populates="source_task",
         foreign_keys="CommitteeRequest.source_task_id",

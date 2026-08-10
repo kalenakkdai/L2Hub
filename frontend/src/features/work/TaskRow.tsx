@@ -47,6 +47,16 @@ export function TaskRow({ task, canEdit, today, onReassign }: TaskRowProps) {
       </p>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12.5px] text-ink-subtle">
+        {task.event ? (
+          <span className="rounded-control bg-surface-sunken px-1.5 py-0.5 text-[11.5px] font-medium text-ink-muted">
+            {task.event.name}
+          </span>
+        ) : null}
+        {task.fromCommittee ? (
+          <span className="text-[11.5px] text-ink-subtle">
+            from {task.fromCommittee.name}
+          </span>
+        ) : null}
         {canEdit ? (
           // The assignee is the trigger, so changing who has a task is one
           // click on the thing you want to change rather than a hunt for a

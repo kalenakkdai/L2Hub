@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core import permission_keys as pk
 from app.models import Committee, CommitteeMembership, Profile
+from app.models.event_summary import Event
 from app.models.work import (
     REQUEST_OPEN_STATUSES,
     REQUEST_STATUSES,
@@ -142,6 +143,14 @@ def _person(profile: Profile | None) -> dict | None:
 
 
 def task_payload(task: Task) -> dict:
+    event = task.event
+    origin = task.origin_task
+    from_committee = None
+    if origin is not None and origin.committee is not None:
+        from_committee = {
+            "id": str(origin.committee_id),
+            "name": origin.committee.name,
+        }
     return {
         "id": str(task.id),
         "committeeId": str(task.committee_id),
@@ -151,6 +160,18 @@ def task_payload(task: Task) -> dict:
         "assignee": _person(task.assignee),
         "dueOn": task.due_on.isoformat() if task.due_on else None,
         "createdAt": task.created_at,
+        "event": (
+            {
+                "id": str(event.id),
+                "name": event.name,
+                "slug": event.slug,
+                "year": event.year,
+            }
+            if event is not None
+            else None
+        ),
+        "originTaskId": str(task.origin_task_id) if task.origin_task_id else None,
+        "fromCommittee": from_committee,
     }
 
 
@@ -202,7 +223,11 @@ def board_payload(db: Session, profile: Profile) -> dict:
     committees = db.scalars(select(Committee).order_by(Committee.name)).all()
     tasks = db.scalars(
         select(Task)
-        .options(selectinload(Task.assignee))
+        .options(
+            selectinload(Task.assignee),
+            selectinload(Task.event),
+            selectinload(Task.origin_task).selectinload(Task.committee),
+        )
         .order_by(Task.due_on.is_(None), Task.due_on, Task.created_at)
     ).all()
     open_requests = db.scalars(
@@ -263,6 +288,18 @@ def _invalid(message: str) -> HTTPException:
     )
 
 
+def _resolve_event(db: Session, event_id: uuid.UUID | None) -> Event | None:
+    """Validate an optional event link. Calendar-only rows are not board work."""
+    if event_id is None:
+        return None
+    event = db.get(Event, event_id)
+    if event is None:
+        raise _invalid("That event was not found.")
+    if event.status == "calendar":
+        raise _invalid("Calendar-only entries cannot be linked to board tasks.")
+    return event
+
+
 def create_task(
     db: Session,
     profile: Profile,
@@ -272,13 +309,14 @@ def create_task(
     details: str = "",
     assignee_user_id: uuid.UUID | None = None,
     due_on: date | None = None,
+    event_id: uuid.UUID | None = None,
     collaborator_committee_ids: list[uuid.UUID] | None = None,
 ) -> tuple[Task, list[CommitteeRequest]]:
     """Lists a task, and fans it out to the committees it needs.
 
     The fan-out is the point of the feature: the moment Fundraising books a
-    fundraiser, Publicity has a row telling them a post is wanted, without
-    anyone remembering to go and ask.
+    fundraiser, Publicity has a request waiting — and a matching row on
+    Publicity's own board — without anyone remembering to go and ask.
     """
     committee = _committee(db, committee_id)
     _require_committee_scope(
@@ -296,6 +334,8 @@ def create_task(
     if assignee_user_id is not None:
         require_assignee_in_committee(db, committee_id, assignee_user_id)
 
+    event = _resolve_event(db, event_id)
+
     task = Task(
         committee_id=committee_id,
         title=clean_title,
@@ -303,6 +343,7 @@ def create_task(
         status="todo",
         assignee_user_id=assignee_user_id,
         due_on=due_on,
+        event_id=event.id if event else None,
         created_by_user_id=profile.id,
     )
     db.add(task)
@@ -328,12 +369,26 @@ def create_task(
         if target_id == committee_id:
             # Asking yourself for help is the task itself.
             continue
+        target = _committee(db, target_id)
+        # Mirror onto the helper committee's board so the work is visible
+        # where they work, not only in the requests log.
+        mirror = Task(
+            committee_id=target_id,
+            title=task.title,
+            details=task.details,
+            status="todo",
+            due_on=due_on,
+            event_id=task.event_id,
+            origin_task_id=task.id,
+            created_by_user_id=profile.id,
+        )
+        db.add(mirror)
         fanned.append(
             _open_request(
                 db,
                 profile,
                 requesting_committee=committee,
-                target_committee=_committee(db, target_id),
+                target_committee=target,
                 title=task.title,
                 details=task.details,
                 due_on=due_on,
@@ -343,6 +398,9 @@ def create_task(
 
     db.commit()
     db.refresh(task)
+    # Payload needs event / origin relationships after commit.
+    if task.event_id is not None:
+        db.refresh(task, attribute_names=["event"])
     return task, fanned
 
 

@@ -24,7 +24,9 @@ class NewTask(BaseModel):
     details: str = ""
     assignee_user_id: uuid.UUID | None = Field(default=None, alias="assigneeUserId")
     due_on: date | None = Field(default=None, alias="dueOn")
-    #: Committees whose help this task needs. Each becomes an open request.
+    event_id: uuid.UUID | None = Field(default=None, alias="eventId")
+    #: Committees whose help this task needs. Each becomes an open request
+    #: and a mirrored row on that committee's board.
     collaborator_committee_ids: list[uuid.UUID] = Field(
         default_factory=list, alias="collaboratorCommitteeIds"
     )
@@ -98,6 +100,7 @@ def create_task(body: NewTask, profile: CurrentProfile, db: DbSession) -> dict:
         details=body.details,
         assignee_user_id=body.assignee_user_id,
         due_on=body.due_on,
+        event_id=body.event_id,
         collaborator_committee_ids=body.collaborator_committee_ids,
     )
     return {

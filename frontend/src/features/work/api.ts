@@ -5,6 +5,15 @@ export type RequestStatus = 'open' | 'accepted' | 'done' | 'declined'
 
 export type Person = { id: string; name: string }
 
+export type CommitteeRef = { id: string; name: string }
+
+export type BoardTaskEvent = {
+  id: string
+  name: string
+  slug: string
+  year: number
+}
+
 export type BoardTask = {
   id: string
   committeeId: string
@@ -14,6 +23,10 @@ export type BoardTask = {
   assignee: Person | null
   dueOn: string | null
   createdAt: string
+  event: BoardTaskEvent | null
+  /** Present when this row was mirrored from another committee's task. */
+  originTaskId: string | null
+  fromCommittee: CommitteeRef | null
 }
 
 export type BoardColumn = {
@@ -26,8 +39,6 @@ export type BoardColumn = {
   openRequestCount: number
   tasks: BoardTask[]
 }
-
-export type CommitteeRef = { id: string; name: string }
 
 export type CommitteeRequest = {
   id: string
@@ -104,7 +115,8 @@ export type NewTaskInput = {
   details?: string
   assigneeUserId?: string | null
   dueOn?: string | null
-  /** Committees whose help this task needs; each becomes an open request. */
+  eventId?: string | null
+  /** Committees whose help this task needs; each gets a request and a board row. */
   collaboratorCommitteeIds?: string[]
 }
 

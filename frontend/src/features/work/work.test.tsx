@@ -52,6 +52,9 @@ const BOARD = {
           assignee: { id: 'u1', name: 'Avery Chen' },
           dueOn: '2026-09-01',
           createdAt: '2026-08-01T00:00:00Z',
+          event: null,
+          originTaskId: null,
+          fromCommittee: null,
         },
       ],
     },
@@ -195,7 +198,11 @@ describe('listing a task that needs another committee', () => {
   })
 
   async function openDialog() {
-    const api = mockApi({ '/board': BOARD, '/board/committees': PICKER })
+    const api = mockApi({
+      '/board': BOARD,
+      '/board/committees': PICKER,
+      '/events': { events: [] },
+    })
     const user = userEvent.setup()
     renderWithProviders(<L2BoardPage />)
     await screen.findByRole('heading', { name: 'Fundraising' })
@@ -219,10 +226,55 @@ describe('listing a task that needs another committee', () => {
         committeeId: FUNDRAISING,
         title: 'Winter fundraiser',
         collaboratorCommitteeIds: [PUBLICITY],
+        eventId: null,
       })
     })
   })
 
+  it('includes the selected event on the task', async () => {
+    const api = mockApi({
+      '/board': BOARD,
+      '/board/committees': PICKER,
+      '/events': {
+        events: [
+          {
+            id: 'evt-maze',
+            name: 'Maze Day',
+            slug: 'maze-day-2026',
+            year: 2026,
+            eventStatus: 'scheduled',
+            summaryStatus: 'not_requested',
+            managingCommitteeId: FUNDRAISING,
+            startsAt: '2026-08-06T00:00:00Z',
+            endsAt: null,
+            wrappedPresentedAt: null,
+          },
+        ],
+      },
+    })
+    const user = userEvent.setup()
+    renderWithProviders(<L2BoardPage />)
+    await screen.findByRole('heading', { name: 'Fundraising' })
+    await user.click(screen.getByRole('button', { name: 'Add task' }))
+    const dialog = await screen.findByRole('dialog')
+
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Task' }),
+      'Flyer design',
+    )
+    // Prefills the managing committee's event; confirm it posts.
+    await user.click(within(dialog).getByRole('button', { name: 'Publicity' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Add task' }))
+
+    await waitFor(() => {
+      const post = api.posted.find((p) => p.url.endsWith('/board/tasks'))
+      expect(post?.body).toMatchObject({
+        title: 'Flyer design',
+        eventId: 'evt-maze',
+        collaboratorCommitteeIds: [PUBLICITY],
+      })
+    })
+  })
   it('asks once before saving a task that needs nobody', async () => {
     const { user, api, dialog } = await openDialog()
 
@@ -426,6 +478,9 @@ function board() {
             assignee: null,
             dueOn: stamp(-40),
             createdAt: '2026-08-01T00:00:00Z',
+            event: null,
+            originTaskId: null,
+            fromCommittee: null,
           },
           {
             id: 't3',
@@ -436,6 +491,9 @@ function board() {
             assignee: null,
             dueOn: stamp(60),
             createdAt: '2026-08-01T00:00:00Z',
+            event: null,
+            originTaskId: null,
+            fromCommittee: null,
           },
         ],
       },
@@ -774,6 +832,9 @@ describe('who has a task', () => {
           assignee: { id: 'u9', name: 'Sam Reed' },
           dueOn: stamp(30),
           createdAt: '2026-08-01T00:00:00Z',
+          event: null,
+          originTaskId: null,
+          fromCommittee: null,
         },
       ],
     }
