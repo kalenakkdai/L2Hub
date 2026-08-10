@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { AppShell } from '../../components/layout/AppShell'
+import { ButtonLink } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useCurrentUser } from '../../auth/useCurrentUser'
@@ -95,9 +96,9 @@ export function L2BoardPage() {
         <p className="max-w-[70ch] text-sm text-ink-subtle">
           What every committee is working on, and who has it. Adding a task here
           also lets you say which other committees you need — each one gets a{' '}
-          <Link to="/requests" className="text-accent-600 underline-offset-2 hover:underline">
+          <ButtonLink to="/requests" variant="primary" size="sm" className="align-middle">
             request
-          </Link>{' '}
+          </ButtonLink>{' '}
           on the record.
         </p>
 
