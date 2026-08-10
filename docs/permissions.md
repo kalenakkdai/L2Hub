@@ -48,10 +48,17 @@ See `docs/note-taker.md` for Chrome Web Speech setup (Whisper is optional fallba
 
 | Capability | President | AC | ASBO | Committee Head | Member |
 |------------|-----------|----|------|----------------|--------|
-| `attendance.view_all` | Yes | Yes | Yes | No | No |
-| `attendance.manage_all` | Yes | Yes | Yes | No | No |
+| `attendance.view_all` | Role yes* | Role yes* | Role yes* | No | No |
+| `attendance.manage_all` | No† | No† | No† | No | No |
 | `attendance.view_committee` | Yes | Yes | Yes | Led committees only | No |
 | `attendance.manage_committee` | Yes | Yes | Yes | Led committees only | No |
+
+\* `attendance.view_all` remains on ASBO/AC/President role bundles for the
+whereabouts map. † Effective `attendance.manage_all` is **not** granted by role
+alone — only Mr. Jan and Jadon Li (see
+`app/services/attendance_operators.py`) receive it at auth time. Other
+AC/ASBO/President accounts are stripped of `attendance.manage_all` so they
+cannot open `/attendance` or call kiosk setup APIs.
 
 The scanner, protected student-ID/parent-contact setup, daily close, and manual
 edits require `attendance.manage_all`. Committee heads only use the whereabouts
@@ -168,9 +175,15 @@ Examples:
 
 Route: `/admin/users` (API: `GET /admin/users`)
 
-- Requires `users.view` (AC / President by default).
+- Requires `users.view` (AC / President / ASBO).
+- `users.manage` (invite / sync writes) stays AC / President.
 - Lists **real** profiles + role assignments + committee memberships.
 - Synthetic preview users are never stored in `profiles` and do not appear.
+
+## Class Officers cohorts
+
+- SCO → senior workspace only; JCO → junior workspace only.
+- ASBO / AC / President see **both** via a Senior / Junior switcher (same UI, isolated data).
 
 ## Seed accounts
 

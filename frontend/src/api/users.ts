@@ -19,6 +19,8 @@ export type UserListItem = {
   committees: CommitteeSummary[]
   last_active_at: string | null
   created_at: string
+  /** False for spreadsheet campers who have not created an account yet. */
+  account_linked?: boolean
 }
 
 export type UserDetail = UserListItem & {
@@ -44,4 +46,12 @@ export function fetchUsers(params?: {
 
 export function fetchUser(userId: string): Promise<UserDetail> {
   return apiFetch<UserDetail>(`/admin/users/${userId}`)
+}
+
+export function syncRosterMemberships(): Promise<{
+  memberships_created: number
+  heads_marked: number
+  asbos_marked: number
+}> {
+  return apiFetch('/admin/users/sync-roster', { method: 'POST' })
 }

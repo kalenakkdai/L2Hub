@@ -75,15 +75,30 @@ def test_users_page_lists_seeded_accounts_for_ac(client, make_token, seeded):
     headers = auth_header(make_token, seeded["ac"].id)
     response = client.get("/admin/users", headers=headers)
     assert response.status_code == 200
-    emails = {user["email"] for user in response.json()["users"]}
+    users = response.json()["users"]
+    emails = {user["email"] for user in users}
+    names = {user["full_name"] for user in users}
     assert "ac@l2hub.local" in emails
     assert "asbo@l2hub.local" in emails
     assert "community.head@l2hub.local" in emails
+    # Spreadsheet campers appear even before they sign up.
+    assert "Hanna Rahmanian" in names
+    assert "Samay Jain" in names
+    pending = [u for u in users if u.get("account_linked") is False]
+    assert len(pending) >= 40
+    assert all(u["status"] == "awaiting_signup" for u in pending)
 
 
 def test_member_cannot_open_users_admin(client, make_token, seeded):
     headers = auth_header(make_token, seeded["community_member"].id)
     assert client.get("/admin/users", headers=headers).status_code == 403
+
+
+def test_asbo_can_open_users_admin(client, make_token, seeded):
+    headers = auth_header(make_token, seeded["asbo"].id)
+    response = client.get("/admin/users", headers=headers)
+    assert response.status_code == 200
+    assert "users" in response.json()
 
 
 def test_auth_me_includes_permissions(client, make_token, seeded):

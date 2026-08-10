@@ -75,6 +75,8 @@ SOURCED_EVENT_TYPES = frozenset(
         # here is what puts the switch in the settings grid — without this the
         # notification would arrive with no way to turn it off.
         "event_created",
+        # Jan's three-month "start planning" reminder (Activities Calendar).
+        "event_starting",
     }
 )
 
@@ -102,10 +104,15 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "request.accepted": "committee_request",
     "request.declined": "committee_request",
     "request.completed": "committee_request",
+    # Baby shadow requests reuse the committee_request preference switch.
+    "shadow.requested": "committee_request",
+    "shadow.approved": "committee_request",
+    "shadow.denied": "committee_request",
     "task.due_soon": "task_due_soon",
     "task.overdue": "task_overdue",
     "event.created": "event_created",
     "event.starting": "event_starting",
+    "event.planning_start": "event_starting",
     "committee.announcement": "crew_announcement",
     "points.awarded": "points_awarded",
     "level.up": "level_up",

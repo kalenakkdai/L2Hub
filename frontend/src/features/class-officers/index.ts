@@ -6,6 +6,11 @@ export {
   useClassOfficersContext,
 } from './context/ClassOfficersProvider'
 export { ClassOfficersLayout } from './pages/ClassOfficersLayout'
+export {
+  ClassOfficersGate,
+  ClassOfficersHomeRedirect,
+  ClassOfficersLegacyRedirect,
+} from './pages/ClassOfficersGate'
 export { ClassOfficersOverviewPage } from './pages/ClassOfficersOverviewPage'
 export { FundraiserPage } from './pages/FundraiserPage'
 export { HomecomingPage } from './pages/HomecomingPage'

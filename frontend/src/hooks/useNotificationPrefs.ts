@@ -62,6 +62,8 @@ export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'task_due_soon',
   'task_overdue',
   'committee_request',
+  'event_created',
+  'event_starting',
 ]
 
 /** What each offered row actually gates, for the grid's own description. */
@@ -73,6 +75,9 @@ export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, stri
   task_overdue: 'Once, the first morning a task of yours is past its due date',
   committee_request:
     'When another committee asks yours for something, and when they answer yours',
+  event_created: 'When a new event is published to The Quad',
+  event_starting:
+    'When Jan is reminded to start planning (~3 months before an Activities Calendar event)',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

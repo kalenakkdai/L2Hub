@@ -14,6 +14,7 @@ from app.db.session import get_db
 from app.mail.factory import get_email_sender_singleton
 from app.mail.protocol import EmailSender
 from app.models.profile import Profile
+from app.models.rbac import CommitteeMembership, UserRoleAssignment
 from app.services import authorization as authz
 from app.storage.factory import get_storage_singleton
 from app.storage.protocol import ObjectStorage
@@ -115,8 +116,13 @@ def get_current_profile(claims: TokenClaims, db: DbSession) -> Profile:
         Profile,
         user_id,
         options=(
-            selectinload(Profile.role_assignments),
-            selectinload(Profile.committee_memberships),
+            selectinload(Profile.role_assignments).selectinload(UserRoleAssignment.role),
+            selectinload(Profile.role_assignments).selectinload(
+                UserRoleAssignment.committee
+            ),
+            selectinload(Profile.committee_memberships).selectinload(
+                CommitteeMembership.committee
+            ),
             selectinload(Profile.permission_overrides),
         ),
     )

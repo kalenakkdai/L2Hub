@@ -20,12 +20,29 @@ from app.models.rbac import Committee, CommitteeMembership
 from app.services import attendance
 
 
-def test_attendance_permissions_are_role_scoped():
-    assert pk.ATTENDANCE_MANAGE_ALL in ROLE_PERMISSION_BUNDLES["asbo"]
-    assert pk.ATTENDANCE_MANAGE_ALL in ROLE_PERMISSION_BUNDLES["ac"]
+def test_attendance_kiosk_is_jan_and_jadon_only():
+    """Role bundles may still list manage_all; effective access is allowlisted."""
+    from app.services.attendance_operators import (
+        ATTENDANCE_OPERATOR_EMAILS,
+        is_attendance_operator,
+    )
+
+    assert "jadonli2020@gmail.com" in ATTENDANCE_OPERATOR_EMAILS
+    assert "ac@l2hub.local" in ATTENDANCE_OPERATOR_EMAILS
+    assert is_attendance_operator(
+        SimpleNamespace(email="jadonli2020@gmail.com", full_name="Jadon Li")
+    )
+    assert is_attendance_operator(
+        SimpleNamespace(email="ac@l2hub.local", full_name="Mr. Jan")
+    )
+    assert not is_attendance_operator(
+        SimpleNamespace(email="asbo@l2hub.local", full_name="Taylor Kim")
+    )
+    assert not is_attendance_operator(
+        SimpleNamespace(email="kalenakkdai@gmail.com", full_name="Kalena Dai")
+    )
     assert pk.ATTENDANCE_MANAGE_ALL not in ROLE_PERMISSION_BUNDLES["committee_head"]
     assert pk.ATTENDANCE_VIEW_COMMITTEE in ROLE_PERMISSION_BUNDLES["committee_head"]
-    assert pk.ATTENDANCE_VIEW_ALL not in ROLE_PERMISSION_BUNDLES["member"]
 
 
 def test_student_id_is_normalized_and_hashed_without_storing_the_raw_value():
@@ -80,10 +97,22 @@ def test_member_cannot_open_attendance_console(make_profile, make_token, client)
     assert response.status_code == 403
 
 
-def test_asbo_can_enroll_scan_and_manually_edit_attendance(
+def test_other_asbo_cannot_open_attendance_console(make_profile, make_token, client):
+    operator = make_profile(email="asbo@l2hub.local", full_name="Taylor Kim", role="asbo")
+    response = client.post(
+        "/attendance/days",
+        headers=_headers(make_token, operator),
+        json={"schoolDate": "2026-08-08"},
+    )
+    assert response.status_code == 403
+
+
+def test_jadon_can_enroll_scan_and_manually_edit_attendance(
     make_profile, make_token, client
 ):
-    operator = make_profile(email="asbo@example.edu", role="asbo")
+    operator = make_profile(
+        email="jadonli2020@gmail.com", full_name="Jadon Li", role="asbo"
+    )
     student = make_profile(email="camper@example.edu", full_name="Camp Er", role="member")
     headers = _headers(make_token, operator)
 
@@ -133,7 +162,9 @@ def test_asbo_can_enroll_scan_and_manually_edit_attendance(
 
 
 def test_unenrolled_barcode_is_rejected(make_profile, make_token, client):
-    operator = make_profile(email="ac@example.edu", role="ac")
+    operator = make_profile(
+        email="ac@l2hub.local", full_name="Mr. Jan", role="ac"
+    )
     headers = _headers(make_token, operator)
     day = _create_day(client, headers)
     response = client.post(
@@ -183,7 +214,9 @@ def test_presence_percent_subtracts_late_arrival_and_time_out_of_room(
 def test_closing_day_flags_under_80_and_queues_parent_email(
     db_session, make_profile
 ):
-    operator = make_profile(email="jan@example.edu", role="ac")
+    operator = make_profile(
+        email="ac@l2hub.local", full_name="Mr. Jan", role="ac"
+    )
     student = make_profile(email="low@example.edu", full_name="Low Attendance")
     day = attendance.create_or_get_day(
         db_session,
@@ -228,7 +261,9 @@ def test_closing_day_flags_under_80_and_queues_parent_email(
 def test_bathroom_requires_student_id_but_errand_accepts_a_name(
     db_session, make_profile
 ):
-    operator = make_profile(email="jan2@example.edu", role="ac")
+    operator = make_profile(
+        email="jadonli2020@gmail.com", full_name="Jadon Li", role="asbo"
+    )
     with pytest.raises(HTTPException) as exc_info:
         attendance.start_whereabouts(
             db_session,
@@ -297,7 +332,9 @@ def test_passkey_registration_stores_only_public_key_material(
 def test_verified_passkey_checks_its_owner_into_operator_day(
     db_session, make_profile, monkeypatch
 ):
-    operator = make_profile(email="passkey-asbo@example.edu", role="asbo")
+    operator = make_profile(
+        email="ac@l2hub.local", full_name="Mr. Jan", role="ac"
+    )
     student = make_profile(email="passkey-student@example.edu")
     db_session.add(
         AttendanceIdentity(

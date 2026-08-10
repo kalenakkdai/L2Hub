@@ -26,6 +26,13 @@ class CommitteeMembershipOut(BaseModel):
     id: uuid.UUID
     name: str
     is_head: bool = False
+    membership_type: str = "member"
+
+
+class ShadowGrantOut(BaseModel):
+    committee_id: uuid.UUID
+    committee_name: str
+    ends_at: datetime
 
 
 class CurrentUser(BaseModel):
@@ -43,6 +50,12 @@ class CurrentUser(BaseModel):
     # on a committee without holding a role there, and the settings page has
     # to show those too.
     committees: list[CommitteeMembershipOut] = Field(default_factory=list)
+    # Baby campers may request temporary head-level visibility.
+    is_baby: bool = False
+    active_shadows: list[ShadowGrantOut] = Field(default_factory=list)
+    # SCO → senior, JCO → junior. Null for platform ops who may switch.
+    class_cohort: str | None = None
+    can_switch_class_cohort: bool = False
 
 
 class DashboardModuleOut(BaseModel):
@@ -74,6 +87,8 @@ class UserListItem(BaseModel):
     committees: list[CommitteeSummary]
     last_active_at: datetime | None
     created_at: datetime
+    # False for spreadsheet campers who have not signed up yet (Campers tab).
+    account_linked: bool = True
 
 
 class UserDetail(UserListItem):

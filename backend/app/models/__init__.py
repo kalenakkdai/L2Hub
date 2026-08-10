@@ -38,6 +38,7 @@ from app.models.rbac import (
     RolePermission,
     UserRoleAssignment,
 )
+from app.models.shadow import ShadowRequest
 from app.models.work import CommitteeRequest, Task
 
 __all__ = [
@@ -69,6 +70,7 @@ __all__ = [
     "PushSubscription",
     "Role",
     "RolePermission",
+    "ShadowRequest",
     "Task",
     "UserRoleAssignment",
     "WhereaboutsEntry",

@@ -24,6 +24,13 @@ export type CommitteeMembership = {
   id: string
   name: string
   is_head: boolean
+  membership_type?: string
+}
+
+export type ShadowGrant = {
+  committee_id: string
+  committee_name: string
+  ends_at: string
 }
 
 export type CurrentUser = {
@@ -37,6 +44,11 @@ export type CurrentUser = {
   permissions?: string[]
   /** Committees the caller belongs to, whether or not they hold a role there. */
   committees?: CommitteeMembership[]
+  is_baby?: boolean
+  active_shadows?: ShadowGrant[]
+  /** SCO → senior, JCO → junior. Null when platform ops may switch. */
+  class_cohort?: 'senior' | 'junior' | null
+  can_switch_class_cohort?: boolean
 }
 
 export type DashboardModule = {

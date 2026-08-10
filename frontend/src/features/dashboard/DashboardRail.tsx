@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { RequestsWidget } from '../work/RequestsWidget'
+import { ShadowWidget } from '../shadow/ShadowWidget'
 import { dateStamp, timeOfDay } from './formatDate'
 import type { CommitteeSnapshot, LiveDebrief, UpcomingItem } from './types'
 
@@ -128,6 +129,8 @@ export function DashboardRail({ committee, debrief, upcoming }: DashboardRailPro
       {/* Where everyone who is not leadership works the request flow: the
           cross-org /requests page is gated, this is not. */}
       <RequestsWidget />
+
+      <ShadowWidget />
 
       {debrief && (
         <RailSection

@@ -7,7 +7,8 @@ Canonical spreadsheet sync (Aug 2026).
 | Layer | Path |
 |-------|------|
 | Frontend fixtures | `frontend/src/data/l2Roster.ts` |
-| Backend seed data | `backend/app/db/l2_roster.py` |
+| Backend people + committees | `backend/app/db/l2_roster.py` |
+| Student ID passwords (gitignored) | `backend/data/roster_credentials.json` |
 
 ## Column aliases
 
@@ -16,18 +17,37 @@ Canonical spreadsheet sync (Aug 2026).
 | ASBOS | `asbo` **role** (not a committee) |
 | A-Team | `activities` (Activities) |
 | Fund | `fundraising` |
+| Campus | `gtac` (display name Campus) |
 | Vid | `videography_photography` |
+| Baby | `membership_type=baby` (member role + Shadow UI) |
+| Head | `is_head` + scoped `committee_head` role |
 
-## What Chunk 1 does / does not do
+## Provisioning accounts
 
-**Done:** fixture + planning mock roster updated to the sheet; shared modules added.
+Login = spreadsheet email. Password = student ID#.
 
-**Not done yet (needs emails or invite flow):** creating ~50 Supabase `auth.users` and `committee_memberships` rows in production. Students still sign up on https://msjquad.org; AC can then assign committees/roles in Users admin once that UI can edit memberships.
+```bash
+cd backend
+export SUPABASE_URL=https://ipdasusozjcxvvnsfkkq.supabase.co
+export SUPABASE_SERVICE_KEY=...   # service_role secret — never commit
+.venv/bin/python scripts/provision_roster_users.py
+```
 
-## ASBOs
+Then AC → Campers → **Sync roster** so committees / baby / head / asbo attach.
 
-- Jadon Li
-- Ariel Duong
-- Kaiwei Parks
-- Melody Gao
-- Hanna Rahmanian
+## SCO / JCO (Class Officers)
+
+| Spreadsheet note | Cohort | Workspace |
+|------------------|--------|-----------|
+| `SCO …` | senior | Senior Class Officers |
+| `JCO …` | junior | Junior Class Officers |
+
+Same UI routes (`/class-officers/*`). Data is isolated per cohort — junior never reads or writes senior plans and vice versa. ASBO/AC can switch cohorts in the header; SCO/JCO stay locked.
+
+Roster sync assigns the `class_officer` role when notes contain SCO or JCO.
+
+## Shadow (baby campers)
+
+Babies keep the member role. On the dashboard they get **Shadow** and **Request duration**.
+That creates a `shadow_requests` row; committee heads get a notification and can Accept/Deny.
+Approved grants elevate head-level committee permissions until `ends_at`.

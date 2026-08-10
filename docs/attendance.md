@@ -4,13 +4,14 @@ Daily Leadership attendance for the shared iPad/MacBook kiosk.
 
 ## Access
 
-- `/attendance`: `attendance.manage_all` — ASBO, AC/Jan, and President through
-  the existing role bundles. This page scans IDs, edits records, enrolls
-  protected identities, closes the day, and checks students out.
+- `/attendance`: **only Mr. Jan and Jadon Li** may open the kiosk and call
+  `attendance.manage_all` (hard allowlist in
+  `app/services/attendance_operators.py`). Other AC/ASBO accounts do not see
+  the Attendance nav item and receive 403 from setup APIs.
 - `/whereabouts`: `attendance.view_all` or scoped
   `attendance.view_committee`. Committee heads only receive active entries for
-  members of committees they lead; ASBO/AC receive all entries.
-- `/settings`: every student may opt into an attendance passkey after ASBO/Jan
+  members of committees they lead; operators with view_all receive all entries.
+- `/settings`: every student may opt into an attendance passkey after Jan/Jadon
   enrolls their student ID.
 
 The backend enforces these permissions; hiding navigation is not authorization.

@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { ProgressBar } from '../../../components/ui/ProgressBar'
 import { useClassOfficersSnapshot } from '../hooks/useClassOfficers'
+import { useClassOfficersContext } from '../context/ClassOfficersProvider'
+import { classOfficersPath } from '../lib/paths'
 import { centsToDollars, fundraiserPercent, homecomingCompletion } from '../lib/progress'
 
 export function ClassOfficersOverviewPage() {
+  const { cohort } = useClassOfficersContext()
   const snapshot = useClassOfficersSnapshot()
 
   if (snapshot.isPending) {
@@ -33,7 +36,7 @@ export function ClassOfficersOverviewPage() {
             <p className="mt-1 text-xs text-ink-muted">{fundraiser.label}</p>
           </div>
           <Link
-            to="/class-officers/fundraiser"
+            to={classOfficersPath(cohort, 'fundraiser')}
             className="text-xs font-medium text-status-info hover:underline"
           >
             Open fundraiser
@@ -64,7 +67,7 @@ export function ClassOfficersOverviewPage() {
             <p className="mt-1 text-xs text-ink-muted">{homecoming.skitTheme || 'Theme TBD'}</p>
           </div>
           <Link
-            to="/class-officers/homecoming"
+            to={classOfficersPath(cohort, 'homecoming')}
             className="text-xs font-medium text-status-info hover:underline"
           >
             Open homecoming
@@ -90,7 +93,9 @@ export function ClassOfficersOverviewPage() {
             {officers.map((person) => (
               <li key={person.id}>
                 {person.name}
-                <span className="text-ink-subtle"> · {person.cohort}</span>
+                {person.title ? (
+                  <span className="text-ink-subtle"> · {person.title}</span>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -100,10 +105,7 @@ export function ClassOfficersOverviewPage() {
           <p className="mt-1 text-[11px] text-ink-subtle">Two per class · view only</p>
           <ul className="mt-3 space-y-1 text-sm text-ink-muted">
             {advisors.map((person) => (
-              <li key={person.id}>
-                {person.name}
-                <span className="text-ink-subtle"> · {person.cohort}</span>
-              </li>
+              <li key={person.id}>{person.name}</li>
             ))}
           </ul>
         </section>

@@ -55,10 +55,16 @@ export type HomecomingPlan = {
 }
 
 export type ClassOfficersSnapshot = {
+  cohort: ClassCohort
   fundraiser: FundraiserGoal
   homecoming: HomecomingPlan
   advisors: Array<{ id: string; name: string; cohort: ClassCohort }>
-  officers: Array<{ id: string; name: string; cohort: ClassCohort }>
+  officers: Array<{
+    id: string
+    name: string
+    cohort: ClassCohort
+    title?: string
+  }>
 }
 
 export type UpdateFundraiserInput = {

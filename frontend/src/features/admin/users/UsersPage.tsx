@@ -1,8 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { fetchCurrentUser, hasPermission, roleLabel } from '../../../api/auth'
-import { fetchUser, fetchUsers, type UserListItem } from '../../../api/users'
+import {
+  fetchUser,
+  fetchUsers,
+  syncRosterMemberships,
+  type UserListItem,
+} from '../../../api/users'
 import { AppShell } from '../../../components/layout/AppShell'
 import { Button } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
@@ -16,6 +21,29 @@ function formatLastActive(value: string | null): string {
     month: 'short',
     day: 'numeric',
   }).format(date)
+}
+
+function statusLabel(status: string): string {
+  if (status === 'awaiting_signup') return 'Awaiting signup'
+  return status.replaceAll('_', ' ')
+}
+
+function committeeLabel(committee: {
+  name: string
+  is_head: boolean
+  membership_type?: string
+}): string {
+  if (committee.is_head || committee.membership_type === 'head') {
+    return `${committee.name} · Head`
+  }
+  if (committee.membership_type === 'baby') {
+    return `${committee.name} · Baby`
+  }
+  return committee.name
+}
+
+function isAccountLinked(user: UserListItem): boolean {
+  return user.account_linked !== false
 }
 
 function RoleBadges({ user }: { user: UserListItem }) {
@@ -70,7 +98,7 @@ function UserDetailPanel({
       <div className="flex items-start justify-between border-b border-border-subtle px-5 py-4">
         <div>
           <h2 className="text-title font-semibold text-ink">
-            {detailQuery.data?.full_name ?? 'User'}
+            {detailQuery.data?.full_name ?? 'Camper'}
           </h2>
           <p className="text-sm text-ink-muted">{detailQuery.data?.email}</p>
         </div>
@@ -81,10 +109,10 @@ function UserDetailPanel({
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {detailQuery.isPending ? (
-          <p className="text-sm text-ink-muted">Loading user…</p>
+          <p className="text-sm text-ink-muted">Loading camper…</p>
         ) : null}
         {detailQuery.isError ? (
-          <p className="text-sm text-status-danger">Could not load user details.</p>
+          <p className="text-sm text-status-danger">Could not load camper details.</p>
         ) : null}
         {detailQuery.data ? (
           <div className="space-y-6">
@@ -95,7 +123,9 @@ function UserDetailPanel({
               <dl className="mt-2 space-y-1 text-sm">
                 <div className="flex justify-between gap-4">
                   <dt className="text-ink-subtle">Status</dt>
-                  <dd className="font-medium text-ink">{detailQuery.data.status}</dd>
+                  <dd className="font-medium capitalize text-ink">
+                    {statusLabel(detailQuery.data.status)}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-ink-subtle">Created</dt>
@@ -185,6 +215,8 @@ function UserDetailPanel({
 export function UsersPage() {
   const [query, setQuery] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -197,8 +229,22 @@ export function UsersPage() {
     enabled: hasPermission(meQuery.data, 'users.view'),
   })
 
+  const syncMutation = useMutation({
+    mutationFn: syncRosterMemberships,
+    onSuccess: (result) => {
+      setSyncMessage(
+        `Synced roster: ${result.memberships_created} memberships created.`,
+      )
+      void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: () => {
+      setSyncMessage('Could not sync roster memberships.')
+    },
+  })
+
   const name = meQuery.data?.full_name?.trim() || meQuery.data?.email || 'User'
   const filtered = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data])
+  const canManage = hasPermission(meQuery.data, 'users.manage')
 
   if (meQuery.isPending) {
     return <FullPageMessage>Loading…</FullPageMessage>
@@ -209,7 +255,7 @@ export function UsersPage() {
       <FullPageMessage>
         <ErrorState
           title="Could not load your profile"
-          description="Sign in again, then reopen Users."
+          description="Sign in again, then reopen Campers."
         />
       </FullPageMessage>
     )
@@ -220,35 +266,54 @@ export function UsersPage() {
       <AppShell name={name} role={meQuery.data.role} permissions={meQuery.data.permissions}>
         <ErrorState
           variant="unauthorized"
-          title="Users administration is restricted"
+          title="Campers is restricted"
           description="Only accounts with users.view can open this roster."
         />
       </AppShell>
     )
   }
 
+  function openCamper(user: UserListItem) {
+    if (!isAccountLinked(user)) return
+    setSelectedUserId(user.id)
+  }
+
   return (
     <AppShell name={name} role={meQuery.data.role} permissions={meQuery.data.permissions}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-display font-semibold text-ink">Users</h1>
+          <h1 className="text-display font-semibold text-ink">Campers</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Manage L2 Hub accounts, roles, committee assignments, and access.
+            Leadership 2 class roster — spreadsheet campers plus signed-up accounts.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" size="sm" disabled>
-            Invite User
-          </Button>
-          <Button type="button" size="sm" disabled>
-            Add User
-          </Button>
+          {canManage ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={syncMutation.isPending}
+              onClick={() => {
+                setSyncMessage(null)
+                syncMutation.mutate()
+              }}
+            >
+              {syncMutation.isPending ? 'Syncing…' : 'Sync roster'}
+            </Button>
+          ) : null}
         </div>
       </div>
 
+      {syncMessage ? (
+        <p className="mb-3 text-sm text-ink-muted" role="status">
+          {syncMessage}
+        </p>
+      ) : null}
+
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <label className="sr-only" htmlFor="users-search">
-          Search users
+          Search campers
         </label>
         <input
           id="users-search"
@@ -265,13 +330,13 @@ export function UsersPage() {
 
       {usersQuery.isPending ? (
         <p className="text-sm text-ink-muted" role="status">
-          Loading users…
+          Loading campers…
         </p>
       ) : null}
 
       {usersQuery.isError ? (
         <ErrorState
-          title="Could not load users"
+          title="Could not load campers"
           description="Check that the backend is running and your account still has users.view."
         />
       ) : null}
@@ -279,10 +344,10 @@ export function UsersPage() {
       {usersQuery.isSuccess ? (
         <div className="overflow-hidden rounded-card border border-border-subtle bg-surface shadow-xs">
           <table className="w-full min-w-[720px] border-collapse text-left">
-            <caption className="sr-only">L2 Hub user accounts</caption>
+            <caption className="sr-only">Leadership 2 campers roster</caption>
             <thead className="border-b border-border-strong bg-surface-sunken">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold text-ink-muted">User</th>
+                <th className="px-4 py-3 text-xs font-semibold text-ink-muted">Camper</th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">Role(s)</th>
                 <th className="px-3 py-3 text-xs font-semibold text-ink-muted">
                   Committee(s)
@@ -297,56 +362,77 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-border-subtle last:border-b-0 hover:bg-surface-sunken"
-                >
-                  <td className="px-4 py-3 align-top">
-                    <button
-                      type="button"
-                      className="text-left"
-                      onClick={() => setSelectedUserId(user.id)}
-                    >
-                      <span className="block text-sm font-semibold text-ink">
-                        {user.full_name ?? 'Unnamed user'}
-                      </span>
-                      <span className="block text-xs text-ink-subtle">{user.email}</span>
-                    </button>
-                  </td>
-                  <td className="px-3 py-3 align-top">
-                    <RoleBadges user={user} />
-                  </td>
-                  <td className="px-3 py-3 align-top text-xs text-ink-muted">
-                    {user.committees.length === 0
-                      ? user.primary_role === 'ac' || user.primary_role === 'asbo'
-                        ? 'Global'
-                        : '—'
-                      : user.committees.map((c) => c.name).join(', ')}
-                  </td>
-                  <td className="px-3 py-3 align-top text-xs font-medium capitalize text-ink">
-                    {user.status}
-                  </td>
-                  <td className="px-3 py-3 align-top text-xs text-ink-muted">
-                    {formatLastActive(user.last_active_at)}
-                  </td>
-                  <td className="px-4 py-3 text-right align-top">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Open actions for ${user.full_name ?? user.email}`}
-                      onClick={() => setSelectedUserId(user.id)}
-                    >
-                      •••
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((user) => {
+                const linked = isAccountLinked(user)
+                return (
+                  <tr
+                    key={user.id}
+                    className="border-b border-border-subtle last:border-b-0 hover:bg-surface-sunken"
+                  >
+                    <td className="px-4 py-3 align-top">
+                      {linked ? (
+                        <button
+                          type="button"
+                          className="text-left"
+                          onClick={() => openCamper(user)}
+                        >
+                          <span className="block text-sm font-semibold text-ink">
+                            {user.full_name ?? 'Unnamed camper'}
+                          </span>
+                          <span className="block text-xs text-ink-subtle">
+                            {user.email || 'No account yet'}
+                          </span>
+                        </button>
+                      ) : (
+                        <div>
+                          <span className="block text-sm font-semibold text-ink">
+                            {user.full_name ?? 'Unnamed camper'}
+                          </span>
+                          <span className="block text-xs text-ink-subtle">
+                            No account yet
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 align-top">
+                      <RoleBadges user={user} />
+                    </td>
+                    <td className="px-3 py-3 align-top text-xs text-ink-muted">
+                      {user.committees.length === 0
+                        ? user.primary_role === 'ac' || user.primary_role === 'asbo'
+                          ? 'Global'
+                          : '—'
+                        : user.committees.map((c) => committeeLabel(c)).join(', ')}
+                    </td>
+                    <td className="px-3 py-3 align-top text-xs font-medium capitalize text-ink">
+                      {statusLabel(user.status)}
+                    </td>
+                    <td className="px-3 py-3 align-top text-xs text-ink-muted">
+                      {formatLastActive(user.last_active_at)}
+                    </td>
+                    <td className="px-4 py-3 text-right align-top">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={!linked}
+                        aria-label={
+                          linked
+                            ? `Open details for ${user.full_name ?? user.email}`
+                            : `${user.full_name ?? 'Camper'} has not signed up`
+                        }
+                        onClick={() => openCamper(user)}
+                      >
+                        •••
+                      </Button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
           {filtered.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-ink-muted">No users match this search.</p>
+            <p className="px-4 py-6 text-sm text-ink-muted">No campers match this search.</p>
           ) : null}
         </div>
       ) : null}

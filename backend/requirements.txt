@@ -20,6 +20,9 @@ psycopg[binary]
 pyjwt[crypto]
 webauthn
 
+# Supabase Admin API (roster provisioning script)
+supabase
+
 # Testing and linting
 pytest
 ruff

@@ -80,6 +80,83 @@ describe('UsersPage', () => {
               committees: [],
               last_active_at: null,
               created_at: '2026-01-01T00:00:00Z',
+              account_linked: true,
+            },
+            {
+              id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+              email: '',
+              full_name: 'Hanna Rahmanian',
+              status: 'awaiting_signup',
+              primary_role: 'asbo',
+              roles: [
+                {
+                  slug: 'asbo',
+                  name: 'ASBO',
+                  rank: 80,
+                  scope: 'global',
+                  committee_id: null,
+                  event_id: null,
+                },
+                {
+                  slug: 'committee_head',
+                  name: 'Committee Head',
+                  rank: 50,
+                  scope: 'committee',
+                  committee_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                  event_id: null,
+                  committee_name: 'Activities',
+                },
+              ],
+              committees: [
+                {
+                  id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                  slug: 'activities',
+                  name: 'Activities',
+                  is_head: true,
+                  membership_type: 'head',
+                },
+              ],
+              last_active_at: null,
+              created_at: '2026-01-01T00:00:00Z',
+              account_linked: false,
+            },
+            {
+              id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+              email: '',
+              full_name: 'Kaiwei Parks',
+              status: 'awaiting_signup',
+              primary_role: 'asbo',
+              roles: [
+                {
+                  slug: 'asbo',
+                  name: 'ASBO',
+                  rank: 80,
+                  scope: 'global',
+                  committee_id: null,
+                  event_id: null,
+                },
+                {
+                  slug: 'committee_head',
+                  name: 'Committee Head',
+                  rank: 50,
+                  scope: 'committee',
+                  committee_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                  event_id: null,
+                  committee_name: 'Activities',
+                },
+              ],
+              committees: [
+                {
+                  id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                  slug: 'activities',
+                  name: 'Activities',
+                  is_head: true,
+                  membership_type: 'head',
+                },
+              ],
+              last_active_at: null,
+              created_at: '2026-01-01T00:00:00Z',
+              account_linked: false,
             },
           ],
         },
@@ -88,9 +165,15 @@ describe('UsersPage', () => {
 
     renderWithProviders(<UsersPage />)
 
-    expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Campers' })).toBeInTheDocument()
     expect(await screen.findByText('Taylor Kim')).toBeInTheDocument()
-    expect(screen.getByText('ASBO')).toBeInTheDocument()
+    expect(screen.getByText('Hanna Rahmanian')).toBeInTheDocument()
+    expect(screen.getByText('Kaiwei Parks')).toBeInTheDocument()
+    expect(screen.getAllByText('Awaiting signup').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText('No account yet').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText('ASBO').length).toBeGreaterThanOrEqual(1)
+    // Co-heads both show Head in the committee column.
+    expect(screen.getAllByText('Activities · Head')).toHaveLength(2)
   })
 
   it('blocks accounts without users.view', async () => {
@@ -109,9 +192,7 @@ describe('UsersPage', () => {
 
     renderWithProviders(<UsersPage />)
 
-    expect(
-      await screen.findByText('Users administration is restricted'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Campers is restricted')).toBeInTheDocument()
   })
 
   it('opens the detail drawer from a roster row', async () => {
@@ -165,6 +246,7 @@ describe('UsersPage', () => {
               committees: [],
               last_active_at: null,
               created_at: '2026-01-01T00:00:00Z',
+              account_linked: true,
             },
           ],
         },

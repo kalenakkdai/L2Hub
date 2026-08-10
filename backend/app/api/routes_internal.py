@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.deps import DbSession, EmailSenderDep, JobAuth
-from app.services import deadlines
+from app.services import activities_calendar_sync, deadlines, planning_reminders
 
 router = APIRouter(prefix="/internal", tags=["internal"], include_in_schema=False)
 
@@ -47,4 +47,44 @@ def run_deadline_reminders(
         "duplicates": result.duplicates,
         "emailsSent": result.emails_sent,
         "emailsFailed": result.emails_failed,
+    }
+
+
+@router.post("/jobs/sync-activities-calendar")
+def run_sync_activities_calendar(_: JobAuth, db: DbSession) -> dict:
+    """Upsert the MSJ Activities Calendar into events + iCal."""
+    result = activities_calendar_sync.sync_activities_calendar(db)
+    db.commit()
+    return {
+        "ok": True,
+        "considered": result.considered,
+        "created": result.created,
+        "updated": result.updated,
+        "planningEvents": result.planning_events,
+    }
+
+
+@router.post("/jobs/planning-reminders")
+def run_planning_reminders(_: JobAuth, db: DbSession) -> dict:
+    """Notify Mr. Jan three months before each ASB event on the calendar.
+
+    Safe to call twice: notices are deduped per event. Syncs the Activities
+    Calendar first so dates stay aligned with the spreadsheet export.
+    """
+    sync = activities_calendar_sync.sync_activities_calendar(db)
+    result = planning_reminders.sweep_planning_reminders(db)
+    db.commit()
+    return {
+        "ok": True,
+        "today": result.today.isoformat(),
+        "sync": {
+            "considered": sync.considered,
+            "created": sync.created,
+            "updated": sync.updated,
+            "planningEvents": sync.planning_events,
+        },
+        "considered": result.considered,
+        "sent": result.sent,
+        "duplicates": result.duplicates,
+        "skipped": result.skipped,
     }

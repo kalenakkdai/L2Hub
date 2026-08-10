@@ -44,7 +44,8 @@ def test_undated_events_serialize_as_null(client, make_token, seeded):
     events = client.get("/events", headers=headers).json()["events"]
 
     assert events, "expected seeded events"
-    undated = [event for event in events if event["slug"].startswith("maze-day")]
+    # Prior-year Maze Day stays undated; 2026 is dated from the Activities Calendar.
+    undated = [event for event in events if event["slug"] == "maze-day-2025"]
     assert undated
     for event in undated:
         assert event["startsAt"] is None
@@ -57,7 +58,7 @@ def test_seed_promotes_enabled_fall_rally_into_events(client, make_token, seeded
     rally = next(event for event in events if event["name"] == "Fall Rally")
 
     assert rally["eventStatus"] == "active"
-    assert rally["startsAt"].startswith("2026-09-12")
+    assert rally["startsAt"].startswith("2026-10-09")
     assert rally["summaryStatus"] == "not_requested"
 
 

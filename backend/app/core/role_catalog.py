@@ -107,8 +107,9 @@ COMMITTEE_HEAD_PERMISSIONS: Final[frozenset[str]] = frozenset(
     }
 )
 
-# Platform-wide ops. No feedback, no grades.edit, no approve/publish/generate,
-# and no planning.enable (AC/Mr. Jan gate only).
+# Platform-wide ops. ASBOs may view Campers and both Class Officers
+# workspaces. Still no private/anonymous feedback, role admin, grade edits,
+# Wrapped approve/publish, or AC-only settings / planning.enable.
 ASBO_DENIED: Final[frozenset[str]] = frozenset(
     {
         *pk.FEEDBACK_PERMISSIONS,
@@ -117,7 +118,6 @@ ASBO_DENIED: Final[frozenset[str]] = frozenset(
         pk.ADMIN_PREVIEW_USER,
         pk.ROLES_MANAGE,
         pk.ROLES_ASSIGN,
-        pk.USERS_VIEW,
         pk.USERS_MANAGE,
         pk.GRADES_EDIT,
         pk.WRAPPED_APPROVE,

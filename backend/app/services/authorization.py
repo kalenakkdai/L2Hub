@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core import permission_keys as pk
 from app.core.role_catalog import (
+    COMMITTEE_HEAD_PERMISSIONS,
     ROLE_ASBO,
     ROLE_MEMBER,
     ROLE_RANK,
@@ -158,6 +159,29 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
         m.committee_id for m in user.committee_memberships if m.is_head
     }
     member_committees = {m.committee_id for m in user.committee_memberships}
+
+    # Baby shadow grants temporarily elevate to head-level committee access.
+    from app.services import shadow as shadow_service
+
+    shadow_ids = shadow_service.active_shadow_committee_ids(db, user.id)
+    if shadow_ids:
+        headed |= shadow_ids
+        for key in COMMITTEE_HEAD_PERMISSIONS:
+            if key in denied:
+                continue
+            allowed.add(key)
+            permission_committee_map.setdefault(key, set()).update(shadow_ids)
+
+    # Attendance kiosk: only Mr. Jan and Jadon Li (see attendance_operators).
+    from app.services.attendance_operators import is_attendance_operator
+
+    if is_attendance_operator(user):
+        allowed.add(pk.ATTENDANCE_MANAGE_ALL)
+        allowed.add(pk.ATTENDANCE_VIEW_ALL)
+        permission_committee_map.setdefault(pk.ATTENDANCE_MANAGE_ALL, set())
+        permission_committee_map.setdefault(pk.ATTENDANCE_VIEW_ALL, set())
+    else:
+        allowed.discard(pk.ATTENDANCE_MANAGE_ALL)
 
     return AuthContext(
         user=user,

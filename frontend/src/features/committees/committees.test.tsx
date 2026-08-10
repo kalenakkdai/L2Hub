@@ -58,7 +58,7 @@ describe('CommitteesPage', () => {
     expect(rows).toHaveLength(SAMPLE_COMMITTEES.length)
     expect(screen.getByText('Activities')).toBeInTheDocument()
     expect(screen.getByText('Videography/Photography')).toBeInTheDocument()
-    expect(screen.getByText('Hanna Rahmanian')).toBeInTheDocument()
+    expect(screen.getByText('Kaiwei Parks')).toBeInTheDocument()
     expect(screen.getAllByText('4 campers').length).toBeGreaterThan(0)
     expect(screen.getAllByText('5 campers').length).toBeGreaterThan(0)
   })
@@ -165,7 +165,7 @@ describe('committee fixture', () => {
       'Community',
       'Elections',
       'Fundraising',
-      'GTAC',
+      'Campus',
       'HCMC',
       'Publicity',
       'Student Store',

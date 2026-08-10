@@ -107,7 +107,11 @@ const EVENTS: Record<string, CommitteeDetail['events']> = {
 
 function membersFor(seed: RosterCommittee): CommitteeMember[] {
   const headSet = new Set(seed.headNames)
-  return seed.members.slice(0, MAX_SHOWN).map((name) => ({
+  const ordered = [
+    ...seed.members.filter((name) => headSet.has(name)),
+    ...seed.members.filter((name) => !headSet.has(name)),
+  ]
+  return ordered.slice(0, MAX_SHOWN).map((name) => ({
     id: `${seed.id}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     name,
     position: null,

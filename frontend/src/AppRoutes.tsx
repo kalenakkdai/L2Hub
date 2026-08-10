@@ -23,9 +23,11 @@ import {
   MockEventPlanningDataProvider,
 } from './features/event-planning'
 import {
+  ClassOfficersGate,
+  ClassOfficersHomeRedirect,
   ClassOfficersLayout,
+  ClassOfficersLegacyRedirect,
   ClassOfficersOverviewPage,
-  ClassOfficersProvider,
   FundraiserPage,
   HomecomingPage,
   MockClassOfficersDataProvider,
@@ -229,15 +231,24 @@ export function AppRoutes() {
         path="/class-officers"
         element={
           <RequireAuth>
-            <ClassOfficersProvider dataProvider={classOfficersDataProvider}>
-              <ClassOfficersLayout />
-            </ClassOfficersProvider>
+            <ClassOfficersGate dataProvider={classOfficersDataProvider} />
           </RequireAuth>
         }
       >
-        <Route index element={<ClassOfficersOverviewPage />} />
-        <Route path="fundraiser" element={<FundraiserPage />} />
-        <Route path="homecoming" element={<HomecomingPage />} />
+        <Route index element={<ClassOfficersHomeRedirect />} />
+        <Route
+          path="fundraiser"
+          element={<ClassOfficersLegacyRedirect section="fundraiser" />}
+        />
+        <Route
+          path="homecoming"
+          element={<ClassOfficersLegacyRedirect section="homecoming" />}
+        />
+        <Route path=":cohort" element={<ClassOfficersLayout />}>
+          <Route index element={<ClassOfficersOverviewPage />} />
+          <Route path="fundraiser" element={<FundraiserPage />} />
+          <Route path="homecoming" element={<HomecomingPage />} />
+        </Route>
       </Route>
       <Route
         path="/tools"

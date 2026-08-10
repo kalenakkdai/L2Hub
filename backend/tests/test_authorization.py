@@ -37,6 +37,9 @@ def test_asbo_can_view_all_grades_but_not_edit_or_feedback(db_session, seeded):
     assert authz.has_permission(db_session, asbo, pk.WRAPPED_REQUEST)
     assert not authz.has_permission(db_session, asbo, pk.WRAPPED_APPROVE)
     assert not authz.has_permission(db_session, asbo, pk.WRAPPED_PUBLISH)
+    # Campers roster is visible; invite/sync stays AC-only.
+    assert authz.has_permission(db_session, asbo, pk.USERS_VIEW)
+    assert not authz.has_permission(db_session, asbo, pk.USERS_MANAGE)
 
 
 def test_president_matches_ac_superadmin_permissions(db_session, seeded):

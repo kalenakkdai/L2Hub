@@ -12,6 +12,7 @@ from app.api.routes_grades import router as grades_router
 from app.api.routes_internal import router as internal_router
 from app.api.routes_note_taker import router as note_taker_router
 from app.api.routes_push import router as push_router
+from app.api.routes_shadow import router as shadow_router
 from app.api.routes_storage import router as storage_router
 from app.api.routes_users import router as users_router
 from app.api.routes_work import router as work_router
@@ -40,6 +41,7 @@ app.include_router(note_taker_router)
 app.include_router(push_router)
 app.include_router(storage_router)
 app.include_router(work_router)
+app.include_router(shadow_router)
 app.include_router(internal_router)
 
 

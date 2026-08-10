@@ -1,4 +1,4 @@
-"""Canonical Users administration API — derived from profiles + assignments."""
+"""Canonical Users / Campers administration API."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from app.schemas.auth import (
     UserListResponse,
 )
 from app.services import authorization as authz
+from app.services import campers as campers_service
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -72,6 +73,7 @@ def _list_item(db: DbSession, profile: Profile) -> UserListItem:
         committees=committees,
         last_active_at=profile.last_active_at,
         created_at=profile.created_at,
+        account_linked=True,
     )
 
 
@@ -82,22 +84,10 @@ def list_users(
     q: str | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
 ) -> UserListResponse:
+    """Campers roster: Leadership 2 spreadsheet merged with signed-up profiles."""
     authz.require_permission(db, profile, pk.USERS_VIEW)
 
-    query = (
-        select(Profile)
-        .options(
-            selectinload(Profile.role_assignments).selectinload(UserRoleAssignment.role),
-            selectinload(Profile.role_assignments).selectinload(UserRoleAssignment.committee),
-            selectinload(Profile.committee_memberships).selectinload(
-                CommitteeMembership.committee
-            ),
-        )
-        .order_by(Profile.email.asc())
-    )
-    users = list(db.scalars(query).unique())
-
-    items = [_list_item(db, user) for user in users]
+    items = campers_service.list_campers(db)
     if q:
         needle = q.strip().lower()
         items = [
@@ -110,6 +100,13 @@ def list_users(
         items = [item for item in items if item.status == status_filter]
 
     return UserListResponse(users=items)
+
+
+@router.post("/sync-roster")
+def sync_roster(profile: CurrentProfile, db: DbSession) -> dict:
+    """Attach signed-up campers to committees when their name matches the roster."""
+    authz.require_permission(db, profile, pk.USERS_MANAGE)
+    return campers_service.sync_roster_memberships(db)
 
 
 @router.get("/{user_id}", response_model=UserDetail)

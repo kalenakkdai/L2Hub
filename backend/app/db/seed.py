@@ -49,7 +49,7 @@ SEED_COMMITTEES: tuple[tuple[str, str], ...] = (
     ("community", "Community"),
     ("elections", "Elections"),
     ("fundraising", "Fundraising"),
-    ("gtac", "GTAC"),
+    ("gtac", "Campus"),
     ("hcmc", "HCMC"),
     ("publicity", "Publicity"),
     ("student_store", "Student Store"),
@@ -271,8 +271,8 @@ def seed_events(db: Session, committees: dict[str, Committee]) -> dict[str, Even
             2026,
             "active",
             committees["spirit"].id,
-            datetime(2026, 9, 12, tzinfo=UTC),
-            datetime(2026, 9, 13, tzinfo=UTC),
+            datetime(2026, 10, 9, tzinfo=UTC),
+            datetime(2026, 10, 9, 23, 59, tzinfo=UTC),
         ),
     )
     for key, name, slug, year, status, committee_id, starts_at, ends_at in specs:
@@ -318,6 +318,15 @@ def seed_events(db: Session, committees: dict[str, Committee]) -> dict[str, Even
                     submitted_at=datetime.now(UTC) if status == "submitted" else None,
                 )
             )
+    db.flush()
+
+    # Align ASB productions with the Activities Calendar (Maze Day, rallies, …).
+    # Full athletics/council sync is the internal job — keep seed light for tests.
+    from app.db.activities_calendar_2026_2027 import ASB_PLANNING_EVENTS
+    from app.services.activities_calendar_sync import upsert_entry
+
+    for entry in ASB_PLANNING_EVENTS:
+        upsert_entry(db, entry)
     db.flush()
     return result
 

@@ -63,7 +63,12 @@ def _maybe_uuid(value: str) -> uuid.UUID | None:
 def list_events(profile: CurrentProfile, db: DbSession) -> dict:
     authz.require_permission(db, profile, pk.EVENTS_VIEW)
     events = db.scalars(
-        select(Event).options(selectinload(Event.summary)).order_by(Event.year.desc())
+        select(Event)
+        .options(selectinload(Event.summary))
+        # Athletics / council / testing from the Activities Calendar stay on
+        # the iCal feed (status=calendar) and out of the Wrapped catalog.
+        .where(Event.status != "calendar")
+        .order_by(Event.year.desc())
     ).all()
     return {"events": [summary_service.event_list_item(event) for event in events]}
 
