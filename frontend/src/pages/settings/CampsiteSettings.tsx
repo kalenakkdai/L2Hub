@@ -5,6 +5,7 @@ import { ErrorState } from '../../components/ui/ErrorState'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { SettingsLayout, type SettingsSection } from '../../components/settings/SettingsLayout'
 import { DangerZone } from '../../components/settings/DangerZone'
+import { CalendarFeedSection } from '../../components/settings/CalendarFeedSection'
 import {
   Field,
   FIELD_CLASS,
@@ -21,6 +22,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'modules', label: 'Modules' },
   { id: 'joining', label: 'Joining' },
   { id: 'points', label: 'Points' },
+  { id: 'calendar', label: 'Calendar' },
   { id: 'danger', label: 'Danger zone' },
 ]
 
@@ -309,6 +311,11 @@ export function CampsiteSettings() {
                 ))}
               </div>
             </SettingsCard>
+
+            {/* Only rendered for editors: the endpoint behind it requires
+                SETTINGS_EDIT, so showing it to a viewer would render a card
+                that can only ever fail. */}
+            {canEdit && <CalendarFeedSection />}
 
             <DangerZone
               actions={[

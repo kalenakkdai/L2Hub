@@ -4,6 +4,7 @@ import { filterNavSections, NAV_SECTIONS } from './navigation'
 import { useCampsiteChrome } from '../../hooks/useCampsiteModules'
 import { NavItem } from './NavItem'
 import { NotificationBell } from './NotificationBell'
+import { useInboxBadge } from './useInboxBadge'
 import { UserMenu } from './UserMenu'
 import { Wordmark } from './Wordmark'
 
@@ -33,6 +34,7 @@ export function MobileNavigation({
     chrome.data?.modulesEnabled,
   )
   const showNotifications = permissions?.includes('notifications.view_own') ?? false
+  const inboxBadge = useInboxBadge(showNotifications)
 
   useEffect(() => {
     if (!open) return
@@ -112,7 +114,11 @@ export function MobileNavigation({
                   <ul className="flex flex-col gap-px">
                     {section.items.map((item) => (
                       <li key={item.to}>
-                        <NavItem item={item} onNavigate={() => setOpen(false)} />
+                        <NavItem
+                          item={item}
+                          badge={item.to === '/inbox' ? inboxBadge : undefined}
+                          onNavigate={() => setOpen(false)}
+                        />
                       </li>
                     ))}
                   </ul>

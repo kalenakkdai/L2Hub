@@ -1,14 +1,18 @@
+import secrets
 import uuid
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session, selectinload
 
 from app.core import permissions
+from app.core.config import settings
 from app.core.security import AuthConfigurationError, AuthError, verify_token
 from app.db.session import get_db
+from app.mail.factory import get_email_sender_singleton
+from app.mail.protocol import EmailSender
 from app.models.profile import Profile
 from app.services import authorization as authz
 from app.storage.factory import get_storage_singleton
@@ -26,6 +30,47 @@ def get_storage() -> ObjectStorage:
 
 
 Storage = Annotated[ObjectStorage, Depends(get_storage)]
+
+
+def get_email_sender() -> EmailSender:
+    """Inject the configured email sender (logging by default)."""
+    return get_email_sender_singleton()
+
+
+EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
+
+
+def require_job_secret(
+    x_l2hub_job_secret: Annotated[str | None, Header(alias="X-L2Hub-Job-Secret")] = None,
+) -> None:
+    """Guard for endpoints a scheduler calls, not a person.
+
+    Deliberately not on the bearer-token path. The caller is pg_cron by way
+    of pg_net, which has no user and cannot mint or refresh a Supabase JWT;
+    the only way to satisfy `get_current_profile` would be to bake a
+    long-lived token for a real student into the database and let every
+    scheduled action carry their name.
+
+    An unset secret is a 503, never an open door — a server that was never
+    configured for scheduled work should say so rather than run it.
+    """
+    expected = settings.job_trigger_secret
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Scheduled jobs are not configured on this server.",
+        )
+    # Compared as bytes: compare_digest raises TypeError on non-ASCII str,
+    # and this value arrives in a header anyone can set.
+    supplied = (x_l2hub_job_secret or "").encode("utf-8", "ignore")
+    if not secrets.compare_digest(supplied, expected.encode("utf-8", "ignore")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid job credentials.",
+        )
+
+
+JobAuth = Annotated[None, Depends(require_job_secret)]
 
 _UNAUTHENTICATED = {"WWW-Authenticate": "Bearer"}
 

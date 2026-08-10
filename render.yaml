@@ -1,0 +1,68 @@
+# Render blueprint for the backend.
+#
+# Kept alongside the AWS instructions in docs/deploy-aws.md rather than
+# replacing them: the frontend goes to Amplify either way, and this is only the
+# backend half. Render builds backend/Dockerfile straight from GitHub, which is
+# the "connect the repo and deploy" path that App Runner used to provide on AWS
+# and that ECS Express Mode does not — Express Mode wants an image already in
+# ECR, which means a local Docker build and a push before anything deploys.
+#
+# Secrets are deliberately marked `sync: false`. Render prompts for those in
+# the dashboard on first deploy instead of reading them from this file, so the
+# database password, the secret key, and the pepper never enter the repo.
+services:
+  - type: web
+    name: l2hub-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Whisper loads a model into memory; the smallest instance types will OOM.
+    plan: standard
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      - key: ATTENDANCE_TIMEZONE
+        value: America/Los_Angeles
+      - key: STORAGE_BACKEND
+        value: supabase
+      - key: SUPABASE_STORAGE_BUCKET
+        value: attachments
+      - key: EMAIL_BACKEND
+        value: resend
+      - key: DEADLINE_BACKFILL_DAYS
+        value: "14"
+
+      # Prompted for on first deploy — never stored in the repo.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: ATTENDANCE_ID_PEPPER
+        sync: false
+      # The Amplify origin, matched as an exact string.
+      - key: CORS_ORIGINS
+        sync: false
+      # Must match the domain the browser is actually on, or passkeys fail
+      # before the request ever reaches the backend.
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: WEBAUTHN_ORIGIN
+        sync: false
+      # Deadline reminder email.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      # Frontend origin, for the link at the bottom of a reminder.
+      - key: APP_BASE_URL
+        sync: false
+      # Must match `l2hub_job_secret` in Supabase Vault, which is what pg_cron
+      # sends. If the two disagree the sweep 401s every morning, silently —
+      # pg_net does not report failures.
+      - key: JOB_TRIGGER_SECRET
+        sync: false

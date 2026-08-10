@@ -10,6 +10,7 @@ import { AvatarField } from '../../components/settings/AvatarField'
 import { ContactSection } from '../../components/settings/ContactSection'
 import { DangerZone } from '../../components/settings/DangerZone'
 import { NotificationsGrid } from '../../components/settings/NotificationsGrid'
+import { PushSection } from '../../components/settings/PushSection'
 import { ProfileSection } from '../../components/settings/ProfileSection'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useProfile } from '../../hooks/useProfile'
@@ -21,6 +22,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'contact', label: 'Contact' },
   { id: 'notifications', label: 'Notifications' },
+  { id: 'push', label: 'Push' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'attendance-passkey', label: 'Attendance passkey' },
   { id: 'account', label: 'Account' },
@@ -109,6 +111,11 @@ export function MySettings() {
               save={save}
               saveNow={saveNow}
             />
+
+            {/* Directly under the grid on purpose: the grid decides WHICH
+                notifications a camper gets, this decides whether this
+                particular device is one of the places they arrive. */}
+            <PushSection />
 
             <AppearanceSection
               profile={profile}

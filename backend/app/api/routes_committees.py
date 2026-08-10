@@ -6,11 +6,15 @@ import uuid
 
 from fastapi import APIRouter
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentProfile, DbSession
 from app.core import permission_keys as pk
 from app.models import Committee
+from app.models.work import Task
 from app.services import authorization as authz
+from app.services import committees as committee_service
+from app.services import work
 
 router = APIRouter(prefix="/committees", tags=["committees"])
 
@@ -47,8 +51,47 @@ def read_committee_tasks(
             code="committee_scope_denied",
             message="You do not have access to this committee.",
         )
+    tasks = db.scalars(
+        select(Task)
+        .options(selectinload(Task.assignee))
+        .where(Task.committee_id == committee.id)
+        .order_by(Task.due_on.is_(None), Task.due_on, Task.created_at)
+    ).all()
     return {
         "committee_id": str(committee.id),
         "committee_slug": committee.slug,
-        "tasks": [],
+        "tasks": [work.task_payload(task) for task in tasks],
     }
+
+
+@router.get("/{committee_ref}/members")
+def read_committee_members(
+    committee_ref: str, profile: CurrentProfile, db: DbSession
+) -> dict:
+    """Who is in this committee.
+
+    Anyone who can put work on a committee's board must be able to see who
+    they can give it to, or the assignee picker is an empty list and
+    `create_task`'s membership check is unreachable through the UI.
+
+    Membership is a gate in its own right, not an oversight: a camper can see
+    who else is in the committee they are in. It cannot be expressed as a
+    permission key, because `has_permission` treats a global grant as
+    matching every committee — handing `committees.view_members` to the
+    member role would open every roster in the school.
+    """
+    committee = _resolve_committee(db, committee_ref)
+    allowed = (
+        authz.has_permission(db, profile, pk.COMMITTEES_VIEW_MEMBERS, committee_id=committee.id)
+        or authz.has_permission(
+            db, profile, pk.TASKS_MANAGE_COMMITTEE, committee_id=committee.id
+        )
+        or authz.has_permission(db, profile, pk.TASKS_MANAGE_ALL)
+        or committee.id in work.member_committee_ids(profile)
+    )
+    if not allowed:
+        raise authz.permission_denied(
+            code="committee_scope_denied",
+            message="You do not have access to this committee.",
+        )
+    return committee_service.roster_payload(db, committee)

@@ -36,6 +36,9 @@ import {
   NoteTakerNewPage,
   NoteTakerSessionPage,
 } from './features/note-taker'
+import { InboxPage } from './features/work/InboxPage'
+import { L2BoardPage } from './features/work/L2BoardPage'
+import { RequestsPage } from './features/work/RequestsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
 import { CommitteesPage } from './features/committees/CommitteesPage'
@@ -97,6 +100,30 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/board"
+        element={
+          <RequireAuth>
+            <L2BoardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/requests"
+        element={
+          <RequireAuth>
+            <RequestsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/inbox"
+        element={
+          <RequireAuth>
+            <InboxPage />
           </RequireAuth>
         }
       />

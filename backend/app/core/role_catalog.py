@@ -49,6 +49,19 @@ MEMBER_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.KNOWLEDGE_VIEW,
         pk.NOTE_TAKER_VIEW,
         pk.NOTE_TAKER_RECORD,
+        # Everyone reads the L2 Board and the request log: the point of both is
+        # that the whole class can see what each committee is up to and who is
+        # waiting on whom.
+        #
+        # Reading is not writing. A camper still only adds tasks to, and
+        # answers requests sent to, the committees they are actually in — that
+        # is tasks.manage_committee and requests.manage_own_committee below,
+        # both committee-scoped.
+        pk.TASKS_VIEW_ALL,
+        pk.REQUESTS_VIEW_ALL,
+        pk.REQUESTS_VIEW_OWN_COMMITTEE,
+        pk.REQUESTS_CREATE,
+        pk.REQUESTS_MANAGE_OWN_COMMITTEE,
     }
 )
 
@@ -87,6 +100,9 @@ COMMITTEE_HEAD_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.MATERIALS_VIEW_COMMITTEE,
         pk.MATERIALS_MANAGE_COMMITTEE,
         pk.NOTIFICATIONS_VIEW_OWN,
+        # tasks.view_all and requests.view_all arrive with the member baseline;
+        # a head reads the board like everyone else and writes to the committee
+        # they actually head.
         *MEMBER_PERMISSIONS,
     }
 )

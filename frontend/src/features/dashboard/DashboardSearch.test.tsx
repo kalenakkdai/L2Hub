@@ -43,8 +43,8 @@ describe('DashboardSearch', () => {
 
     const input = screen.getByRole('combobox', { name: 'Search pages' })
     await user.click(input)
-    await user.type(input, 'resources')
-    expect(screen.getByRole('option', { name: /Resources/i })).toBeDisabled()
+    await user.type(input, 'my tasks')
+    expect(screen.getByRole('option', { name: /My tasks/i })).toBeDisabled()
     expect(screen.getByTestId('location')).toHaveTextContent('/dashboard')
   })
 })

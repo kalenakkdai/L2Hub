@@ -126,7 +126,7 @@ class TestDeliver:
             type="task.assigned", title="Task", body="You have a task",
         )
 
-        assert written == 2
+        assert written.written == 2
         assert notifications.unread_count(db_session, a.id) == 1
 
     def test_skips_a_camper_who_switched_the_type_off(self, db_session) -> None:
@@ -138,7 +138,7 @@ class TestDeliver:
             type="task.assigned", title="Task", body="",
         )
 
-        assert written == 1
+        assert written.written == 1
         assert notifications.unread_count(db_session, declines.id) == 0
         assert notifications.unread_count(db_session, wants.id) == 1
 
@@ -149,7 +149,7 @@ class TestDeliver:
         written = notifications.deliver(
             db_session, recipient_ids=[camper.id], type="task.assigned", title="T", body="")
 
-        assert written == 1
+        assert written.written == 1
 
     def test_a_preference_on_another_channel_does_not_gate_in_app(self, db_session) -> None:
         camper = _profile(db_session)
@@ -163,26 +163,44 @@ class TestDeliver:
 
         # Switching off email must not silence the in-app notification.
         assert notifications.deliver(
-            db_session, recipient_ids=[camper.id], type="task.assigned", title="T", body="") == 1
+            db_session, recipient_ids=[camper.id], type="task.assigned",
+            title="T", body="").written == 1
 
     def test_skips_a_paused_camper(self, db_session) -> None:
         camper = _profile(db_session, notifications_paused=True)
 
         assert notifications.deliver(
-            db_session, recipient_ids=[camper.id], type="task.assigned", title="T", body="") == 0
+            db_session, recipient_ids=[camper.id], type="task.assigned",
+            title="T", body="").written == 0
 
     def test_skips_during_quiet_hours(self, db_session) -> None:
         camper = _profile(db_session, quiet_hours_start=time(22, 0), quiet_hours_end=time(7, 0))
 
-        at_night = datetime(2026, 8, 8, 23, 30, tzinfo=UTC)
+        # Quiet hours are set as local wall-clock times in the settings page,
+        # so the instants here are written as UTC but chosen for what they
+        # mean in America/Los_Angeles: 23:30 PDT is 06:30 UTC the next day.
+        at_night = datetime(2026, 8, 9, 6, 30, tzinfo=UTC)
         assert notifications.deliver(
             db_session, recipient_ids=[camper.id], type="task.assigned",
-            title="T", body="", now=at_night) == 0
+            title="T", body="", now=at_night).written == 0
 
-        midday = datetime(2026, 8, 8, 12, 0, tzinfo=UTC)
+        midday = datetime(2026, 8, 8, 19, 0, tzinfo=UTC)  # 12:00 PDT
         assert notifications.deliver(
             db_session, recipient_ids=[camper.id], type="task.assigned",
-            title="T", body="", now=midday) == 1
+            title="T", body="", now=midday).written == 1
+
+    def test_a_utc_clock_is_not_mistaken_for_a_local_one(self, db_session) -> None:
+        """23:30 UTC is 16:30 in California, which is nobody's quiet hours.
+
+        Comparing the two directly used to silence the wrong nine hours of
+        the day; the daily deadline sweep runs at a fixed UTC instant, which
+        would have made that a permanent miss rather than an occasional one.
+        """
+        camper = _profile(db_session, quiet_hours_start=time(22, 0), quiet_hours_end=time(7, 0))
+
+        assert notifications.deliver(
+            db_session, recipient_ids=[camper.id], type="task.assigned", title="T", body="",
+            now=datetime(2026, 8, 8, 23, 30, tzinfo=UTC)).written == 1
 
     def test_overdue_arrives_during_quiet_hours(self, db_session) -> None:
         camper = _profile(
@@ -192,12 +210,12 @@ class TestDeliver:
 
         assert notifications.deliver(
             db_session, recipient_ids=[camper.id], type="task.overdue", title="Late", body="",
-            now=datetime(2026, 8, 8, 23, 30, tzinfo=UTC)) == 1
+            now=datetime(2026, 8, 9, 6, 30, tzinfo=UTC)).written == 1
 
     def test_ignores_a_recipient_that_does_not_exist(self, db_session) -> None:
         assert notifications.deliver(
             db_session, recipient_ids=[uuid.uuid4()], type="task.assigned",
-            title="T", body="") == 0
+            title="T", body="").written == 0
 
 
 class TestMarkRead:

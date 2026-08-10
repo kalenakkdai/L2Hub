@@ -8,6 +8,7 @@ import { ErrorState } from '../../../components/ui/ErrorState'
 import { useAttendanceCommands, useWhereabouts } from '../hooks'
 import type { WhereaboutsEntry } from '../types'
 import campusMap from '../assets/msjhs-campus-map.png'
+import { initials } from '../../../lib/initials'
 
 type Point = { x: number; y: number; label: string }
 
@@ -25,15 +26,6 @@ const DESTINATIONS: Record<string, Point> = {
   cafeteria: { x: 55, y: 43, label: 'Snack bar / kitchen' },
   parking_lot: { x: 16, y: 39, label: 'Parking lot' },
   other: { x: 66, y: 62, label: 'Other destination' },
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
 }
 
 function pointFor(entry: WhereaboutsEntry, index: number): Point {

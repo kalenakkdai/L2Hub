@@ -10,17 +10,7 @@ import { useCurrentUser } from '../../auth/useCurrentUser'
 import { dateStamp, timeOfDay } from '../dashboard/formatDate'
 import { useCommittee } from './useCommittees'
 import type { CommitteeDetail } from './types'
-
-function initials(name: string): string {
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || '?'
-  )
-}
+import { initials } from '../../lib/initials'
 
 function Roster({ committee }: { committee: CommitteeDetail }) {
   return (

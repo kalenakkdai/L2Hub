@@ -30,6 +30,11 @@ function Badge({ badge }: { badge: NavBadge }) {
 type NavItemProps = {
   item: NavItemDefinition
   onNavigate?: () => void
+  /**
+   * Replaces the item's own badge with a live one. The definitions carry
+   * placeholder counts; this is how a real number reaches the row.
+   */
+  badge?: NavBadge
 }
 
 /**
@@ -38,8 +43,9 @@ type NavItemProps = {
  * Routes that do not exist yet render as inert rows rather than links, so
  * nothing in the navigation leads to a blank page.
  */
-export function NavItem({ item, onNavigate }: NavItemProps) {
-  const { icon: Icon, label, to, badge } = item
+export function NavItem({ item, onNavigate, badge: liveBadge }: NavItemProps) {
+  const { icon: Icon, label, to } = item
+  const badge = liveBadge ?? item.badge
 
   if (!IMPLEMENTED_ROUTES.has(to)) {
     return (

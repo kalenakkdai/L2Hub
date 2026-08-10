@@ -1,0 +1,28 @@
+# AWS Amplify Hosting build spec.
+#
+# This repo is a monorepo, so the build is declared under `applications` with
+# an `appRoot`. Amplify also needs AMPLIFY_MONOREPO_APP_ROOT=frontend set as an
+# environment variable in the console — the appRoot below tells Amplify where
+# to run the build, that variable tells it which folder to watch for changes.
+version: 1
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # `npm ci` rather than `npm install` so the build uses the exact
+            # tree in package-lock.json instead of resolving fresh ranges.
+            - npm ci
+        build:
+          commands:
+            # `tsc -b && vite build` — a type error fails the deploy, which is
+            # what we want: a broken build should never reach the CDN.
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*

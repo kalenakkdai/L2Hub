@@ -39,6 +39,7 @@ def promote_event_plan(
     plan_id: str,
     title: str,
     event_date: date,
+    committee_id: uuid.UUID | None = None,
 ) -> Event:
     """Idempotently promote an approved planning record into Events.
 
@@ -70,6 +71,7 @@ def promote_event_plan(
             status="active",
             starts_at=starts_at,
             ends_at=ends_at,
+            managing_committee_id=committee_id,
             created_at=_utcnow(),
         )
         db.add(event)
@@ -78,6 +80,11 @@ def promote_event_plan(
         event.year = event_date.year
         event.starts_at = starts_at
         event.ends_at = ends_at
+        # Only ever set, never cleared: a re-promotion that omits the Crew is
+        # the planning record not carrying one, not an instruction to unassign
+        # an event somebody has already put a Crew against.
+        if committee_id is not None:
+            event.managing_committee_id = committee_id
         if event.status != "complete":
             event.status = "active"
     db.commit()

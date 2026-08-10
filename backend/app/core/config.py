@@ -51,12 +51,62 @@ class Settings(BaseSettings):
     # Access tokens issued by Supabase Auth carry aud="authenticated".
     supabase_jwt_audience: str = "authenticated"
 
-    # Object storage (files, screenshots, future knowledge uploads).
-    # `local` writes under STORAGE_LOCAL_ROOT on this machine. Later swap to
-    # `s3` or `gcs` without changing call sites that depend on ObjectStorage.
+    # Object storage (files, screenshots, meeting recordings).
+    # `local`    — files under STORAGE_LOCAL_ROOT on this machine. Development
+    #              only: a container filesystem is wiped on every deploy.
+    # `supabase` — objects in a private Supabase Storage bucket. Use this
+    #              anywhere the uploads are meant to outlive the process.
     storage_backend: str = "local"
     # Empty → backend/.local-storage. Absolute or ~ paths are fine.
     storage_local_root: str = ""
+
+    # Secret key (dashboard -> Project Settings -> API keys). Server-side only
+    # and RLS-bypassing, so it must never reach the browser. Required when
+    # STORAGE_BACKEND=supabase; unused otherwise.
+    supabase_service_key: str = ""
+    supabase_storage_bucket: str = "attachments"
+    supabase_storage_signed_url_ttl: int = 3600
+
+    # Outbound email (deadline reminders).
+    # `log`    — write the message to the application log and send nothing.
+    #            The default, and what development and the tests run on: a
+    #            reminder must never reach a real student from a laptop.
+    # `resend` — POST to Resend. Needs RESEND_API_KEY and EMAIL_FROM.
+    email_backend: str = "log"
+    resend_api_key: str = ""
+    # Must be a verified sender on the provider, e.g. "L2 Hub <hub@example.edu>".
+    email_from: str = ""
+    email_reply_to: str = ""
+    # Origin of the frontend, used to deep-link from an email back into the
+    # board. Empty means the email simply carries no link.
+    app_base_url: str = ""
+
+    # Web push.
+    # `log`     — write the notification to the application log and send
+    #             nothing. The default, and what the tests run on.
+    # `webpush` — encrypt and POST to the browser's push service via
+    #             pywebpush. Needs all three VAPID values below.
+    push_backend: str = "log"
+    # The public half is not a secret: it is handed to every browser that
+    # subscribes, and the subscription is bound to it. Rotating this keypair
+    # invalidates every existing subscription, because a push signed by a new
+    # key is refused for a subscription created under the old one.
+    push_vapid_public_key: str = ""
+    # NEVER commit this, and never expose it under a VITE_ name. Holding it
+    # plus a stored endpoint is enough to push to that browser.
+    push_vapid_private_key: str = ""
+    # RFC 8292: a mailto: or https: contact the push service can reach if our
+    # traffic causes them a problem. Not optional in practice — several push
+    # services reject a VAPID token without it.
+    push_vapid_subject: str = ""
+
+    # Shared secret for the pg_cron/pg_net job trigger. Empty means scheduled
+    # jobs are refused outright rather than run unauthenticated.
+    job_trigger_secret: str = ""
+    # How far back the deadline sweep looks for tasks that already slipped.
+    # Without this floor the first run after a deploy would raise an overdue
+    # notice for every task that has ever been late, all at once.
+    deadline_backfill_days: int = 14
 
     # Optional Whisper fallback when an upload has no browser transcript.
     whisper_model: str = "base"

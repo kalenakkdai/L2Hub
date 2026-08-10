@@ -3,6 +3,10 @@ fastapi
 uvicorn[standard]
 python-multipart
 
+# HTTP client. Used by the tests, and at runtime by the Supabase Storage
+# backend — so it is a production dependency, not a test-only one.
+httpx
+
 # Data validation and settings
 pydantic
 pydantic-settings
@@ -18,8 +22,19 @@ webauthn
 
 # Testing and linting
 pytest
-httpx
 ruff
 
 # Note Taker — local speech-to-text (also needs ffmpeg on PATH)
 openai-whisper
+
+# iCal subscription feed. RFC 5545 has more escaping rules than it looks like
+# — commas, semicolons and newlines inside a DESCRIPTION all need escaping,
+# and lines fold at 75 octets counted in UTF-8, not characters. This library
+# handles both; hand-built strings get it wrong the first time a camper types
+# a comma into an event description.
+icalendar
+
+# Web push. Handles the RFC 8291 payload encryption and the RFC 8292 VAPID
+# signing — both are ECDH plus JWT work that is easy to get subtly wrong and
+# whose failure mode is a notification that silently never arrives.
+pywebpush

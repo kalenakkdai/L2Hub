@@ -34,6 +34,17 @@ TASKS_MANAGE_COMMITTEE: Final = "tasks.manage_committee"
 TASKS_VIEW_ALL: Final = "tasks.view_all"
 TASKS_MANAGE_ALL: Final = "tasks.manage_all"
 
+# cross-committee requests
+# The ladder mirrors tasks: a member works inside their own committee, and
+# only leadership sees every committee's traffic at once.
+REQUESTS_VIEW_OWN_COMMITTEE: Final = "requests.view_own_committee"
+REQUESTS_CREATE: Final = "requests.create"
+REQUESTS_MANAGE_OWN_COMMITTEE: Final = "requests.manage_own_committee"
+REQUESTS_VIEW_ALL: Final = "requests.view_all"
+#: Answering for a committee you are not in, and filing in its name. Held by
+#: platform ops only — a committee head runs one committee, not all of them.
+REQUESTS_MANAGE_ALL: Final = "requests.manage_all"
+
 # debrief
 DEBRIEF_SUBMIT: Final = "debrief.submit"
 DEBRIEF_VIEW_OWN: Final = "debrief.view_own"
@@ -139,6 +150,15 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
     (TASKS_MANAGE_COMMITTEE, "Manage committee tasks", "tasks"),
     (TASKS_VIEW_ALL, "View all tasks", "tasks"),
     (TASKS_MANAGE_ALL, "Manage all tasks", "tasks"),
+    (REQUESTS_VIEW_OWN_COMMITTEE, "View own committee's requests", "requests"),
+    (REQUESTS_CREATE, "File a request to another committee", "requests"),
+    (
+        REQUESTS_MANAGE_OWN_COMMITTEE,
+        "Accept or complete requests sent to own committee",
+        "requests",
+    ),
+    (REQUESTS_VIEW_ALL, "View every committee's requests", "requests"),
+    (REQUESTS_MANAGE_ALL, "File and answer requests for any committee", "requests"),
     (DEBRIEF_SUBMIT, "Submit own debrief", "debrief"),
     (DEBRIEF_VIEW_OWN, "View own debrief submissions", "debrief"),
     (DEBRIEF_VIEW_COMMITTEE, "View committee debriefs", "debrief"),
@@ -219,6 +239,8 @@ COMMITTEE_SCOPED_PERMISSIONS: Final[frozenset[str]] = frozenset(
     {
         TASKS_VIEW_COMMITTEE,
         TASKS_MANAGE_COMMITTEE,
+        REQUESTS_VIEW_OWN_COMMITTEE,
+        REQUESTS_MANAGE_OWN_COMMITTEE,
         DEBRIEF_VIEW_COMMITTEE,
         ATTENDANCE_VIEW_COMMITTEE,
         ATTENDANCE_MANAGE_COMMITTEE,
