@@ -2,7 +2,7 @@ import type { PlanStatus } from '../types'
 
 const LABELS: Record<PlanStatus, string> = {
   draft: 'Draft',
-  pending_enablement: 'Awaiting Mr. Jan',
+  pending_enablement: 'Awaiting enablement',
   enabled: 'Enabled',
   active: 'Active',
   completed: 'Completed',

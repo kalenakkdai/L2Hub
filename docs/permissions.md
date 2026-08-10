@@ -12,7 +12,7 @@ Frontend checks are convenience only. Every API route must call
 |------|------|------|---------|
 | AC | `ac` | 100 | Administrator. Unrestricted access. |
 | President | `president` | 100 | Second super-admin; same permission bundle as AC. |
-| ASBO | `asbo` | 80 | Broad operational access; no private/anonymous feedback; no grade assign/publish/edit. |
+| ASBO | `asbo` | 80 | Broad operational access including event-planning enablement; no private/anonymous feedback; no grade assign/publish. |
 | Committee Head | `committee_head` | 50 | Scoped to committees they lead. |
 | Class Officer | `class_officer` | 25 | Senior/Junior Class Officers. Edit Class Officers fundraiser and homecoming plans. |
 | Class Advisor | `class_advisor` | 20 | Faculty advisors (two per class). View Class Officers progress only. |
@@ -145,12 +145,16 @@ Responses never include author metadata.
 | `grades.grade_committee` | Yes (Jadon, all) | Yes (Jan, all) | **No** | Yes (own) | No |
 | `grades.publish` | Yes (Jadon) | Yes (Jan) | **No** | No | No |
 | `grades.edit` | Legacy (unused) | Legacy (unused) | **No** | No | No |
+| `planning.enable` | Yes | Yes | Yes | No | No |
 
 Gradebook workflow: committee heads enter scores for their crew; those scores
 stay unpublished until Jan or Jadon (ASB President) releases them
 (`grades.publish`). Jan and Jadon share full gradebook control (assign, grade,
 publish, view all). Every change one makes notifies the other so the book stays
 transparent between them.
+
+Event planning enablement (`planning.enable`) is shared by Jan, Jadon, and every
+ASBO — any of them may approve a plan so assignees can accept.
 
 See [event-summary.md](./event-summary.md) for the full workflow.
 
@@ -160,6 +164,7 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 |------------|-----------|----|------|----------------|--------|
 | View all events | Yes | Yes | Yes | Own committee events | Assigned events |
 | Start debrief | Yes | Yes | Yes | No (unless later granted) | No |
+| Enable event planning | Yes | Yes | Yes | No | No |
 | View all grades | Yes | Yes | Yes | No | No |
 | View own grades | Yes | Yes | Yes | Yes (own) | Yes |
 | View committee grades | Yes | Yes | Yes | Yes (own) | No |
@@ -173,7 +178,9 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 
 Jan and Jadon are gradebook operators (email/name allowlist, same pattern as
 attendance). Other AC/President accounts that are not on that list keep assign
-and publish through the role bundle but do not get org-wide score entry.## Dashboard modules
+and publish through the role bundle but do not get org-wide score entry.
+
+## Dashboard modules
 
 `GET /auth/dashboard` returns `{ roles, permissions, modules }` derived from
 effective permissions.

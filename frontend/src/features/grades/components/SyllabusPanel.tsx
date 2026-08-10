@@ -198,7 +198,7 @@ function ManualSection() {
         <ManualRow
           title="Event planning"
           to="/event-planning"
-          body="Draft plans, agendas, and assignments. When Mr. Jan enables a plan it appears under Events."
+          body="Draft plans, agendas, and assignments. When Jan or an ASBO enables a plan it appears under Events."
         />
         <ManualRow
           title="Tools / Note Taker"

@@ -3,6 +3,7 @@ import {
   MockEventPlanningAuthProvider,
   MockEventPlanningDataProvider,
   createAcPlanningAuthProvider,
+  createAsboPlanningAuthProvider,
 } from './mockPlanningAdapter'
 
 describe('MockEventPlanningDataProvider', () => {
@@ -144,6 +145,12 @@ describe('MockEventPlanningAuthProvider', () => {
     const ac = createAcPlanningAuthProvider()
     expect(ac.hasPermission('planning.enable')).toBe(true)
     expect(ac.hasPermission('feedback.view_anonymous')).toBe(true)
+  })
+
+  it('gives ASBOs enable without anonymous feedback review', () => {
+    const asbo = createAsboPlanningAuthProvider()
+    expect(asbo.hasPermission('planning.enable')).toBe(true)
+    expect(asbo.hasPermission('feedback.view_anonymous')).toBe(false)
   })
 
   it('keeps members from enabling plans', () => {

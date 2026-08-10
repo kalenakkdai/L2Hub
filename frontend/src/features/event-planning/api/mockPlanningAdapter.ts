@@ -241,7 +241,7 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
     const plan = this.requirePlan(planId)
     if (plan.status !== 'enabled' && plan.status !== 'active') {
       throw new Error(
-        'Mr. Jan must enable this plan before assignments can be accepted',
+        'Mr. Jan or an ASBO must enable this plan before assignments can be accepted',
       )
     }
     const assignment = plan.assignments.find((item) => item.id === assignmentId)
@@ -258,7 +258,7 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
     const plan = this.requirePlan(planId)
     if (plan.status !== 'enabled' && plan.status !== 'active') {
       throw new Error(
-        'Mr. Jan must enable this plan before assignments can be declined',
+        'Mr. Jan or an ASBO must enable this plan before assignments can be declined',
       )
     }
     const assignment = plan.assignments.find((item) => item.id === assignmentId)
@@ -388,6 +388,25 @@ export function createAcPlanningAuthProvider() {
     {
       id: 'mem-jan',
       name: 'Mr. Jan',
+      committeeId: null,
+      committeeName: null,
+    },
+  )
+}
+
+/** Jadon and other ASBOs — may enable plans, but not review anonymous feedback. */
+export function createAsboPlanningAuthProvider() {
+  return new MockEventPlanningAuthProvider(
+    [
+      'planning.view',
+      'planning.create',
+      'planning.assign',
+      'planning.enable',
+      'knowledge.view',
+    ],
+    {
+      id: 'mem-jadon',
+      name: 'Jadon Li',
       committeeId: null,
       committeeName: null,
     },

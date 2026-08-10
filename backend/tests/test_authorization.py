@@ -54,6 +54,12 @@ def test_asbo_can_view_all_grades_but_not_edit_or_feedback(db_session, seeded):
     assert not authz.has_permission(db_session, asbo, pk.USERS_MANAGE)
 
 
+def test_asbo_and_president_can_enable_event_planning(db_session, seeded):
+    assert authz.has_permission(db_session, seeded["asbo"], pk.PLANNING_ENABLE)
+    # President (Jadon) already has the full AC bundle.
+    assert authz.has_permission(db_session, seeded["president"], pk.PLANNING_ENABLE)
+
+
 def test_president_and_jan_share_full_gradebook_control(db_session, seeded):
     president = seeded["president"]
     ac = seeded["ac"]

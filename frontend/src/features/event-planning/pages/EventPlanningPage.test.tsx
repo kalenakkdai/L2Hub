@@ -132,7 +132,7 @@ describe('EventPlanDetailPage', () => {
       auth: createAcPlanningAuthProvider(),
       route: '/event-planning/plan-maze',
     })
-    expect(await screen.findByText('Awaiting Mr. Jan')).toBeInTheDocument()
+    expect(await screen.findByText('Awaiting enablement')).toBeInTheDocument()
     expect(screen.getByRole('article', { name: 'Plan agenda' })).toBeInTheDocument()
     await user.click(screen.getByTestId('enable-plan-button'))
     await waitFor(() => {

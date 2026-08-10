@@ -52,8 +52,8 @@ export function EventPlanningPage() {
         <h1 className="text-display font-semibold text-ink">Event planning</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Anyone can start a plan and assign committees or individuals. Creating a
-          plan auto-generates a Winter Ball–style meeting agenda. Mr. Jan must
-          enable a plan before people can accept their assignments.
+          plan auto-generates a Winter Ball–style meeting agenda. Jan or an ASBO
+          must enable a plan before people can accept their assignments.
         </p>
       </header>
 

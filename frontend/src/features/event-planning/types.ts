@@ -1,6 +1,6 @@
 /**
  * Event Planning domain types.
- * Enablement is AC-only (Mr. Jan). Anonymous reports never carry author identity.
+ * Enablement is Jan / ASBO (including Jadon). Anonymous reports never carry author identity.
  */
 
 export type PlanStatus =

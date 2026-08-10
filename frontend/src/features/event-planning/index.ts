@@ -3,6 +3,7 @@ export {
   MockEventPlanningDataProvider,
   MockEventPlanningAuthProvider,
   createAcPlanningAuthProvider,
+  createAsboPlanningAuthProvider,
 } from './api/mockPlanningAdapter'
 export type {
   EventPlanningDataProvider,

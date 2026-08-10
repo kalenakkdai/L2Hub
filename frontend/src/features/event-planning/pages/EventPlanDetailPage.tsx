@@ -99,7 +99,7 @@ export function EventPlanDetailPage() {
             disabled={commands.submitForEnablement.isPending}
             onClick={() => commands.submitForEnablement.mutate(plan.id)}
           >
-            Send to Mr. Jan for enablement
+            Send for enablement
           </button>
         ) : null}
         {canEnable && plan.status === 'pending_enablement' ? (
@@ -115,7 +115,7 @@ export function EventPlanDetailPage() {
         ) : null}
         {!canAccept ? (
           <p className="text-xs text-status-warning">
-            Assignees cannot accept until Mr. Jan enables this plan.
+            Assignees cannot accept until Jan or an ASBO enables this plan.
           </p>
         ) : null}
       </div>
