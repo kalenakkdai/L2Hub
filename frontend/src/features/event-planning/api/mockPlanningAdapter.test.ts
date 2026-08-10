@@ -54,10 +54,10 @@ describe('MockEventPlanningDataProvider', () => {
     expect(withCommittee.assignments[0]?.committeeName).toBe('Sports')
     const withPerson = await data.assign(created.id, {
       targetType: 'individual',
-      memberId: 'mem-taylor',
+      memberId: 'mem-publicity-devon-mandal',
       roleLabel: 'Scorekeeper',
     })
-    expect(withPerson.assignments.at(-1)?.memberName).toBe('Stephanie Leung')
+    expect(withPerson.assignments.at(-1)?.memberName).toBe('Devon Mandal')
   })
 
   it('auto-generates a Winter Ball–style agenda every time a plan is created', async () => {
@@ -79,10 +79,10 @@ describe('MockEventPlanningDataProvider', () => {
 
   it('never returns author identity on anonymous reports', async () => {
     const data = new MockEventPlanningDataProvider({
-      currentUserId: 'mem-jordan',
+      currentUserId: 'mem-community-ariel-duong',
     })
     await data.submitAnonymousReport('plan-rally', {
-      subjectMemberId: 'mem-avery',
+      subjectMemberId: 'mem-activities-hanna-rahmanian',
       category: 'not_doing_work',
       details: 'Missed the last two setup shifts.',
       attachments: [
@@ -98,21 +98,21 @@ describe('MockEventPlanningDataProvider', () => {
     const reports = await data.listAnonymousReports('plan-rally')
     expect(reports).toHaveLength(1)
     expect(reports[0]).toMatchObject({
-      subjectMemberName: 'Jennifer Li',
+      subjectMemberName: 'Hanna Rahmanian',
       category: 'not_doing_work',
     })
     expect(reports[0].attachments).toHaveLength(1)
     expect(reports[0].attachments[0].displayName).toBe('screenshot-1.png')
     expect(reports[0]).not.toHaveProperty('authorId')
-    expect(JSON.stringify(reports[0])).not.toContain('mem-jordan')
+    expect(JSON.stringify(reports[0])).not.toContain('mem-community-ariel-duong')
   })
 
   it('stores screenshot attachments without original filenames', async () => {
     const data = new MockEventPlanningDataProvider({
-      currentUserId: 'mem-jordan',
+      currentUserId: 'mem-community-ariel-duong',
     })
     await data.submitAnonymousReport('plan-rally', {
-      subjectMemberId: 'mem-avery',
+      subjectMemberId: 'mem-activities-hanna-rahmanian',
       category: 'disruptive',
       details: 'Chat screenshot of missed deadlines.',
       attachments: [

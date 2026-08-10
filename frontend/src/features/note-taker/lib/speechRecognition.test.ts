@@ -61,25 +61,25 @@ describe('speechRecognition', () => {
   })
 
   it('accumulates final results into a transcript snapshot', async () => {
-    let instance: FakeSpeechRecognition | null = null
+    const holder: { current: FakeSpeechRecognition | null } = { current: null }
     Object.defineProperty(window, 'SpeechRecognition', {
       configurable: true,
       value: class extends FakeSpeechRecognition {
         constructor() {
           super()
-          instance = this
+          holder.current = this
         }
       },
     })
 
     const onInterim = vi.fn()
     const capture = startSpeechCapture({ onInterim })
-    expect(instance?.started).toBe(true)
+    expect(holder.current?.started).toBe(true)
 
-    instance?.emit([{ isFinal: false, transcript: 'hello there' }])
+    holder.current?.emit([{ isFinal: false, transcript: 'hello there' }])
     expect(onInterim).toHaveBeenCalledWith('hello there')
 
-    instance?.emit([{ isFinal: true, transcript: 'Hello there.' }])
+    holder.current?.emit([{ isFinal: true, transcript: 'Hello there.' }])
     const result = await capture.stop()
     expect(result.fullText).toContain('Hello there.')
     expect(result.segments).toHaveLength(1)

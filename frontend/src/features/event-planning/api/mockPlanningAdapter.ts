@@ -10,6 +10,7 @@ import type {
   PlanningRagResult,
   SubmitPlanningReportInput,
 } from '../types'
+import { L2_ROSTER_COMMITTEES, primaryHead } from '../../../data/l2Roster'
 import { runPlanningRag } from '../lib/rag'
 import { buildPlanAgendaDocument } from '../lib/planAgenda'
 import { sanitizeAttachmentDisplayName } from '../lib/reportAttachments'
@@ -39,59 +40,44 @@ export interface EventPlanningAuthProvider {
   hasPermission(permission: PlanningPermission): boolean
 }
 
+/** Demo operator kept so local planning auth still has a stable current user. */
+const DEMO_OPERATOR: PlanningMember = {
+  id: 'mem-kalena',
+  name: 'Kalena Dai',
+  committeeId: 'com-tech',
+  committeeName: 'Tech',
+}
+
 const MEMBERS: PlanningMember[] = [
-  {
-    id: 'mem-kalena',
-    name: 'Kalena Dai',
-    committeeId: 'com-tech',
-    committeeName: 'Tech',
-  },
-  {
-    id: 'mem-avery',
-    name: 'Jennifer Li',
-    committeeId: 'com-activities',
-    committeeName: 'Activities',
-  },
-  {
-    id: 'mem-jordan',
-    name: 'Helen Hu',
-    committeeId: 'com-community',
-    committeeName: 'Community',
-  },
-  {
-    id: 'mem-taylor',
-    name: 'Stephanie Leung',
-    committeeId: 'com-publicity',
-    committeeName: 'Publicity',
-  },
-  {
-    id: 'mem-morgan',
-    name: 'Stephanie Yu',
-    committeeId: 'com-sports',
-    committeeName: 'Sports',
-  },
-  {
-    id: 'mem-sam',
-    name: 'Luis He',
-    committeeId: 'com-tech',
-    committeeName: 'Tech',
-  },
+  DEMO_OPERATOR,
+  ...L2_ROSTER_COMMITTEES.flatMap((committee) =>
+    committee.members.map((name) => ({
+      id: `mem-${committee.id}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      name,
+      committeeId: `com-${committee.id}`,
+      committeeName: committee.name,
+    })),
+  ),
 ]
 
-const COMMITTEES: PlanningCommittee[] = [
-  { id: 'com-activities', name: 'Activities' },
-  { id: 'com-community', name: 'Community' },
-  { id: 'com-elections', name: 'Elections' },
-  { id: 'com-fundraising', name: 'Fundraising' },
-  { id: 'com-gtac', name: 'GTAC' },
-  { id: 'com-hcmc', name: 'HCMC' },
-  { id: 'com-publicity', name: 'Publicity' },
-  { id: 'com-student_store', name: 'Student Store' },
-  { id: 'com-star', name: 'STAR' },
-  { id: 'com-sports', name: 'Sports' },
-  { id: 'com-tech', name: 'Tech' },
-  { id: 'com-videography_photography', name: 'Videography/Photography' },
-]
+const COMMITTEES: PlanningCommittee[] = L2_ROSTER_COMMITTEES.map((committee) => ({
+  id: `com-${committee.id}`,
+  name: committee.name,
+}))
+
+function memberIdFor(committeeId: string, name: string): string {
+  return `mem-${committeeId}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+}
+
+const ACTIVITIES_HEAD = primaryHead(
+  L2_ROSTER_COMMITTEES.find((c) => c.id === 'activities')!,
+)!
+const COMMUNITY_HEAD = primaryHead(
+  L2_ROSTER_COMMITTEES.find((c) => c.id === 'community')!,
+)!
+const PUBLICITY_HEAD = primaryHead(
+  L2_ROSTER_COMMITTEES.find((c) => c.id === 'publicity')!,
+)!
 
 type StoredReport = PlanningReport & {
   /** Stored for audit only — never returned from listAnonymousReports. */
@@ -127,8 +113,8 @@ function seedPlans(): EventPlan[] {
         {
           id: 'asg-2',
           targetType: 'individual',
-          memberId: 'mem-avery',
-          memberName: 'Jennifer Li',
+          memberId: memberIdFor('activities', ACTIVITIES_HEAD),
+          memberName: ACTIVITIES_HEAD,
           roleLabel: 'Check-in captain',
           status: 'invited',
         },
@@ -140,8 +126,8 @@ function seedPlans(): EventPlan[] {
       summary: 'Gym spirit rally with section seating.',
       eventDate: '2026-09-12',
       status: 'enabled',
-      createdById: 'mem-jordan',
-      createdByName: 'Helen Hu',
+      createdById: memberIdFor('community', COMMUNITY_HEAD),
+      createdByName: COMMUNITY_HEAD,
       createdAt: '2026-07-20T16:00:00.000Z',
       enabledAt: '2026-07-22T18:00:00.000Z',
       enabledByName: 'Mr. Jan',
@@ -166,6 +152,14 @@ function seedPlans(): EventPlan[] {
           memberId: 'mem-kalena',
           memberName: 'Kalena Dai',
           roleLabel: 'Mic handoff',
+          status: 'invited',
+        },
+        {
+          id: 'asg-5',
+          targetType: 'individual',
+          memberId: memberIdFor('publicity', PUBLICITY_HEAD),
+          memberName: PUBLICITY_HEAD,
+          roleLabel: 'Spirit graphics',
           status: 'invited',
         },
       ],
