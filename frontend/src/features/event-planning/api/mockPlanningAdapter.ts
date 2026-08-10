@@ -193,6 +193,28 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
     const title = input.title.trim()
     const summary = input.summary.trim()
     const eventDate = input.eventDate || null
+    const agenda =
+      input.initialAgenda ??
+      buildPlanAgendaDocument({ title, summary, eventDate })
+    const assignments: PlanAssignment[] = []
+    for (const draft of input.initialAssignments ?? []) {
+      const committee =
+        COMMITTEES.find(
+          (item) =>
+            item.id === draft.committeeId ||
+            item.id === `com-${draft.committeeId}` ||
+            item.name.toLowerCase() === (draft.committeeName ?? '').toLowerCase(),
+        ) ?? null
+      if (committee) {
+        assignments.push(
+          this.buildAssignment({
+            targetType: 'committee',
+            committeeId: committee.id,
+            roleLabel: draft.roleLabel,
+          }),
+        )
+      }
+    }
     const plan: EventPlan = {
       id: `plan-${crypto.randomUUID().slice(0, 8)}`,
       title,
@@ -202,9 +224,8 @@ export class MockEventPlanningDataProvider implements EventPlanningDataProvider 
       createdById: creator.id,
       createdByName: creator.name,
       createdAt: new Date().toISOString(),
-      assignments: [],
-      // Every new plan starts with a Winter Ball–style meeting agenda.
-      agenda: buildPlanAgendaDocument({ title, summary, eventDate }),
+      assignments,
+      agenda,
     }
     this.plans.unshift(plan)
     return structuredClone(plan)

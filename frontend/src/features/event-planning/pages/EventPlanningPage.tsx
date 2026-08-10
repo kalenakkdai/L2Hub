@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../../../components/layout/AppShell'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
@@ -17,6 +17,7 @@ import type { EventPlan } from '../types'
 
 export function EventPlanningPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const meQuery = useQuery({ queryKey: ['auth', 'me'], queryFn: fetchCurrentUser })
   const { userQuery, hasPermission: hasPlanningPermission } = usePlanningAuth()
   const plansQuery = useEventPlans()
@@ -24,7 +25,63 @@ export function EventPlanningPage() {
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [eventDate, setEventDate] = useState('')
+  const [bridgeError, setBridgeError] = useState<string | null>(null)
+  const bridgeStarted = useRef(false)
 
+  const fromMessenger = searchParams.get('fromMessenger')
+
+  useEffect(() => {
+    if (!fromMessenger || bridgeStarted.current) return
+    bridgeStarted.current = true
+    const raw = window.sessionStorage.getItem(
+      `l2hub.messenger-agenda.bridge.${fromMessenger}`,
+    )
+    if (!raw) {
+      setBridgeError('Messenger agenda bridge data was not found.')
+      return
+    }
+    try {
+      const bridge = JSON.parse(raw) as {
+        title?: string
+        summary?: string
+        agenda?: EventPlan['agenda']
+        assignments?: Array<{
+          roleLabel: string
+          committeeSlug: string
+          committeeName: string
+        }>
+      }
+      void createPlan
+        .mutateAsync({
+          title: bridge.title || 'Messenger agenda event',
+          summary: bridge.summary || 'Created from Messenger Agenda.',
+          initialAgenda: bridge.agenda ?? null,
+          initialAssignments: (bridge.assignments ?? []).map((item) => ({
+            targetType: 'committee' as const,
+            committeeId: `com-${item.committeeSlug}`,
+            committeeName: item.committeeName,
+            roleLabel: item.roleLabel,
+          })),
+        })
+        .then((plan) => {
+          window.sessionStorage.removeItem(
+            `l2hub.messenger-agenda.bridge.${fromMessenger}`,
+          )
+          navigate(`/event-planning/${plan.id}`, { replace: true })
+        })
+        .catch((error: unknown) => {
+          setBridgeError(
+            error instanceof Error ? error.message : 'Could not create plan.',
+          )
+        })
+    } catch {
+      setBridgeError('Messenger agenda bridge data was invalid.')
+    }
+  }, [fromMessenger, createPlan, navigate])
+
+  if (fromMessenger && !bridgeError) {
+    return <FullPageMessage>Creating event plan from Messenger agenda…</FullPageMessage>
+  }
   if (meQuery.isPending || userQuery.isPending) {
     return <FullPageMessage>Loading…</FullPageMessage>
   }
@@ -55,6 +112,11 @@ export function EventPlanningPage() {
           plan auto-generates a Winter Ball–style meeting agenda. Jan or an ASBO
           must enable a plan before people can accept their assignments.
         </p>
+        {bridgeError ? (
+          <p className="mt-2 text-sm text-red-700" role="alert">
+            {bridgeError}
+          </p>
+        ) : null}
       </header>
 
       <div className="mb-4">

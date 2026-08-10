@@ -29,6 +29,13 @@ const ALIASES: Record<string, string[]> = {
   '/whereabouts': ['map', 'errand', 'checkout', 'ping'],
   '/tools': ['utilities'],
   '/note-taker': ['notes', 'otter', 'transcript', 'meeting', 'record', 'mic'],
+  '/messenger-agenda': [
+    'messenger',
+    'facebook',
+    'chat agenda',
+    'keyword',
+    'auto generate',
+  ],
   '/settings': ['profile', 'account', 'preferences'],
   '/settings/campsite': ['modules', 'admin settings'],
 }

@@ -130,6 +130,12 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
 
+    # Meta / Facebook Messenger (optional — paste mode works without these)
+    meta_app_id: str = ""
+    meta_app_secret: str = ""
+    meta_webhook_verify_token: str = ""
+    meta_page_access_token: str = ""
+
     model_config = SettingsConfigDict(
         env_file=(ENV_FILE, ENV_FILE_LOCAL),
         env_file_encoding="utf-8",

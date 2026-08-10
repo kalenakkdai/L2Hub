@@ -38,6 +38,11 @@ import {
   NoteTakerNewPage,
   NoteTakerSessionPage,
 } from './features/note-taker'
+import {
+  MessengerAgendaLayout,
+  MessengerAgendaListPage,
+  MessengerAgendaSessionPage,
+} from './features/messenger-agenda'
 import { InboxPage } from './features/work/InboxPage'
 import { L2BoardPage } from './features/work/L2BoardPage'
 import { RequestsPage } from './features/work/RequestsPage'
@@ -276,6 +281,17 @@ export function AppRoutes() {
         <Route index element={<NoteTakerListPage />} />
         <Route path="new" element={<NoteTakerNewPage />} />
         <Route path=":sessionId" element={<NoteTakerSessionPage />} />
+      </Route>
+      <Route
+        path="/messenger-agenda"
+        element={
+          <RequireAuth>
+            <MessengerAgendaLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<MessengerAgendaListPage />} />
+        <Route path=":sessionId" element={<MessengerAgendaSessionPage />} />
       </Route>
       <Route
         path="/events/:eventId/summary"

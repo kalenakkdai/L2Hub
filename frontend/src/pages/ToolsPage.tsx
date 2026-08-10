@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Mic } from 'lucide-react'
+import { MessageSquare, Mic } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { FullPageMessage } from '../components/FullPageMessage'
@@ -24,6 +24,14 @@ const TOOLS: Tool[] = [
       'Record a meeting, keep the original audio, and get a raw transcript plus an auto-written meeting note. Docs file themselves onto the event timeline in Event planning.',
     icon: Mic,
     permission: 'note_taker.view',
+  },
+  {
+    name: 'Messenger Agenda',
+    to: '/messenger-agenda',
+    blurb:
+      'Connect Messenger chats you grant access to. Press Start, speak the keyword, capture the chat, and generate a meeting agenda with auto assignments and a new event plan.',
+    icon: MessageSquare,
+    permission: 'messenger_agenda.view',
   },
 ]
 

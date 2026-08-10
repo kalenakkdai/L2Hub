@@ -94,6 +94,14 @@ export interface CreateEventPlanInput {
   title: string
   summary: string
   eventDate?: string | null
+  /** Prefill from Messenger Agenda (or other tools). */
+  initialAgenda?: PlanAgendaDocument | null
+  initialAssignments?: Array<{
+    targetType: AssignmentTargetType
+    committeeId?: string | null
+    committeeName?: string | null
+    roleLabel: string
+  }> | null
 }
 
 export interface AssignToPlanInput {

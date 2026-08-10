@@ -40,8 +40,15 @@ so the shell bell works).
 | `note_taker.view` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
 | `note_taker.record` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
 | `note_taker.manage` | Yes | Yes | Yes | No | No | No | No |
+| `messenger_agenda.view` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
+| `messenger_agenda.ingest` | Yes | Yes | Yes | Yes (via Member) | No | Yes (via Member) | Yes |
+| `messenger_agenda.manage` | Yes | Yes | Yes | No | No | No | No |
 
 Members see their own meetings. `note_taker.manage` lets ops open any session.
+
+Messenger Agenda: grant chat access, press Start, speak/type the start keyword,
+capture until the end keyword, then generate a meeting agenda and optional
+event-planning assignments. `messenger_agenda.manage` lets ops open any session.
 See `docs/note-taker.md` for Chrome Web Speech setup (Whisper is optional fallback).
 
 ### Attendance and whereabouts

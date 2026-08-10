@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessagesSquare,
   Mic,
+  MessageSquare,
   MapPinned,
   ScanLine,
   Send,
@@ -157,6 +158,12 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Mic,
         permission: 'note_taker.view',
       },
+      {
+        label: 'Messenger Agenda',
+        to: '/messenger-agenda',
+        icon: MessageSquare,
+        permission: 'messenger_agenda.view',
+      },
     ],
   },
   {
@@ -183,6 +190,7 @@ export const IMPLEMENTED_ROUTES = new Set([
   '/tools',
   '/note-taker',
   '/note-taker/new',
+  '/messenger-agenda',
   '/class-officers',
   '/class-officers/senior',
   '/class-officers/senior/fundraiser',

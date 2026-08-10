@@ -26,6 +26,7 @@ from app.models.note_taker import (
     MeetingSessionEventLink,
     MeetingTranscript,
 )
+from app.models.messenger_agenda import MessengerAgendaSession, MessengerConnection
 from app.models.profile import Profile
 from app.models.push import PushSubscription
 from app.models.rbac import (
@@ -61,6 +62,8 @@ __all__ = [
     "MeetingSession",
     "MeetingSessionEventLink",
     "MeetingTranscript",
+    "MessengerAgendaSession",
+    "MessengerConnection",
     "Notification",
     "NotificationPreference",
     "ParentAlert",

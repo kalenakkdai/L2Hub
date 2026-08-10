@@ -49,6 +49,8 @@ MEMBER_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.KNOWLEDGE_VIEW,
         pk.NOTE_TAKER_VIEW,
         pk.NOTE_TAKER_RECORD,
+        pk.MESSENGER_AGENDA_VIEW,
+        pk.MESSENGER_AGENDA_INGEST,
         # Everyone reads the L2 Board and the request log: the point of both is
         # that the whole class can see what each committee is up to and who is
         # waiting on whom.
