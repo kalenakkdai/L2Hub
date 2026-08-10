@@ -61,9 +61,10 @@ ATTENDANCE_VIEW_ALL: Final = "attendance.view_all"
 ATTENDANCE_MANAGE_ALL: Final = "attendance.manage_all"
 
 # grades
-# Workflow: heads enter scores (grade_committee); Jan assigns rubric items and
-# publishes (assign / publish). grades.edit is legacy and no longer grants
-# score entry — keep the key so older role rows do not break seed sync.
+# Workflow: Jan and Jadon (gradebook operators) grade, approve, edit rubrics,
+# and publish. Heads send draft assignment requests and enter class-wide
+# committee grades (separate category) via grades.grade_committee.
+# grades.edit is legacy and grants nothing — keep for older role rows.
 GRADES_VIEW_OWN: Final = "grades.view_own"
 GRADES_VIEW_COMMITTEE: Final = "grades.view_committee"
 GRADES_VIEW_ALL: Final = "grades.view_all"
@@ -71,6 +72,7 @@ GRADES_EDIT: Final = "grades.edit"
 GRADES_ASSIGN: Final = "grades.assign"
 GRADES_GRADE_COMMITTEE: Final = "grades.grade_committee"
 GRADES_PUBLISH: Final = "grades.publish"
+GRADES_REQUEST_ASSIGNMENT: Final = "grades.request_assignment"
 
 # agenda
 AGENDA_VIEW_COMMITTEE: Final = "agenda.view_committee"
@@ -185,8 +187,17 @@ PERMISSION_CATALOG: Final[tuple[tuple[str, str, str], ...]] = (
         "grades",
     ),
     (GRADES_ASSIGN, "Create and configure gradebook assignments", "grades"),
-    (GRADES_GRADE_COMMITTEE, "Enter grades for own committee", "grades"),
+    (
+        GRADES_GRADE_COMMITTEE,
+        "Enter committee-category grades for the class (heads: own committee)",
+        "grades",
+    ),
     (GRADES_PUBLISH, "Publish grades so students can see them", "grades"),
+    (
+        GRADES_REQUEST_ASSIGNMENT,
+        "Send draft assignment requests to Jan for approval",
+        "grades",
+    ),
     (AGENDA_VIEW_COMMITTEE, "View committee agendas", "agenda"),
     (AGENDA_EDIT_COMMITTEE, "Edit committee agendas", "agenda"),
     (AGENDA_VIEW_ALL, "View all agendas", "agenda"),
@@ -266,6 +277,7 @@ COMMITTEE_SCOPED_PERMISSIONS: Final[frozenset[str]] = frozenset(
         COMMITTEES_MANAGE_MEMBERS,
         GRADES_VIEW_COMMITTEE,
         GRADES_GRADE_COMMITTEE,
+        GRADES_REQUEST_ASSIGNMENT,
     }
 )
 

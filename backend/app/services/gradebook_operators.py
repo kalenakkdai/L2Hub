@@ -1,7 +1,9 @@
 """Who has full gradebook control: Mr. Jan (AC) and Jadon Li (ASB President).
 
-Both may assign, enter, and publish grades. Every change one makes notifies
-the other so the gradebook stays transparent between them.
+Both may assign, enter, publish, edit rubrics, and approve draft requests.
+Every change one makes notifies the other so the gradebook stays transparent
+between them. Heads send assignment drafts and enter committee-category
+class grades separately.
 """
 
 from __future__ import annotations

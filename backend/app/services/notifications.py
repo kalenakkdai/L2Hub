@@ -79,6 +79,8 @@ SOURCED_EVENT_TYPES = frozenset(
         "event_starting",
         # Jan ↔ Jadon gradebook transparency notices.
         "gradebook_activity",
+        # Head draft assignment requests and committee-category submissions.
+        "gradebook_requests",
     }
 )
 
@@ -116,6 +118,8 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "event.starting": "event_starting",
     "event.planning_start": "event_starting",
     "grades.changed": "gradebook_activity",
+    "grades.assignment_requested": "gradebook_requests",
+    "grades.committee_submitted": "gradebook_requests",
     "committee.announcement": "crew_announcement",
     "points.awarded": "points_awarded",
     "level.up": "level_up",

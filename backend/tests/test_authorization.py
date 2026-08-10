@@ -120,6 +120,9 @@ def test_committee_head_can_grade_own_committee_but_not_publish(
     assert authz.has_permission(
         db_session, head, pk.GRADES_GRADE_COMMITTEE, committee_id=community
     )
+    assert authz.has_permission(
+        db_session, head, pk.GRADES_REQUEST_ASSIGNMENT, committee_id=community
+    )
     assert not authz.has_permission(
         db_session, head, pk.GRADES_GRADE_COMMITTEE, committee_id=spirit
     )
@@ -246,11 +249,13 @@ def test_dashboard_modules_hide_feedback_for_asbo(db_session, seeded):
     assert "system_settings" in ac_modules
     assert "grade_publish_queue" in ac_modules
     assert "committee_grading" in ac_modules
+    assert "assignment_requests" in ac_modules
 
     head_modules = {
         m["key"] for m in resolve_dashboard_modules(db_session, seeded["community_head"])
     }
     assert "committee_grading" in head_modules
+    assert "assignment_requests" in head_modules
     assert "grade_publish_queue" not in head_modules
 
     member_modules = {

@@ -16,6 +16,7 @@ export const EVENT_TYPES = [
   'committee_request',
   'whereabouts_ping',
   'gradebook_activity',
+  'gradebook_requests',
 ] as const
 
 export const CHANNELS = ['email', 'sms', 'in_app'] as const
@@ -43,6 +44,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   committee_request: 'Committee requests',
   whereabouts_ping: 'Whereabouts pings',
   gradebook_activity: 'Gradebook changes (Jan ↔ Jadon)',
+  gradebook_requests: 'Assignment requests & committee grades',
 }
 
 /**
@@ -67,6 +69,7 @@ export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'event_created',
   'event_starting',
   'gradebook_activity',
+  'gradebook_requests',
 ]
 
 /** What each offered row actually gates, for the grid's own description. */
@@ -83,6 +86,8 @@ export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, stri
     'When Jan is reminded to start planning (~3 months before an Activities Calendar event)',
   gradebook_activity:
     'When Jan or Jadon assigns, grades, or publishes — each is notified of the other’s changes',
+  gradebook_requests:
+    'When a committee head sends Jan a draft assignment request or submits committee grades',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

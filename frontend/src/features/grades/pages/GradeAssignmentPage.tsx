@@ -4,6 +4,7 @@ import { AssignmentRubricPanel } from '../components/AssignmentRubricPanel'
 import { AssignmentSummaryRail } from '../components/AssignmentSummaryRail'
 import { CompletionCriteria } from '../components/CompletionCriteria'
 import { GradeStatusIndicator } from '../components/GradeStatusIndicator'
+import { RubricEditorPanel } from '../components/RubricEditorPanel'
 import { SubmissionHistory } from '../components/SubmissionHistory'
 import {
   EmptyGradesState,
@@ -17,7 +18,7 @@ import {
   useGradebookPermissions,
   useSubmissionHistory,
 } from '../hooks/useGradebook'
-import type { RubricCriterionScore } from '../types'
+import type { AssignmentRubric, RubricCriterionScore } from '../types'
 
 const barButton =
   'rounded-control border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-sunken disabled:opacity-50'
@@ -92,6 +93,23 @@ export function GradeAssignmentPage() {
       await queryClient.invalidateQueries({ queryKey: ['gradebook', 'me'] })
     },
   })
+
+  const rubricEditMutation = useMutation({
+    mutationFn: async (rubric: AssignmentRubric) => {
+      if (!commands?.updateAssignmentRubric) {
+        throw new Error('Rubric edit unavailable')
+      }
+      return commands.updateAssignmentRubric(assignmentId, {
+        criteria: rubric.criteria,
+      })
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: gradebookKeys.assignment(assignmentId),
+      })
+    },
+  })
+
   if (detailQuery.isPending) {
     return (
       <p className="text-sm text-ink-muted" role="status">
@@ -197,19 +215,17 @@ export function GradeAssignmentPage() {
                 the other so nothing is invisible.
               </p>
             ) : null}
-            {canGrade && !canPublish ? (
-              <p className="mt-2 text-[12.5px] text-ink-subtle">
-                Saving a score sends it to Jan or Jadon to publish before
-                students see it.
-              </p>
-            ) : null}
-            {canAssign && !canGrade ? (
-              <p className="mt-2 text-[12.5px] text-ink-subtle">
-                You configure assignments. Committee heads enter the scores;
-                you publish them when ready.
-              </p>
-            ) : null}
           </div>
+
+          {canAssign && commands?.updateAssignmentRubric ? (
+            <div className="mt-4">
+              <RubricEditorPanel
+                rubric={detail.rubric}
+                saving={rubricEditMutation.isPending}
+                onSave={(rubric) => rubricEditMutation.mutate(rubric)}
+              />
+            </div>
+          ) : null}
 
           {detail.feedback ? (
             <div className="mt-4 overflow-hidden rounded-card border border-border-subtle bg-surface px-3 py-3 shadow-xs">

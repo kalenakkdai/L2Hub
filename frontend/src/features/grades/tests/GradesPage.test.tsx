@@ -31,7 +31,7 @@ describe('GradesPage', () => {
       '1',
     )
     expect(screen.getByRole('tab', { name: /^Completed/ })).toHaveTextContent(
-      '3',
+      '4',
     )
     expect(screen.getByRole('tab', { name: /^Syllabus$/ })).toBeInTheDocument()
   })
@@ -98,11 +98,12 @@ describe('GradesPage', () => {
   it('shows Canvas-style weighted category totals', async () => {
     renderWithGradebook(<GradesPage />)
     expect(await screen.findByText('Weighted total')).toBeInTheDocument()
-    expect(screen.getAllByText('71.9%').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('78.9%').length).toBeGreaterThan(0)
     const categories = screen.getByRole('list', { name: 'Category weights' })
     expect(categories).toBeInTheDocument()
     expect(within(categories).getByText(/Event debriefs/)).toBeInTheDocument()
     expect(within(categories).getByText(/Reflections/)).toBeInTheDocument()
+    expect(within(categories).getByText(/Committee grades/)).toBeInTheDocument()
   })
 
   it('lets students enter theoretical grades and save them to the sidebar', async () => {
@@ -220,7 +221,7 @@ describe('GradesPage', () => {
       const titles = links
         .map((link) => link.textContent ?? '')
         .filter((text) => !text.includes('Open'))
-      expect(titles[0]).toMatch(/Leadership Reflection/)
+      expect(titles[0]).toMatch(/Fall Committee Performance/)
     })
   })
 
@@ -328,7 +329,7 @@ describe('GradesPage', () => {
     expect(
       table.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-    expect(screen.getByText('56.7%')).toBeInTheDocument()
+    expect(screen.getByText('65%')).toBeInTheDocument()
     const colorKey = screen.getByRole('list', {
       name: 'Grade range color key',
     })

@@ -19,6 +19,7 @@ export type AssignmentType =
   | 'attendance'
   | 'task'
   | 'committee_deliverable'
+  | 'committee_grade'
   | 'meeting_response'
   | 'material_checklist'
   | 'custom'
@@ -30,6 +31,8 @@ export type GradebookPermission =
   | 'gradebook.edit'
   | 'gradebook.assign'
   | 'gradebook.grade'
+  | 'gradebook.grade_committee'
+  | 'gradebook.request_assignment'
   | 'gradebook.publish'
   | 'gradebook.mark_excused'
   | 'debrief.reopen'
@@ -45,20 +48,22 @@ export function mapBackendGradePermissions(
     mapped.push('gradebook.view_event', 'gradebook.view_student')
   }
   if (set.has('grades.assign')) mapped.push('gradebook.assign')
-  if (set.has('grades.grade_committee')) {
-    mapped.push('gradebook.grade', 'gradebook.mark_excused')
+  if (set.has('grades.request_assignment')) {
+    mapped.push('gradebook.request_assignment')
   }
-  if (set.has('grades.publish')) mapped.push('gradebook.publish')
-  // Operators with assign+publish+grade get the full UI surface.
+  // Committee-category class grades (heads) — separate from individual grading.
+  if (set.has('grades.grade_committee')) {
+    mapped.push('gradebook.grade_committee')
+  }
+  // Individual assignment grading + excuse is Jan/Jadon only (assign+publish+grade).
   if (
     set.has('grades.assign') &&
     set.has('grades.publish') &&
     set.has('grades.grade_committee')
   ) {
-    if (!mapped.includes('gradebook.grade')) {
-      mapped.push('gradebook.grade', 'gradebook.mark_excused')
-    }
+    mapped.push('gradebook.grade', 'gradebook.mark_excused')
   }
+  if (set.has('grades.publish')) mapped.push('gradebook.publish')
   if (set.has('debrief.reopen')) mapped.push('debrief.reopen')
   return mapped
 }
@@ -369,6 +374,65 @@ export interface GradeUpdateInput {
   feedbackSummary?: string | null
   /** Assigner scores for manual rubric parts. On-time is never client-authored. */
   rubricScores?: RubricCriterionScore[]
+}
+
+export type BulkGradeItem = {
+  entryId: string
+  score?: number | null
+  status?: GradeStatus
+}
+
+export type AssignmentRequestStatus = 'pending' | 'approved' | 'rejected'
+
+/** Head → Jan draft proposal for a new gradebook assignment. */
+export interface AssignmentDraftRequest {
+  id: string
+  title: string
+  description?: string | null
+  proposedCategoryId?: string | null
+  proposedPoints?: number | null
+  committeeId: string
+  committeeName?: string | null
+  status: AssignmentRequestStatus
+  submittedBy: { id: string; name: string }
+  submittedAt: string
+  reviewNote?: string | null
+}
+
+export interface AssignmentRequestInput {
+  title: string
+  description?: string
+  proposedCategoryId?: string
+  proposedPoints?: number
+  committeeId?: string
+}
+
+/** Class-wide scores in the Committee grades category. */
+export interface CommitteeGradeBatchInput {
+  committeeId: string
+  assignmentTitle?: string
+  pointsPossible?: number
+  scores: Array<{ studentId: string; score: number }>
+}
+
+export interface CommitteeGradeRosterRow {
+  studentId: string
+  studentName: string
+  score: number | null
+  entryId?: string | null
+}
+
+export interface CommitteeGradeRoster {
+  committeeId: string
+  committeeName: string
+  assignmentTitle: string
+  pointsPossible: number
+  categoryId: string
+  rows: CommitteeGradeRosterRow[]
+}
+
+export type RubricUpdateInput = {
+  criteria: RubricCriterion[]
 }
 
 export type GradebookSortField =

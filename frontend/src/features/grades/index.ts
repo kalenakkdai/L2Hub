@@ -42,6 +42,8 @@ export { GradesPage } from './pages/GradesPage'
 export { GradeAssignmentPage } from './pages/GradeAssignmentPage'
 export { EventGradebookPage } from './pages/EventGradebookPage'
 export { StudentGradebookPage } from './pages/StudentGradebookPage'
+export { AssignmentRequestsPage } from './pages/AssignmentRequestsPage'
+export { CommitteeGradeEntryPage } from './pages/CommitteeGradeEntryPage'
 
 export { GradesLayout } from './components/GradesLayout'
 export { GradeStatusIndicator } from './components/GradeStatusIndicator'

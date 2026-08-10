@@ -4,7 +4,12 @@ import type {
   GradebookDataProvider,
 } from './contracts'
 import type {
+  AssignmentDraftRequest,
+  AssignmentRequestInput,
   AssignmentRubric,
+  BulkGradeItem,
+  CommitteeGradeBatchInput,
+  CommitteeGradeRoster,
   EventDebriefSubmissionContent,
   EventGradebook,
   GradeAssignmentDetail,
@@ -18,6 +23,7 @@ import type {
   GradeUpdateInput,
   RubricCriterion,
   RubricCriterionScore,
+  RubricUpdateInput,
   StudentGradebook,
   SubmissionHistoryItem,
 } from '../types'
@@ -50,10 +56,11 @@ const REFLECTION_DISTRIBUTION_PERCENTS = [
 
 /** Canvas-style assignment groups — weights sum to 100. */
 const DEFAULT_CATEGORIES: GradeCategory[] = [
-  { id: 'cat-debriefs', name: 'Event debriefs', weightPercent: 40 },
-  { id: 'cat-reflections', name: 'Reflections', weightPercent: 25 },
-  { id: 'cat-deliverables', name: 'Deliverables', weightPercent: 20 },
-  { id: 'cat-participation', name: 'Participation', weightPercent: 15 },
+  { id: 'cat-debriefs', name: 'Event debriefs', weightPercent: 35 },
+  { id: 'cat-reflections', name: 'Reflections', weightPercent: 20 },
+  { id: 'cat-deliverables', name: 'Deliverables', weightPercent: 15 },
+  { id: 'cat-participation', name: 'Participation', weightPercent: 10 },
+  { id: 'cat-committee-grades', name: 'Committee grades', weightPercent: 20 },
 ]
 
 function buildEntries(): GradebookEntry[] {
@@ -169,6 +176,22 @@ function buildEntries(): GradebookEntry[] {
       categoryId: 'cat-deliverables',
       dueAt: '2026-08-20T06:59:00.000Z',
       canSubmit: true,
+    },
+    {
+      id: 'entry-committee-grade',
+      assignmentId: 'asg-committee-fall',
+      assignmentTitle: 'Fall Committee Performance',
+      assignmentType: 'committee_grade',
+      committee: { id: 'com-events', name: 'Events Committee' },
+      status: 'graded',
+      score: 9,
+      pointsPossible: 10,
+      categoryId: 'cat-committee-grades',
+      dueAt: '2026-08-18T06:59:00.000Z',
+      gradedAt: ISO.graded,
+      publicationStatus: 'pending_publish',
+      publishedAt: null,
+      canSubmit: false,
     },
   ]
 }
@@ -508,6 +531,9 @@ export type MockGradebookOptions = {
 export class MockGradebookDataProvider implements GradebookDataProvider {
   private entries: GradebookEntry[]
   private rubricScoresByEntryId: Map<string, RubricCriterionScore[]>
+  private rubricsByAssignmentId: Map<string, AssignmentRubric>
+  private assignmentRequests: AssignmentDraftRequest[]
+  private committeeRoster: CommitteeGradeRoster
   private failOnGetMyGradebook: boolean
   private failMessage: string
 
@@ -519,6 +545,62 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
         defaultScoresFor(entry.assignmentId),
       ]),
     )
+    this.rubricsByAssignmentId = new Map()
+    for (const entry of this.entries) {
+      if (!this.rubricsByAssignmentId.has(entry.assignmentId)) {
+        this.rubricsByAssignmentId.set(
+          entry.assignmentId,
+          rubricFor(entry.assignmentId, entry.pointsPossible ?? 10),
+        )
+      }
+    }
+    this.assignmentRequests = [
+      {
+        id: 'req-spirit-rally',
+        title: 'Spirit Rally Reflection',
+        description: 'Short post-rally reflection for all campers.',
+        proposedCategoryId: 'cat-reflections',
+        proposedPoints: 10,
+        committeeId: 'com-spirit',
+        committeeName: 'Spirit',
+        status: 'pending',
+        submittedBy: { id: 'head-spirit', name: 'Spirit Head' },
+        submittedAt: ISO.opened,
+      },
+    ]
+    this.committeeRoster = {
+      committeeId: 'com-events',
+      committeeName: 'Events Committee',
+      assignmentTitle: 'Fall Committee Performance',
+      pointsPossible: 10,
+      categoryId: 'cat-committee-grades',
+      rows: [
+        {
+          studentId: 'stu-kalena',
+          studentName: 'Kalena Dai',
+          score: 9,
+          entryId: 'entry-committee-grade',
+        },
+        {
+          studentId: 'stu-avery',
+          studentName: 'Avery Chen',
+          score: null,
+          entryId: null,
+        },
+        {
+          studentId: 'stu-jordan',
+          studentName: 'Jordan Lee',
+          score: null,
+          entryId: null,
+        },
+        {
+          studentId: 'stu-sam',
+          studentName: 'Sam Ortiz',
+          score: 8,
+          entryId: null,
+        },
+      ],
+    }
     this.failOnGetMyGradebook = options.failOnGetMyGradebook ?? false
     this.failMessage = options.failMessage ?? 'Mock gradebook unavailable'
   }
@@ -546,10 +628,9 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
       throw new Error('Assignment not found')
     }
 
-    const rubric = rubricFor(
-      assignmentId,
-      entry.pointsPossible ?? 10,
-    )
+    const rubric =
+      this.rubricsByAssignmentId.get(assignmentId) ??
+      rubricFor(assignmentId, entry.pointsPossible ?? 10)
     const submission = submissionFor(assignmentId)
     const scores = this.rubricScoresByEntryId.get(entry.id) ?? []
     const rubricEvaluation = evaluateRubric({
@@ -586,6 +667,41 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
   replaceEntry(next: GradebookEntry): void {
     const index = this.entries.findIndex((entry) => entry.id === next.id)
     if (index >= 0) this.entries[index] = next
+  }
+
+  setAssignmentRubric(assignmentId: string, rubric: AssignmentRubric): void {
+    this.rubricsByAssignmentId.set(assignmentId, rubric)
+  }
+
+  getAssignmentRequestsSync(): AssignmentDraftRequest[] {
+    return this.assignmentRequests.map((r) => ({ ...r }))
+  }
+
+  upsertAssignmentRequest(request: AssignmentDraftRequest): void {
+    const index = this.assignmentRequests.findIndex((r) => r.id === request.id)
+    if (index >= 0) this.assignmentRequests[index] = request
+    else this.assignmentRequests.unshift(request)
+  }
+
+  getCommitteeRosterSync(): CommitteeGradeRoster {
+    return {
+      ...this.committeeRoster,
+      rows: this.committeeRoster.rows.map((row) => ({ ...row })),
+    }
+  }
+
+  setCommitteeRoster(roster: CommitteeGradeRoster): void {
+    this.committeeRoster = roster
+  }
+
+  async getAssignmentRequests(): Promise<AssignmentDraftRequest[]> {
+    return this.getAssignmentRequestsSync()
+  }
+
+  async getCommitteeGradeRoster(
+    _committeeId?: string,
+  ): Promise<CommitteeGradeRoster> {
+    return this.getCommitteeRosterSync()
   }
 
   async getSubmissionHistory(
@@ -741,6 +857,89 @@ export class MockGradebookCommandProvider implements GradebookCommandProvider {
       published.push(next)
     }
     return published
+  }
+
+  async bulkUpdateGrades(items: BulkGradeItem[]): Promise<GradebookEntry[]> {
+    const updated: GradebookEntry[] = []
+    for (const item of items) {
+      const entry = await this.updateGrade(item.entryId, {
+        score: item.score,
+        status: item.status ?? 'graded',
+      })
+      updated.push(entry)
+    }
+    return updated
+  }
+
+  async updateAssignmentRubric(
+    assignmentId: string,
+    input: RubricUpdateInput,
+  ): Promise<AssignmentRubric> {
+    const rubric = ensureDefaultRubric(
+      input.criteria.filter((c) => c.kind === 'manual'),
+    )
+    this.data.setAssignmentRubric(assignmentId, rubric)
+    return rubric
+  }
+
+  async submitAssignmentRequest(
+    input: AssignmentRequestInput,
+  ): Promise<AssignmentDraftRequest> {
+    const request: AssignmentDraftRequest = {
+      id: `req-${Date.now()}`,
+      title: input.title,
+      description: input.description ?? null,
+      proposedCategoryId: input.proposedCategoryId ?? 'cat-deliverables',
+      proposedPoints: input.proposedPoints ?? 10,
+      committeeId: input.committeeId ?? 'com-events',
+      committeeName: 'Events Committee',
+      status: 'pending',
+      submittedBy: { id: 'head-events', name: 'Events Head' },
+      submittedAt: new Date().toISOString(),
+    }
+    this.data.upsertAssignmentRequest(request)
+    return request
+  }
+
+  async reviewAssignmentRequest(
+    requestId: string,
+    decision: 'approve' | 'reject',
+    note?: string,
+  ): Promise<AssignmentDraftRequest> {
+    const existing = this.data
+      .getAssignmentRequestsSync()
+      .find((r) => r.id === requestId)
+    if (!existing) throw new Error('Assignment request not found')
+    const next: AssignmentDraftRequest = {
+      ...existing,
+      status: decision === 'approve' ? 'approved' : 'rejected',
+      reviewNote: note ?? null,
+    }
+    this.data.upsertAssignmentRequest(next)
+    return next
+  }
+
+  async submitCommitteeGrades(
+    input: CommitteeGradeBatchInput,
+  ): Promise<CommitteeGradeRoster> {
+    const roster = this.data.getCommitteeRosterSync()
+    const scoreMap = new Map(
+      input.scores.map((row) => [row.studentId, row.score]),
+    )
+    const next: CommitteeGradeRoster = {
+      ...roster,
+      committeeId: input.committeeId || roster.committeeId,
+      assignmentTitle: input.assignmentTitle ?? roster.assignmentTitle,
+      pointsPossible: input.pointsPossible ?? roster.pointsPossible,
+      rows: roster.rows.map((row) => ({
+        ...row,
+        score: scoreMap.has(row.studentId)
+          ? (scoreMap.get(row.studentId) ?? null)
+          : row.score,
+      })),
+    }
+    this.data.setCommitteeRoster(next)
+    return next
   }
 }
 

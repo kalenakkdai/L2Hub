@@ -9,6 +9,13 @@ import type {
   GradeUpdateInput,
   StudentGradebook,
   SubmissionHistoryItem,
+  AssignmentDraftRequest,
+  AssignmentRequestInput,
+  AssignmentRubric,
+  BulkGradeItem,
+  CommitteeGradeBatchInput,
+  CommitteeGradeRoster,
+  RubricUpdateInput,
 } from '../types'
 
 /**
@@ -21,6 +28,8 @@ export interface GradebookDataProvider {
   getMySubmission(assignmentId: string): Promise<GradeSubmission | null>
   getEventGradebook?(eventId: string): Promise<EventGradebook>
   getStudentGradebook?(studentId: string): Promise<StudentGradebook>
+  getAssignmentRequests?(): Promise<AssignmentDraftRequest[]>
+  getCommitteeGradeRoster?(committeeId?: string): Promise<CommitteeGradeRoster>
 }
 
 /**
@@ -35,6 +44,27 @@ export interface GradebookCommandProvider {
   reopenSubmission?(assignmentId: string, studentId: string): Promise<void>
   /** Jan releases head-entered scores to students. */
   publishGrades?(entryIds: string[]): Promise<GradebookEntry[]>
+  /** Mass-grade multiple roster rows at once (Jan/Jadon). */
+  bulkUpdateGrades?(items: BulkGradeItem[]): Promise<GradebookEntry[]>
+  /** Change rubric structure (Jan/Jadon). */
+  updateAssignmentRubric?(
+    assignmentId: string,
+    input: RubricUpdateInput,
+  ): Promise<AssignmentRubric>
+  /** Head sends a draft assignment request to Jan. */
+  submitAssignmentRequest?(
+    input: AssignmentRequestInput,
+  ): Promise<AssignmentDraftRequest>
+  /** Jan/Jadon approve or reject a draft request. */
+  reviewAssignmentRequest?(
+    requestId: string,
+    decision: 'approve' | 'reject',
+    note?: string,
+  ): Promise<AssignmentDraftRequest>
+  /** Head enters class-wide committee-category grades. */
+  submitCommitteeGrades?(
+    input: CommitteeGradeBatchInput,
+  ): Promise<CommitteeGradeRoster>
 }
 
 /**

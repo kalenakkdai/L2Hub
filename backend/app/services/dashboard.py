@@ -35,6 +35,11 @@ MODULE_CATALOG: tuple[DashboardModule, ...] = (
         (pk.GRADES_GRADE_COMMITTEE,),
     ),
     DashboardModule(
+        "assignment_requests",
+        "Assignment requests",
+        (pk.GRADES_REQUEST_ASSIGNMENT, pk.GRADES_ASSIGN),
+    ),
+    DashboardModule(
         "committee_tasks",
         "Committee tasks",
         (pk.TASKS_VIEW_COMMITTEE, pk.TASKS_MANAGE_COMMITTEE),

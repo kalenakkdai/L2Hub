@@ -142,16 +142,19 @@ Responses never include author metadata.
 | `agenda.generate` | Yes | Yes | No | No | No |
 | `notifications.view_own` | Yes | Yes | Yes | Yes | Yes |
 | `grades.assign` | Yes (Jadon) | Yes (Jan) | **No** | No | No |
-| `grades.grade_committee` | Yes (Jadon, all) | Yes (Jan, all) | **No** | Yes (own) | No |
+| `grades.grade_committee` | Yes (Jadon, all) | Yes (Jan, all) | **No** | Yes (committee category) | No |
 | `grades.publish` | Yes (Jadon) | Yes (Jan) | **No** | No | No |
+| `grades.request_assignment` | Yes (Jadon) | Yes (Jan) | **No** | Yes (own) | No |
 | `grades.edit` | Legacy (unused) | Legacy (unused) | **No** | No | No |
 | `planning.enable` | Yes | Yes | Yes | No | No |
 
-Gradebook workflow: committee heads enter scores for their crew; those scores
-stay unpublished until Jan or Jadon (ASB President) releases them
-(`grades.publish`). Jan and Jadon share full gradebook control (assign, grade,
-publish, view all). Every change one makes notifies the other so the book stays
-transparent between them.
+Gradebook workflow: only Jan and Jadon may grade individual assignments, edit
+rubrics, mass-grade, approve draft assignment requests, and publish
+(`grades.assign` / `grades.publish`). Committee heads send draft assignment
+requests to Jan and enter class-wide scores in the separate **Committee
+grades** category (`grades.grade_committee`). Those scores stay unpublished
+until Jan or Jadon releases them. Every change one operator makes notifies the
+other so the book stays transparent between them.
 
 Event planning enablement (`planning.enable`) is shared by Jan, Jadon, and every
 ASBO — any of them may approve a plan so assignees can accept.
@@ -168,8 +171,11 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 | View all grades | Yes | Yes | Yes | No | No |
 | View own grades | Yes | Yes | Yes | Yes (own) | Yes |
 | View committee grades | Yes | Yes | Yes | Yes (own) | No |
-| Assign gradebook items | Yes (Jadon) | Yes (Jan) | No | No | No |
-| Enter grades | Yes (Jadon, all) | Yes (Jan, all) | No | Yes (own committee) | No |
+| Assign / edit rubrics | Yes (Jadon) | Yes (Jan) | No | No | No |
+| Grade / mass-grade assignments | Yes (Jadon) | Yes (Jan) | No | No | No |
+| Approve assignment drafts | Yes (Jadon) | Yes (Jan) | No | No | No |
+| Request assignment drafts | Yes | Yes | No | Yes (own) | No |
+| Enter committee-category grades | Yes (Jadon) | Yes (Jan) | No | Yes (own committee → class) | No |
 | Publish grades | Yes (Jadon) | Yes (Jan) | No | No | No |
 | View private/anonymous feedback | Yes | Yes | No | No | No |
 | Manage users (Users page) | Yes | Yes | No by default | No | No |
@@ -177,8 +183,8 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 | Manage own committee tasks | Yes | Yes | Yes | Yes (own) | No |
 
 Jan and Jadon are gradebook operators (email/name allowlist, same pattern as
-attendance). Other AC/President accounts that are not on that list keep assign
-and publish through the role bundle but do not get org-wide score entry.
+attendance). Other AC/President accounts that are not on that list do **not**
+receive assign, publish, or org-wide grading — only the allowlisted pair does.
 
 ## Dashboard modules
 

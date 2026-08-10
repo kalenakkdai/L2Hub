@@ -51,6 +51,8 @@ import { ToolsPage } from './pages/ToolsPage'
 import { MySettings } from './pages/settings/MySettings'
 import { CampsiteSettings } from './pages/settings/CampsiteSettings'
 import {
+  AssignmentRequestsPage,
+  CommitteeGradeEntryPage,
   EventGradebookPage,
   GradeAssignmentPage,
   GradebookProvider,
@@ -73,6 +75,8 @@ const gradebookAuthProvider = new MockGradebookAuthProvider([
   // Dev default: Jan/Jadon operator — full control.
   'gradebook.assign',
   'gradebook.grade',
+  'gradebook.grade_committee',
+  'gradebook.request_assignment',
   'gradebook.publish',
   'gradebook.mark_excused',
   'debrief.reopen',
@@ -327,6 +331,8 @@ export function AppRoutes() {
         }
       >
         <Route path="/grades" element={<GradesPage />} />
+        <Route path="/grades/requests" element={<AssignmentRequestsPage />} />
+        <Route path="/grades/committee" element={<CommitteeGradeEntryPage />} />
         <Route path="/grades/events/:eventId" element={<EventGradebookPage />} />
         <Route
           path="/grades/students/:studentId"

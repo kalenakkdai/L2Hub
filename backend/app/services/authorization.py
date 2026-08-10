@@ -16,10 +16,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.core import permission_keys as pk
 from app.core.role_catalog import (
     COMMITTEE_HEAD_PERMISSIONS,
-    ROLE_AC,
     ROLE_ASBO,
     ROLE_MEMBER,
-    ROLE_PRESIDENT,
     ROLE_RANK,
     SUPERADMIN_ROLES,
 )
@@ -186,9 +184,9 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
         allowed.discard(pk.ATTENDANCE_MANAGE_ALL)
 
     # Gradebook workflow:
-    # - Committee heads enter scores for the committees they lead.
-    # - Jan (AC) and Jadon (ASB President) share full gradebook control and
-    #   notify each other on every change (see gradebook_operators).
+    # - Jan and Jadon only: grade assignments, approve drafts, edit rubrics,
+    #   mass-grade, and publish (see gradebook_operators).
+    # - Heads: request draft assignments + enter committee-category class grades.
     # - Legacy grades.edit never grants score entry on its own.
     from app.services.gradebook_operators import is_gradebook_operator
 
@@ -202,27 +200,31 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
             permission_committee_map.setdefault(pk.GRADES_VIEW_COMMITTEE, set()).add(
                 committee_id
             )
+            permission_committee_map.setdefault(
+                pk.GRADES_REQUEST_ASSIGNMENT, set()
+            ).add(committee_id)
+        allowed.add(pk.GRADES_REQUEST_ASSIGNMENT)
     else:
         allowed.discard(pk.GRADES_GRADE_COMMITTEE)
+        allowed.discard(pk.GRADES_REQUEST_ASSIGNMENT)
+
+    # Only Jan / Jadon get assign and publish — never the broader AC /
+    # President role alone. View-all stays with roles that already have it
+    # (ASBO/AC/President); operators also force-add it for the allowlist pair.
+    allowed.discard(pk.GRADES_ASSIGN)
+    allowed.discard(pk.GRADES_PUBLISH)
 
     if is_gradebook_operator(user):
-        # Full control: assign, enter scores anywhere, publish, view all.
         allowed.add(pk.GRADES_ASSIGN)
         allowed.add(pk.GRADES_PUBLISH)
         allowed.add(pk.GRADES_VIEW_ALL)
         allowed.add(pk.GRADES_GRADE_COMMITTEE)
         allowed.add(pk.GRADES_VIEW_COMMITTEE)
+        allowed.add(pk.GRADES_REQUEST_ASSIGNMENT)
         # Empty scope set = unrestricted for committee-scoped checks.
         permission_committee_map[pk.GRADES_GRADE_COMMITTEE] = set()
         permission_committee_map[pk.GRADES_VIEW_COMMITTEE] = set()
-    elif ROLE_AC in {r["slug"] for r in roles_payload} or ROLE_PRESIDENT in {
-        r["slug"] for r in roles_payload
-    }:
-        # Other AC / President accounts that are not on the Jan/Jadon
-        # allowlist still assign and publish, but scoring stays with heads
-        # unless they also head a committee.
-        allowed.add(pk.GRADES_ASSIGN)
-        allowed.add(pk.GRADES_PUBLISH)
+        permission_committee_map[pk.GRADES_REQUEST_ASSIGNMENT] = set()
 
     return AuthContext(
         user=user,

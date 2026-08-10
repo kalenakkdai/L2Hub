@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { GradeFilters } from '../components/GradeFilters'
 import { GradeSummary } from '../components/GradeSummary'
 import { GradeTable } from '../components/GradeTable'
@@ -116,6 +116,33 @@ export function GradesPage() {
                 ? ` · ${userQuery.data.committeeName}`
                 : ''}
             </p>
+          ) : null}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {authProvider.hasPermission('gradebook.request_assignment') ||
+          authProvider.hasPermission('gradebook.assign') ? (
+            <Link
+              to="/grades/requests"
+              className="text-xs font-medium text-ink underline-offset-2 hover:underline"
+            >
+              Assignment requests
+            </Link>
+          ) : null}
+          {authProvider.hasPermission('gradebook.grade_committee') ? (
+            <Link
+              to="/grades/committee"
+              className="text-xs font-medium text-ink underline-offset-2 hover:underline"
+            >
+              Committee grades
+            </Link>
+          ) : null}
+          {authProvider.hasPermission('gradebook.view_event') ? (
+            <Link
+              to="/grades/events/evt-maze"
+              className="text-xs font-medium text-ink underline-offset-2 hover:underline"
+            >
+              Event mass grading
+            </Link>
           ) : null}
         </div>
       </header>

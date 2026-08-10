@@ -46,19 +46,42 @@ def test_every_camper_reads_every_committees_tasks(client, make_token, seeded):
         assert client.get("/committees/spirit/tasks", headers=headers).status_code == 200, who
 
 
-def test_committee_head_grades_all_forbidden_but_can_grade_own(
+def test_committee_head_grades_all_forbidden_but_can_request_and_committee_grade(
     client, make_token, seeded
 ):
     headers = auth_header(make_token, seeded["community_head"].id)
     assert client.get("/grades/all", headers=headers).status_code == 403
     assert client.get("/grades/pending", headers=headers).status_code == 403
     assert client.post("/grades/assignments", headers=headers).status_code == 403
-    # Heads may enter scores (stub) for their committee.
+    # Heads may not grade individual assignment entries.
     entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     assert (
         client.post(f"/grades/entries/{entry_id}/grade", headers=headers).status_code
-        == 200
+        == 403
     )
+    # Heads may send draft assignment requests and enter committee-category grades.
+    assert client.get("/grades/assignment-requests", headers=headers).status_code == 200
+    req = client.post(
+        "/grades/assignment-requests",
+        headers=headers,
+        json={"title": "Spirit Week checklist", "proposedPoints": 10},
+    )
+    assert req.status_code == 201
+    assert req.json()["status"] == "pending"
+    community = seeded["community_head"]
+    from app.db.seed import SEED_COMMITTEE_IDS
+
+    committee_id = str(SEED_COMMITTEE_IDS["community"])
+    batch = client.post(
+        "/grades/committee-grades",
+        headers=headers,
+        json={
+            "committeeId": committee_id,
+            "scores": [{"studentId": str(community.id), "score": 9}],
+        },
+    )
+    assert batch.status_code == 201
+    assert batch.json()["categoryId"] == "cat-committee-grades"
 
 
 def test_jan_and_jadon_can_assign_publish_and_grade(
@@ -83,6 +106,26 @@ def test_jan_and_jadon_can_assign_publish_and_grade(
     )
     assert (
         client.post(f"/grades/entries/{entry_id}/grade", headers=jan).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/grades/entries/bulk-grade",
+            headers=jadon,
+            json={
+                "items": [
+                    {"entryId": entry_id, "score": 10, "status": "graded"},
+                ]
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/grades/assignment-requests/{entry_id}/review",
+            headers=jan,
+            json={"decision": "approve"},
+        ).status_code
         == 200
     )
 
