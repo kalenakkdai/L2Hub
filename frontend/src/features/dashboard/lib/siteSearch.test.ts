@@ -37,18 +37,4 @@ describe('searchSiteDestinations', () => {
     const hits = searchSiteDestinations('grades', member, { grades: false })
     expect(hits.map((hit) => hit.to)).not.toContain('/grades')
   })
-
-  it('marks My tasks as implemented once the campfire page ships', () => {
-    const hits = searchSiteDestinations('tasks', [
-      ...member,
-      'tasks.view_own',
-    ])
-    const tasks = hits.find((hit) => hit.to === '/tasks')
-    expect(tasks).toEqual(
-      expect.objectContaining({
-        label: 'My tasks',
-        implemented: true,
-      }),
-    )
-  })
 })

@@ -78,24 +78,24 @@ describe('Sidebar', () => {
     )
   })
 
-  it('links My tasks once the route is implemented', () => {
+  it('links My owl for campers who can view their grades', () => {
     renderChrome(
       <Sidebar
         name="Ada Lovelace"
         role="asbo"
-        permissions={['tasks.view_own', 'notifications.view_own']}
+        permissions={['grades.view_own', 'notifications.view_own']}
       />,
     )
 
-    expect(screen.getByRole('link', { name: /My tasks/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /My owl/ })).toHaveAttribute(
       'href',
-      '/tasks',
+      '/owl',
     )
   })
 
-  it('hides My tasks without tasks.view_own', () => {
+  it('hides My owl without grades.view_own', () => {
     renderChrome(<Sidebar name="Ada Lovelace" role="asbo" permissions={[]} />)
-    expect(screen.queryByText('My tasks')).not.toBeInTheDocument()
+    expect(screen.queryByText('My owl')).not.toBeInTheDocument()
   })
 
   it('renders unbuilt destinations as inert rows, not dead links', () => {

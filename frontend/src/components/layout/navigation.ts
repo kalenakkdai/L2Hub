@@ -2,7 +2,6 @@ import {
   BookOpenCheck,
   CalendarDays,
   ClipboardCheck,
-  ClipboardList,
   Feather,
   Inbox,
   LayoutDashboard,
@@ -74,12 +73,6 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Work',
     items: [
-      {
-        label: 'My tasks',
-        to: '/tasks',
-        icon: ClipboardList,
-        permission: 'tasks.view_own',
-      },
       {
         label: 'My owl',
         to: '/owl',
@@ -183,7 +176,6 @@ export const NAV_SECTIONS: NavSection[] = [
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
   '/board',
-  '/tasks',
   '/owl',
   '/requests',
   '/inbox',

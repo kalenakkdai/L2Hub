@@ -37,14 +37,14 @@ describe('DashboardSearch', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/note-taker')
   })
 
-  it('does not navigate to Soon destinations', async () => {
+  it('does not navigate when no option is selected', async () => {
     const user = userEvent.setup()
     renderSearch()
 
     const input = screen.getByRole('combobox', { name: 'Search pages' })
     await user.click(input)
-    await user.type(input, 'my tasks')
-    expect(screen.getByRole('option', { name: /My tasks/i })).toBeDisabled()
+    await user.type(input, 'zzzz-not-a-page')
+    expect(screen.queryByRole('option')).not.toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent('/dashboard')
   })
 })

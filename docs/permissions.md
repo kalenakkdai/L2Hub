@@ -202,7 +202,7 @@ effective permissions.
 
 Examples:
 
-- Member → `my_tasks`, `my_events`, `my_grades`, …
+- Member → `my_events`, `my_grades`, …
 - Committee Head → personal + committee modules
 - ASBO → operational modules, **no** `feedback_review`
 - AC / President → all modules including `feedback_review`, `user_management`, `system_settings`

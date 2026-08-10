@@ -19,7 +19,6 @@ class DashboardModule:
 
 
 MODULE_CATALOG: tuple[DashboardModule, ...] = (
-    DashboardModule("my_tasks", "My tasks", (pk.TASKS_VIEW_OWN,)),
     DashboardModule("my_events", "My events", (pk.EVENTS_VIEW,)),
     DashboardModule("my_committee", "My committee", (pk.COMMITTEES_VIEW,)),
     DashboardModule("my_submissions", "My submissions", (pk.DEBRIEF_VIEW_OWN,)),

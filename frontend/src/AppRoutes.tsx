@@ -45,7 +45,6 @@ import {
 } from './features/messenger-agenda'
 import { InboxPage } from './features/work/InboxPage'
 import { L2BoardPage } from './features/work/L2BoardPage'
-import { MyTasksPage } from './features/work/MyTasksPage'
 import { OwlRewardsPage } from './features/owl/OwlRewardsPage'
 import { RequestsPage } from './features/work/RequestsPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -126,14 +125,6 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <L2BoardPage />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/tasks"
-        element={
-          <RequireAuth>
-            <MyTasksPage />
           </RequireAuth>
         }
       />
