@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { ApiError } from '../../../api/client'
 import { FullPageMessage } from '../../../components/FullPageMessage'
+import { AppShell } from '../../../components/layout/AppShell'
 import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { CampsiteScene } from '../components/CampsiteScene'
 import { FeedbackConstellation } from '../components/FeedbackConstellation'
 import { fetchWrapped, markWrappedPresented } from '../api'
 
-/** The campsite backdrop both Wrapped views sit on. */
+/** Full-bleed backdrop for the projected story deck. */
 const CAMPSITE_BACKDROP =
   'relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,#14532d_0%,#062016_55%,#03140d_100%)] text-emerald-50'
 
@@ -409,12 +410,21 @@ export function WrappedPage() {
   const slide = slides[index]
 
   if (listMode || reducedMotion) {
-    return (
-      <div className={CAMPSITE_BACKDROP}>
-        <CampsiteScene committees={wrappedCommittees} fullBleed owl={false} />
+    const me = meQuery.data
 
-        <div className="on-navy relative z-10 mx-auto max-w-4xl px-4 pb-16 sm:px-8">
-          <header className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-white/12 pt-6 pb-4">
+    // The same frame the events list uses: sidebar chrome, campsite backdrop
+    // offset past it, and translucent cards. Only the story deck is
+    // full-bleed, because a deck being projected should not show navigation.
+    return (
+      <AppShell
+        name={me?.full_name ?? me?.email ?? 'Camper'}
+        role={me?.role ?? 'member'}
+        permissions={me?.permissions}
+      >
+        <CampsiteScene committees={wrappedCommittees} />
+
+        <div className="on-navy relative z-10 pb-16 text-emerald-50">
+          <header className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-white/12 pt-2 pb-4 sm:pt-6">
             <div>
               <p className="text-xs font-semibold tracking-wide text-navy-ink-muted uppercase">
                 Event Wrapped
@@ -476,12 +486,12 @@ export function WrappedPage() {
 
           {/*
             Scroll clearance for the campsite, which is pinned to the viewport
-            rather than scrolled with the page. Full-bleed here, so there is no
-            sidebar width to subtract as there is on the events list.
+            rather than scrolled with the page — the same reservation the
+            events list makes, minus the 16rem sidebar above lg.
           */}
-          <div aria-hidden="true" className="h-[31.25vw]" />
+          <div aria-hidden="true" className="h-[31.25vw] lg:h-[calc(31.25vw_-_5rem)]" />
         </div>
-      </div>
+      </AppShell>
     )
   }
 
