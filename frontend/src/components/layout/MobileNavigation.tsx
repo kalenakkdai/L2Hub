@@ -56,7 +56,7 @@ export function MobileNavigation({
 
   return (
     <>
-      <header className="on-navy sticky top-0 z-30 flex items-center gap-3 bg-navy-900 px-4 py-3 lg:hidden">
+      <header className="on-navy sticky top-10 z-30 flex items-center gap-3 bg-navy-900 px-4 py-3 lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}

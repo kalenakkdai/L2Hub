@@ -49,8 +49,9 @@ export function AppShell({
         permissions={permissions}
       />
 
-      {/* Fixed so long pages scroll under a stationary sidebar. */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:block">
+      {/* Fixed so long pages scroll under a stationary sidebar.
+          top-10 clears the temporary LiveDemoBanner (remove with the banner). */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:top-10 lg:left-0 lg:block">
         <Sidebar
           name={name}
           role={role}
