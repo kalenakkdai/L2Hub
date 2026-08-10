@@ -42,6 +42,10 @@ Raw student IDs are normalized, keyed with `ATTENDANCE_ID_PEPPER`, and stored
 only as an HMAC-SHA256 digest plus the last four characters for administration.
 Use a production-only random pepper; changing it requires re-enrolling IDs.
 
+Roster sync (Campers → Sync roster) enrolls digests from
+`backend/data/roster_student_ids.json`, matched to profiles by email then by
+name. That file is **not** the Auth password file — see `docs/roster.md`.
+
 ## Touch ID / Face ID
 
 Websites cannot access, identify, or store fingerprints. The opt-in alternative

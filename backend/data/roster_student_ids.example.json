@@ -1,0 +1,5 @@
+{
+  "_comment": "Attendance student IDs keyed by email (preferred) or by-name:Full Name. Separate from Auth passwords. Copy to roster_student_ids.json (gitignored). Never commit real IDs.",
+  "example.student@gmail.com": "123456",
+  "by-name:Example Student": "123456"
+}

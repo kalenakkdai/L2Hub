@@ -231,6 +231,56 @@ def list_days(db: Session, operator: Profile) -> list[AttendanceDay]:
     )
 
 
+def apply_identity(
+    db: Session,
+    *,
+    profile_id: uuid.UUID,
+    student_id: str,
+    parent_email: str | None = None,
+    parent_phone: str | None = None,
+    commit: bool = True,
+) -> AttendanceIdentity:
+    """Write the attendance identity for a profile (no auth check).
+
+    Callers that expose this to the network must authorize first. The roster
+    sync path uses this so student IDs stay separate from Auth passwords.
+    """
+    if db.get(Profile, profile_id) is None:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    normalized = normalize_student_id(student_id)
+    identity = db.get(AttendanceIdentity, profile_id)
+    if identity is None:
+        identity = AttendanceIdentity(profile_id=profile_id)
+        db.add(identity)
+    identity.student_id_digest = student_id_digest(normalized)
+    identity.student_id_last4 = normalized[-4:]
+    if parent_email is not None:
+        identity.parent_email = parent_email.strip() or None
+    if parent_phone is not None:
+        identity.parent_phone = parent_phone.strip() or None
+    identity.updated_at = now_utc()
+    if commit:
+        try:
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="That student ID is already assigned.",
+            ) from exc
+        db.refresh(identity)
+    else:
+        try:
+            db.flush()
+        except Exception as exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="That student ID is already assigned.",
+            ) from exc
+    return identity
+
+
 def upsert_identity(
     db: Session,
     operator: Profile,
@@ -241,28 +291,14 @@ def upsert_identity(
     parent_phone: str | None,
 ) -> AttendanceIdentity:
     authz.require_permission(db, operator, pk.ATTENDANCE_MANAGE_ALL)
-    if db.get(Profile, profile_id) is None:
-        raise HTTPException(status_code=404, detail="Student not found.")
-    normalized = normalize_student_id(student_id)
-    identity = db.get(AttendanceIdentity, profile_id)
-    if identity is None:
-        identity = AttendanceIdentity(profile_id=profile_id)
-        db.add(identity)
-    identity.student_id_digest = student_id_digest(normalized)
-    identity.student_id_last4 = normalized[-4:]
-    identity.parent_email = (parent_email or "").strip() or None
-    identity.parent_phone = (parent_phone or "").strip() or None
-    identity.updated_at = now_utc()
-    try:
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="That student ID is already assigned.",
-        ) from exc
-    db.refresh(identity)
-    return identity
+    return apply_identity(
+        db,
+        profile_id=profile_id,
+        student_id=student_id,
+        parent_email=parent_email,
+        parent_phone=parent_phone,
+        commit=True,
+    )
 
 
 def find_profile_by_student_id(db: Session, raw: str) -> Profile:

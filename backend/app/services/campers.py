@@ -320,12 +320,19 @@ def sync_roster_memberships(db: Session) -> dict[str, int]:
             heads += 1
 
     db.commit()
+    from app.services import roster_student_ids as student_id_sync
+
+    id_sync = student_id_sync.sync_roster_student_ids(db)
     return {
         "memberships_created": linked,
         "heads_marked": heads,
         "asbos_marked": asbos,
         "babies_marked": babies,
         "class_officers_marked": class_officers,
+        "student_ids_enrolled": id_sync["enrolled"],
+        "student_ids_updated": id_sync["updated"],
+        "student_ids_skipped": id_sync["skipped"],
+        "student_ids_missing_file": id_sync["missing_file"],
     }
 
 

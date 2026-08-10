@@ -8,7 +8,12 @@ Canonical spreadsheet sync (Aug 2026).
 |-------|------|
 | Frontend fixtures | `frontend/src/data/l2Roster.ts` |
 | Backend people + committees | `backend/app/db/l2_roster.py` |
-| Student ID passwords (gitignored) | `backend/data/roster_credentials.json` |
+| Initial Auth passwords (gitignored) | `backend/data/roster_credentials.json` |
+| Attendance student IDs (gitignored) | `backend/data/roster_student_ids.json` |
+
+**Passwords and student IDs are different variables.** Syncing or changing a
+login password never overwrites the attendance digest, and enrolling a student
+ID never resets Auth.
 
 ## Column aliases
 
@@ -24,16 +29,22 @@ Canonical spreadsheet sync (Aug 2026).
 
 ## Provisioning accounts
 
-Login = spreadsheet email. Password = student ID#.
+Login = spreadsheet email. Initial password = `roster_credentials.json`.
 
 ```bash
 cd backend
+# One-time: split any old combined credentials file
+.venv/bin/python scripts/split_roster_secrets.py
 export SUPABASE_URL=https://ipdasusozjcxvvnsfkkq.supabase.co
 export SUPABASE_SERVICE_KEY=...   # service_role secret — never commit
 .venv/bin/python scripts/provision_roster_users.py
 ```
 
-Then AC → Campers → **Sync roster** so committees / baby / head / asbo attach.
+Existing users are **not** password-reset unless you pass `--reset-passwords`.
+
+Then AC → Campers → **Sync roster** so committees / baby / head / asbo attach
+**and** student IDs from `roster_student_ids.json` enroll into attendance
+(matched by email, then by name).
 
 ## SCO / JCO (Class Officers)
 

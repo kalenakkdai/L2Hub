@@ -10,8 +10,10 @@ Column aliases from the sheet:
   Vid → videography_photography
   ASBOS → asbo role (not a committee)
 
-Student ID numbers are passwords for provisioned accounts and live only in
-`backend/data/roster_credentials.json` (gitignored) — never commit them.
+Student ID numbers for attendance live in `backend/data/roster_student_ids.json`
+(gitignored). Initial Auth passwords live in a *separate* file,
+`backend/data/roster_credentials.json`. Campers can change passwords without
+affecting their attendance ID.
 """
 
 from __future__ import annotations
