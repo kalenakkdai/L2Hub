@@ -11,6 +11,9 @@ import {
 
 function hrefFor(note: AppNotification): string | null {
   const payload = note.payload ?? {}
+  if (typeof payload.href === 'string') {
+    return payload.href
+  }
   if (typeof payload.eventSlug === 'string') {
     return `/events/${payload.eventSlug}/summary`
   }
@@ -23,8 +26,8 @@ function hrefFor(note: AppNotification): string | null {
   if (typeof payload.taskId === 'string') {
     return '/board'
   }
-  if (typeof payload.href === 'string') {
-    return payload.href
+  if (note.type === 'grades.changed') {
+    return '/grades'
   }
   return null
 }
