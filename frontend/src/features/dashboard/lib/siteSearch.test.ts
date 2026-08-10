@@ -38,15 +38,16 @@ describe('searchSiteDestinations', () => {
     expect(hits.map((hit) => hit.to)).not.toContain('/grades')
   })
 
-  it('marks unimplemented routes without dropping them from discovery', () => {
-    // Resources used to be the example here; it has a real page now (the
-    // request log). My tasks is the remaining placeholder.
-    const hits = searchSiteDestinations('tasks', member)
+  it('marks My tasks as implemented once the campfire page ships', () => {
+    const hits = searchSiteDestinations('tasks', [
+      ...member,
+      'tasks.view_own',
+    ])
     const tasks = hits.find((hit) => hit.to === '/tasks')
     expect(tasks).toEqual(
       expect.objectContaining({
         label: 'My tasks',
-        implemented: false,
+        implemented: true,
       }),
     )
   })

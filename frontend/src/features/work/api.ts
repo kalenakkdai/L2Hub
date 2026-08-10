@@ -151,6 +151,49 @@ export function fetchMyRequests() {
   return apiFetch<MyRequests>('/requests/mine')
 }
 
+export type TaskProgress = {
+  total: number
+  done: number
+  percentComplete: number
+}
+
+export type CampfireAssigneeProgress = {
+  id: string | null
+  name: string
+  isMe: boolean
+  total: number
+  done: number
+  percentComplete: number
+}
+
+export type CampfireEvent = {
+  id: string
+  name: string
+  slug: string
+  year: number
+  status: string
+  startsAt: string | null
+  endsAt: string | null
+}
+
+export type MyTasksCampfire = {
+  event: CampfireEvent
+  tone: 'now' | 'next' | 'recent'
+  progress: TaskProgress
+  myTasks: BoardTask[]
+  assignees: CampfireAssigneeProgress[]
+}
+
+export type MyTasksPayload = {
+  openTaskCount: number
+  campfires: MyTasksCampfire[]
+  unlinkedTasks: BoardTask[]
+}
+
+export function fetchMyTasks() {
+  return apiFetch<MyTasksPayload>('/tasks/mine')
+}
+
 export type NewRequestInput = {
   requestingCommitteeId: string
   targetCommitteeId: string

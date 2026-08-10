@@ -15,10 +15,20 @@ from app.core.config import settings
 from app.models.messenger_agenda import MessengerAgendaSession, MessengerConnection
 from app.models.profile import Profile
 from app.services import authorization as authz
-from app.services.messenger_agenda.agenda import agenda_to_dict, generate_agenda
+from app.services.messenger_agenda.agenda import (
+    AgendaBullet,
+    agenda_to_dict,
+    bullets_from_payload,
+    generate_agenda,
+)
 from app.services.messenger_agenda.assignments import (
     drafts_to_dicts,
     generate_assignment_drafts,
+)
+from app.services.messenger_agenda.contributors import (
+    collect_contributors,
+    contributors_to_dicts,
+    parse_utterances,
 )
 from app.services.messenger_agenda.keywords import (
     DEFAULT_END_KEYWORD,
@@ -77,6 +87,14 @@ def session_to_dict(session: MessengerAgendaSession) -> dict:
         assignments = json.loads(session.assignments_json or "[]")
     except json.JSONDecodeError:
         assignments = []
+    try:
+        contributors = json.loads(session.contributors_json or "[]")
+    except json.JSONDecodeError:
+        contributors = []
+    transcript = [
+        {"text": u.text, "speaker": u.speaker}
+        for u in parse_utterances(session.captured_text or "")
+    ]
     return {
         "id": str(session.id),
         "title": session.title,
@@ -90,6 +108,8 @@ def session_to_dict(session: MessengerAgendaSession) -> dict:
         "capturedText": session.captured_text,
         "agenda": agenda,
         "assignments": assignments,
+        "contributors": contributors,
+        "transcript": transcript,
         "planId": session.plan_id,
         "capturingStartedAt": (
             session.capturing_started_at.isoformat()
@@ -206,6 +226,10 @@ def ingest_text(
         session.status = "capturing"
         session.capturing_started_at = session.capturing_started_at or _now()
     session.captured_text = captured
+    # Refresh the color legend while capturing so the UI can show who is in.
+    session.contributors_json = json.dumps(
+        contributors_to_dicts(collect_contributors(parse_utterances(captured)))
+    )
     session.updated_at = _now()
 
     if saw_end and (capturing or saw_start):
@@ -238,9 +262,13 @@ def _finalize_locked(
         session.captured_text = captured or session.raw_text.strip()
 
     agenda = generate_agenda(
-        session_title=session.title, captured_text=session.captured_text
+        session_title=session.title,
+        captured_text=session.captured_text,
+        start_keyword=session.start_keyword,
+        end_keyword=session.end_keyword,
     )
     session.agenda_json = json.dumps(agenda_to_dict(agenda))
+    session.contributors_json = json.dumps(contributors_to_dicts(agenda.contributors))
     # Seed assignments from action items so Auto-gen has a baseline.
     action_section = next(
         (s for s in agenda.sections if s.title == "Action items"), None
@@ -271,16 +299,15 @@ def generate_assignments(
         agenda = json.loads(session.agenda_json or "{}")
     except json.JSONDecodeError:
         agenda = {}
-    action_bullets: list[str] = []
+    action_bullets: list[AgendaBullet] = []
     for section in agenda.get("sections") or []:
         if section.get("title") == "Action items":
-            action_bullets = list(section.get("bullets") or [])
+            action_bullets = bullets_from_payload(section.get("bullets"))
             break
     if not action_bullets and session.captured_text:
         action_bullets = [
-            line.strip()
-            for line in session.captured_text.splitlines()
-            if line.strip()
+            AgendaBullet(text=u.text, speaker=u.speaker)
+            for u in parse_utterances(session.captured_text)
         ][:10]
     drafts = generate_assignment_drafts(action_bullets)
     session.assignments_json = json.dumps(drafts_to_dicts(drafts))

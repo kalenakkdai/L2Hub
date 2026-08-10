@@ -12,8 +12,9 @@
  *    column and /auth/me does not return one. Adding it is a schema decision,
  *    not something this fixture should be taken to have settled.
  *
- * 2. Points, levels, streaks, and prep checklists have no backing tables at
+ * 2. Levels, streaks, and prep checklists have no backing tables at
  *    all. They are design concepts at this stage, nothing more.
+ *    Header standing uses letter grade / percent from the gradebook shape.
  *
  * 3. Nothing here is filtered by role. The server decides what a camper may
  *    see; the UI renders whatever it is handed.
@@ -36,7 +37,7 @@ export const SAMPLE_DASHBOARD: DashboardData = {
   committee: 'Activities committee',
   campsiteCount: 9,
 
-  stats: { points: 1240, level: 8, openCount: 3 },
+  stats: { gradeLetter: 'B', gradePercent: 86, openCount: 3 },
 
   nextEvent: {
     id: 'maze-day',
@@ -146,10 +147,10 @@ export const SAMPLE_DASHBOARD: DashboardData = {
   },
 
   progress: {
-    level: 8,
-    levelTitle: 'Section Lead',
-    points: 1240,
-    pointsToNextLevel: 1400,
+    gradeLetter: 'B',
+    gradePercent: 86,
+    nextBand: 'A−',
+    nextBandMin: 90,
     streakWeeks: 10,
     tasksDone: 27,
     participationRate: 96,
@@ -159,9 +160,9 @@ export const SAMPLE_DASHBOARD: DashboardData = {
   activity: [
     {
       id: 'a1',
-      kind: 'points',
-      description: 'Submitted Maze Day feedback',
-      points: 20,
+      kind: 'grade',
+      description: 'Maze Day feedback graded',
+      score: 20,
       occurredAt: hoursFromNow(-2),
     },
     {

@@ -10,8 +10,10 @@ export type BadgeTone = 'accent' | 'warning' | 'danger' | 'info' | 'neutral'
 
 /** The three figures in the page header. */
 export type HeaderStats = {
-  points: number
-  level: number
+  /** Letter band from the weighted gradebook percent, or null if none yet. */
+  gradeLetter: string | null
+  /** Overall percent (0–100), or null when nothing is graded. */
+  gradePercent: number | null
   openCount: number
 }
 
@@ -77,10 +79,12 @@ export type GradesOverview = {
 }
 
 export type ProgressSummary = {
-  level: number
-  levelTitle: string
-  points: number
-  pointsToNextLevel: number
+  gradeLetter: string | null
+  gradePercent: number | null
+  /** Next letter band to climb toward, or null at the top of the scale. */
+  nextBand: string | null
+  /** Minimum percent for `nextBand`. */
+  nextBandMin: number | null
   streakWeeks: number
   tasksDone: number
   participationRate: number
@@ -90,10 +94,10 @@ export type ProgressSummary = {
 
 export type ActivityItem = {
   id: string
-  kind: 'points' | 'event' | 'submission' | 'committee' | 'level'
+  kind: 'grade' | 'event' | 'submission' | 'committee'
   description: string
-  /** Points awarded, when the entry is an award. */
-  points?: number
+  /** Score earned on graded work, when the entry is a grade award. */
+  score?: number
   /** ISO 8601. */
   occurredAt: string
 }

@@ -2,7 +2,6 @@ import {
   ArrowRightLeft,
   CircleCheckBig,
   FileText,
-  TrendingUp,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react'
@@ -11,11 +10,10 @@ import { relativeTime } from './formatDate'
 import type { ActivityItem } from './types'
 
 const KIND_ICONS: Record<ActivityItem['kind'], LucideIcon> = {
-  points: CircleCheckBig,
+  grade: CircleCheckBig,
   event: ArrowRightLeft,
   submission: FileText,
   committee: UserPlus,
-  level: TrendingUp,
 }
 
 /** Lowest-weight section on the page: muted, dense, scannable. */
@@ -27,7 +25,7 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
       <ul className="flex flex-col gap-0.5">
         {items.map((item) => {
           const Icon = KIND_ICONS[item.kind]
-          const awarded = item.kind === 'points'
+          const graded = item.kind === 'grade'
 
           return (
             <li
@@ -37,7 +35,7 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
               <Icon
                 aria-hidden="true"
                 className={
-                  awarded
+                  graded
                     ? 'h-[15px] w-[15px] shrink-0 text-accent-ink'
                     : 'h-[15px] w-[15px] shrink-0 text-ink-subtle'
                 }
@@ -45,9 +43,9 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
               <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
                 {item.description}
               </span>
-              {item.points !== undefined && (
+              {item.score !== undefined && (
                 <span className="shrink-0 rounded bg-accent-100 px-1.5 py-0.5 font-mono text-[11.5px] text-accent-ink">
-                  +{item.points}
+                  {item.score}
                 </span>
               )}
               <time

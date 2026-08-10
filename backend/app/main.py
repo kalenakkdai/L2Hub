@@ -12,6 +12,8 @@ from app.api.routes_grades import router as grades_router
 from app.api.routes_internal import router as internal_router
 from app.api.routes_messenger_agenda import router as messenger_agenda_router
 from app.api.routes_note_taker import router as note_taker_router
+from app.api.routes_owl import router as owl_router
+from app.api.routes_photographer import router as photographer_router
 from app.api.routes_push import router as push_router
 from app.api.routes_shadow import router as shadow_router
 from app.api.routes_storage import router as storage_router
@@ -39,6 +41,8 @@ app.include_router(committees_router)
 app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(note_taker_router)
+app.include_router(owl_router)
+app.include_router(photographer_router)
 app.include_router(messenger_agenda_router)
 app.include_router(push_router)
 app.include_router(storage_router)

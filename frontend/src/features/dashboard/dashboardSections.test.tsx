@@ -131,8 +131,8 @@ describe('GradesPanel', () => {
     renderInRouter(<GradesPanel grades={SAMPLE_DASHBOARD.grades} />)
 
     expect(screen.getByText('Completed')).toBeInTheDocument()
-    expect(screen.getByText('268/310')).toBeInTheDocument()
-    expect(screen.getByText('Points earned · 86%')).toBeInTheDocument()
+    expect(screen.getByText('B')).toBeInTheDocument()
+    expect(screen.getByText('Grade · 86% · 268/310')).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(
       SAMPLE_DASHBOARD.grades.rows.length,
     )
@@ -153,46 +153,68 @@ describe('GradesPanel', () => {
       />,
     )
 
-    expect(screen.getByText('Points earned · 0%')).toBeInTheDocument()
+    expect(screen.getByText('Grade · 0%')).toBeInTheDocument()
   })
 })
 
 describe('ProgressPanel', () => {
-  it('shows level, remaining points, and the three figures', () => {
+  it('shows grade, climb toward the next band, and the three figures', () => {
     render(<ProgressPanel progress={SAMPLE_DASHBOARD.progress} />)
 
-    expect(screen.getByText('Level 8 · Section Lead')).toBeInTheDocument()
-    expect(screen.getByText('160 pts to Level 9')).toBeInTheDocument()
+    expect(screen.getByText('Grade B · 86%')).toBeInTheDocument()
+    expect(screen.getByText('4% to A−')).toBeInTheDocument()
     expect(screen.getByText('Week streak')).toBeInTheDocument()
   })
 
-  it('does not report negative points past a level boundary', () => {
+  it('does not report a negative climb past the next band', () => {
     render(
       <ProgressPanel
-        progress={{ ...SAMPLE_DASHBOARD.progress, points: 1600, pointsToNextLevel: 1400 }}
+        progress={{
+          ...SAMPLE_DASHBOARD.progress,
+          gradePercent: 92,
+          gradeLetter: 'A−',
+          nextBand: 'A',
+          nextBandMin: 93,
+        }}
       />,
     )
 
-    expect(screen.getByText('Ready for Level 9')).toBeInTheDocument()
+    expect(screen.getByText('1% to A')).toBeInTheDocument()
+  })
+
+  it('marks the top of the scale when there is no next band', () => {
+    render(
+      <ProgressPanel
+        progress={{
+          ...SAMPLE_DASHBOARD.progress,
+          gradePercent: 98,
+          gradeLetter: 'A+',
+          nextBand: null,
+          nextBandMin: null,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Top of the scale')).toBeInTheDocument()
   })
 })
 
 describe('ActivityFeed', () => {
-  it('lists entries with relative timestamps and point awards', () => {
+  it('lists entries with relative timestamps and grade scores', () => {
     render(<ActivityFeed items={SAMPLE_DASHBOARD.activity} />)
 
     const list = screen.getByRole('list')
     expect(within(list).getAllByRole('listitem')).toHaveLength(
       SAMPLE_DASHBOARD.activity.length,
     )
-    expect(screen.getByText('+20')).toBeInTheDocument()
+    expect(screen.getByText('20')).toBeInTheDocument()
   })
 })
 
 describe('DashboardHeader', () => {
   beforeEach(() => sessionStorage.clear())
 
-  const stats = { points: 1200, level: 4, openCount: 3 }
+  const stats = { gradeLetter: 'B', gradePercent: 86, openCount: 3 }
 
   it('leads with the greeting and no date or clock above it', () => {
     renderInRouter(<DashboardHeader firstName="Brittany" stats={stats} />)
@@ -212,9 +234,10 @@ describe('DashboardHeader', () => {
   it('still shows the three standing numbers', () => {
     renderInRouter(<DashboardHeader firstName="Brittany" stats={stats} />)
 
-    expect(screen.getByText('Points')).toBeInTheDocument()
-    expect(screen.getByText('Level')).toBeInTheDocument()
+    expect(screen.getByText('Grade')).toBeInTheDocument()
+    expect(screen.getByText('Overall')).toBeInTheDocument()
     expect(screen.getByText('Open')).toBeInTheDocument()
+    expect(screen.getByText('B')).toBeInTheDocument()
   })
 
   it('offers a page search field under the greeting', () => {

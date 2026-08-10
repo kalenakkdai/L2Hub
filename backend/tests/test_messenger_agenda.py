@@ -7,7 +7,7 @@ import pytest
 from app.core import permission_keys as pk
 from app.db.seed import seed_development_users
 from app.services import authorization as authz
-from app.services.messenger_agenda.agenda import generate_agenda
+from app.services.messenger_agenda.agenda import AgendaBullet, generate_agenda
 from app.services.messenger_agenda.assignments import generate_assignment_drafts
 from app.services.messenger_agenda.keywords import extract_capture_window
 
@@ -63,7 +63,48 @@ def test_generate_agenda_has_action_and_decision_sections():
     assert "Action items" in titles
     assert "Key decisions" in titles
     actions = next(s for s in agenda.sections if s.title == "Action items")
-    assert any("flyer" in b.lower() for b in actions.bullets)
+    assert any("flyer" in b.text.lower() for b in actions.bullets)
+
+
+def test_agenda_attributes_bullets_and_colors_contributors():
+    captured, _, _ = extract_capture_window(CHAT)
+    agenda = generate_agenda(session_title="ASB chat", captured_text=captured)
+
+    names = [c.name for c in agenda.contributors]
+    assert names == ["Jordan", "Sam", "Avery", "Jan"]
+    # Every contributor gets a distinct color so highlights stay readable.
+    assert len({c.color for c in agenda.contributors}) == len(names)
+
+    actions = next(s for s in agenda.sections if s.title == "Action items")
+    flyer = next(b for b in actions.bullets if "flyer" in b.text.lower())
+    assert flyer.speaker == "Avery"
+    decisions = next(s for s in agenda.sections if s.title == "Key decisions")
+    assert any(b.speaker == "Jan" for b in decisions.bullets)
+
+
+def test_agenda_drops_keyword_only_lines():
+    captured, _, _ = extract_capture_window(CHAT)
+    agenda = generate_agenda(session_title="ASB chat", captured_text=captured)
+    notes = next(s for s in agenda.sections if s.title == "Agenda / Meeting Notes")
+    assert all("agenda start" not in b.text.lower() for b in notes.bullets)
+
+
+def test_agenda_falls_back_to_contributors_for_attendees():
+    captured, _, _ = extract_capture_window(CHAT)
+    agenda = generate_agenda(session_title="ASB chat", captured_text=captured)
+    attendees = next(s for s in agenda.sections if s.title == "Attendees")
+    assert {b.text for b in attendees.bullets} == {"Jordan", "Sam", "Avery", "Jan"}
+
+
+def test_unattributed_lines_have_no_speaker():
+    agenda = generate_agenda(
+        session_title="Notes",
+        captured_text="Publicity should post the flyer by Friday",
+    )
+    actions = next(s for s in agenda.sections if s.title == "Action items")
+    assert actions.bullets
+    assert all(b.speaker is None for b in actions.bullets)
+    assert agenda.contributors == ()
 
 
 def test_assignment_drafts_map_committees():
@@ -78,6 +119,18 @@ def test_assignment_drafts_map_committees():
     assert "publicity" in slugs
     assert "events" in slugs
     assert "spirit" in slugs
+
+
+def test_assignment_drafts_keep_speaker_attribution():
+    drafts = generate_assignment_drafts(
+        [
+            AgendaBullet(text="Publicity should post the flyer", speaker="Avery"),
+            AgendaBullet(text="Events will handle check-in"),
+        ]
+    )
+    by_slug = {d.committee_slug: d for d in drafts}
+    assert by_slug["publicity"].attributed_to == "Avery"
+    assert by_slug["events"].attributed_to is None
 
 
 def test_member_can_run_keyword_to_agenda_flow(client, make_token, seeded):
@@ -108,6 +161,17 @@ def test_member_can_run_keyword_to_agenda_flow(client, make_token, seeded):
     assert body["status"] == "finalized"
     assert body["agenda"]["title"]
     assert body["assignments"]
+    # Each contributor comes back with a color for highlighting in the doc.
+    # Capture started before the keyword, so Kalena's earlier line counts too.
+    assert [c["name"] for c in body["contributors"]] == [
+        "Kalena",
+        "Jordan",
+        "Sam",
+        "Avery",
+        "Jan",
+    ]
+    assert all(c["color"].startswith("#") for c in body["contributors"])
+    assert any(line["speaker"] == "Avery" for line in body["transcript"])
 
     regenerated = client.post(
         f"/messenger-agenda/sessions/{session_id}/assignments/generate",

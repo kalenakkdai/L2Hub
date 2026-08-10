@@ -13,29 +13,47 @@ function Figure({ value, label }: { value: string; label: string }) {
   )
 }
 
-/** Level, points to the next one, and the three figures behind them. */
+/** Current letter grade, climb toward the next band, and supporting figures. */
 export function ProgressPanel({ progress }: { progress: ProgressSummary }) {
-  const remaining = Math.max(0, progress.pointsToNextLevel - progress.points)
+  const percent = progress.gradePercent ?? 0
+  const hasGrade = progress.gradeLetter != null && progress.gradePercent != null
+  const climbing =
+    progress.nextBand != null &&
+    progress.nextBandMin != null &&
+    progress.gradePercent != null
+  const remaining = climbing
+    ? Math.max(0, progress.nextBandMin! - progress.gradePercent!)
+    : 0
 
   return (
     <Card className="flex h-full flex-col p-5">
       <div className="mb-2.5 flex items-baseline justify-between gap-3">
         <span className="font-semibold text-ink">
-          Level {progress.level} · {progress.levelTitle}
+          {hasGrade
+            ? `Grade ${progress.gradeLetter} · ${progress.gradePercent}%`
+            : 'No grade yet'}
         </span>
         <span className="text-[13px] text-ink-subtle">
-          {remaining > 0
-            ? `${remaining.toLocaleString()} pts to Level ${progress.level + 1}`
-            : `Ready for Level ${progress.level + 1}`}
+          {climbing
+            ? remaining > 0
+              ? `${remaining}% to ${progress.nextBand}`
+              : `At ${progress.nextBand}`
+            : hasGrade
+              ? 'Top of the scale'
+              : 'Graded work will land here'}
         </span>
       </div>
 
       <ProgressBar
         className="h-2"
-        value={progress.points}
-        max={progress.pointsToNextLevel}
+        value={percent}
+        max={100}
         delayMs={360}
-        label={`Points toward level ${progress.level + 1}`}
+        label={
+          climbing
+            ? `Progress toward ${progress.nextBand}`
+            : 'Overall grade percent'
+        }
       />
 
       <div className="mt-4 flex gap-7 border-t border-border-divider pt-4">

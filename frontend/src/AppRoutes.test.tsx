@@ -182,4 +182,34 @@ describe('routing', () => {
       )
     })
   })
+
+  describe('/photographer', () => {
+    it('is reachable without signing in', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url = String(input)
+        if (url.includes('/public/photographer/events')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ events: [] }),
+          } as Response
+        }
+        if (url.includes('/public/photographer/options')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ permissions: [] }),
+          } as Response
+        }
+        return { ok: true, status: 200, json: async () => ({}) } as Response
+      })
+
+      renderWithProviders(<AppRoutes />, { route: '/photographer' })
+
+      expect(
+        await screen.findByRole('heading', { name: 'Share event photos' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Sign in' })).not.toBeInTheDocument()
+    })
+  })
 })

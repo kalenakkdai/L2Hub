@@ -29,6 +29,9 @@ function hrefFor(note: AppNotification): string | null {
   if (note.type === 'grades.changed') {
     return '/grades'
   }
+  if (note.type === 'owl.access_revoked') {
+    return '/owl'
+  }
   return null
 }
 

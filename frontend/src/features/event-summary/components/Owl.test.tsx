@@ -215,4 +215,50 @@ describe('owl sweep reporting', () => {
     expect(onSweep.mock.calls[0][0]).toBe(fakeRect)
     unmount()
   })
+
+  it('lands on a returned tent perch, folds its wings, then takes off', () => {
+    const fakeRect = {
+      left: 0,
+      top: 0,
+      right: 116,
+      bottom: 116,
+      width: 116,
+      height: 116,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(fakeRect)
+    vi.useFakeTimers()
+
+    const onSweep = vi.fn(() => ({ id: 'publicity', x: 240, y: 180 }))
+    const { container, unmount } = render(<Owl onSweep={onSweep} />)
+
+    act(() => {
+      vi.advanceTimersByTime(5000)
+    })
+
+    const anchor = container.querySelector<HTMLElement>('.owl-anchor')
+    expect(anchor?.className).toContain('owl-anchor-perching')
+    expect(anchor?.style.left).toBe('240px')
+    expect(anchor?.style.top).toBe('180px')
+    expect(container.querySelector('.owl-body')?.className).toContain(
+      'owl-body-perched',
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(720)
+    })
+    expect(container.querySelector('.owl-body')?.className).not.toContain(
+      'owl-body-flying',
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(3200)
+    })
+    expect(container.querySelector('.owl-body')?.className).not.toContain(
+      'owl-body-perched',
+    )
+    unmount()
+  })
 })

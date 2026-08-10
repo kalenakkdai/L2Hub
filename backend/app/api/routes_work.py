@@ -56,6 +56,12 @@ class RequestResponse(BaseModel):
     status: str
 
 
+@router.get("/tasks/mine")
+def my_tasks(profile: CurrentProfile, db: DbSession) -> dict:
+    """Campfire circle for My Tasks: happening/starting events + progress."""
+    return work.my_tasks_payload(db, profile)
+
+
 @router.get("/board")
 def read_board(profile: CurrentProfile, db: DbSession) -> dict:
     """Every committee and its tasks — the L2 Board."""

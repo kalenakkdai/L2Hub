@@ -131,7 +131,7 @@ export function DashboardPage() {
               <EmptyState
                 icon={Inbox}
                 title="No activity yet"
-                description="Points, check-ins, and submissions will show up here."
+                description="Grades, check-ins, and submissions will show up here."
               />
             ) : (
               <ActivityFeed items={data.activity} />

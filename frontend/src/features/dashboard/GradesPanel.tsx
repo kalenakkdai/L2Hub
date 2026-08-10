@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { cn } from '../../components/ui/cn'
+import { letterGrade } from '../grades/utils/letterGrade'
 import type { GradeRow, GradesOverview } from './types'
 
 const BAND_FILL: Record<NonNullable<GradeRow['band']>, string> = {
@@ -65,6 +66,8 @@ export function GradesPanel({ grades }: { grades: GradesOverview }) {
     grades.pointsPossible > 0
       ? Math.round((grades.pointsEarned / grades.pointsPossible) * 100)
       : 0
+  const letter =
+    grades.pointsPossible > 0 ? letterGrade(percent) : null
 
   return (
     <div>
@@ -73,8 +76,12 @@ export function GradesPanel({ grades }: { grades: GradesOverview }) {
         <Tile value={String(grades.missing)} label="Missing" tone="danger" />
         <Tile value={String(grades.open)} label="Open" tone="warning" />
         <Tile
-          value={`${grades.pointsEarned}/${grades.pointsPossible}`}
-          label={`Points earned · ${percent}%`}
+          value={letter ?? '—'}
+          label={
+            grades.pointsPossible > 0
+              ? `Grade · ${percent}% · ${grades.pointsEarned}/${grades.pointsPossible}`
+              : 'Grade · 0%'
+          }
         />
       </div>
 

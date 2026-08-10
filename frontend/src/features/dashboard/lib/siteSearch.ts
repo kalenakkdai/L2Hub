@@ -17,6 +17,8 @@ export type SiteSearchHit = {
 const ALIASES: Record<string, string[]> = {
   '/dashboard': ['home', 'overview', 'main'],
   '/grades': ['gradebook', 'scores', 'assignments', 'rubric', 'syllabus'],
+  '/owl': ['owl', 'rewards', 'customize', 'a+', 'points', 'cosmetics'],
+  '/tasks': ['my tasks', 'campfire', 'assignments'],
   '/admin/users': ['users', 'people', 'roster', 'members', 'campers'],
   '/committees': ['teams', 'groups'],
   '/events': ['wrapped', 'happening', 'calendar', 'fall rally'],

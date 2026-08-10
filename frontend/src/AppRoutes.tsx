@@ -45,6 +45,8 @@ import {
 } from './features/messenger-agenda'
 import { InboxPage } from './features/work/InboxPage'
 import { L2BoardPage } from './features/work/L2BoardPage'
+import { MyTasksPage } from './features/work/MyTasksPage'
+import { OwlRewardsPage } from './features/owl/OwlRewardsPage'
 import { RequestsPage } from './features/work/RequestsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
@@ -53,6 +55,7 @@ import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { ToolsPage } from './pages/ToolsPage'
+import { PhotographerUploadPage } from './features/photographer/PhotographerUploadPage'
 import { MySettings } from './pages/settings/MySettings'
 import { CampsiteSettings } from './pages/settings/CampsiteSettings'
 import {
@@ -109,6 +112,7 @@ export function AppRoutes() {
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/photographer" element={<PhotographerUploadPage />} />
       <Route
         path="/dashboard"
         element={
@@ -122,6 +126,28 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <L2BoardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/tasks"
+        element={
+          <RequireAuth>
+            <MyTasksPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/owl"
+        element={
+          <RequireAuth>
+            <GradebookProvider
+              dataProvider={gradebookDataProvider}
+              commandProvider={gradebookCommandProvider}
+              authProvider={gradebookAuthProvider}
+            >
+              <OwlRewardsPage />
+            </GradebookProvider>
           </RequireAuth>
         }
       />

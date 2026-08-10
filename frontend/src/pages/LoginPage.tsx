@@ -151,6 +151,17 @@ export function LoginPage() {
             </Link>
           </p>
 
+          <p className="mt-3 text-center text-[13px] text-ink-subtle">
+            Event photographer?{' '}
+            <Link
+              to="/photographer"
+              className="font-medium text-accent-ink underline-offset-2 hover:underline"
+            >
+              Drop photos here
+            </Link>{' '}
+            — no login needed.
+          </p>
+
           <DevAccountsPanel />
         </div>
       </div>

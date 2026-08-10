@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
+  Feather,
   Inbox,
   LayoutDashboard,
   MessagesSquare,
@@ -77,7 +78,13 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'My tasks',
         to: '/tasks',
         icon: ClipboardList,
-        badge: { kind: 'count', value: 3, tone: 'accent' },
+        permission: 'tasks.view_own',
+      },
+      {
+        label: 'My owl',
+        to: '/owl',
+        icon: Feather,
+        permission: 'grades.view_own',
       },
       { label: 'Inbox', to: '/inbox', icon: Inbox },
       {
@@ -176,6 +183,8 @@ export const NAV_SECTIONS: NavSection[] = [
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
   '/board',
+  '/tasks',
+  '/owl',
   '/requests',
   '/inbox',
   '/committees',

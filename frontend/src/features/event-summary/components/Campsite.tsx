@@ -135,6 +135,16 @@ function CommitteeTent({ tent, open = false }: { tent: Tent; open?: boolean }) {
 
   return (
     <g data-tent={tent.name} className={open ? 'tent tent-open' : 'tent'}>
+      {/* Measured by CampsiteScene so the owl can put its feet on the roof.
+       * A small transparent circle has a real client rect, unlike a zero-width
+       * SVG line, and remains completely decorative. */}
+      <circle
+        data-tent-perch
+        cx={r(x)}
+        cy={r(peak)}
+        r={2.5}
+        fill="transparent"
+      />
       <ellipse
         cx={r(x)}
         cy={r(y)}

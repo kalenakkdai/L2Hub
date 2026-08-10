@@ -11,6 +11,12 @@ import {
 } from '../hooks/useMessengerAgenda'
 import type { MessengerAgendaSession } from '../types'
 import { agendaToPlanDocument } from '../lib/planBridge'
+import {
+  AttributedLine,
+  AttributedTranscript,
+  ContributorLegend,
+  contributorIndex,
+} from '../components/AgendaHighlights'
 
 type OutletCtx = { canIngest: boolean; canPlan: boolean }
 
@@ -146,10 +152,26 @@ export function MessengerAgendaSessionPage() {
 
       {session.capturedText ? (
         <section className="rounded-card border border-border-subtle bg-surface p-4 shadow-xs">
-          <h2 className="text-sm font-semibold text-ink">Captured window</h2>
-          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-xs text-ink-muted">
-            {session.capturedText}
-          </pre>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink">Captured window</h2>
+            <p className="text-xs text-ink-subtle">
+              {session.contributors.length} contributor
+              {session.contributors.length === 1 ? '' : 's'}
+            </p>
+          </div>
+          <div className="mt-2">
+            <ContributorLegend contributors={session.contributors} />
+          </div>
+          {session.transcript.length > 0 ? (
+            <AttributedTranscript
+              lines={session.transcript}
+              contributors={session.contributors}
+            />
+          ) : (
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap text-xs text-ink-muted">
+              {session.capturedText}
+            </pre>
+          )}
         </section>
       ) : null}
 
@@ -177,17 +199,38 @@ export function MessengerAgendaSessionPage() {
               </p>
             ) : (
               <ul className="space-y-2">
-                {session.assignments.map((item, index) => (
-                  <li
-                    key={`${item.committeeSlug}-${index}`}
-                    className="rounded-control border border-border-subtle px-3 py-2 text-sm"
-                  >
-                    <p className="font-medium text-ink">{item.roleLabel}</p>
-                    <p className="text-xs text-ink-subtle">
-                      {item.committeeName} · from “{item.sourceLine}”
-                    </p>
-                  </li>
-                ))}
+                {session.assignments.map((item, index) => {
+                  const person = item.attributedTo
+                    ? session.contributors.find((c) => c.name === item.attributedTo)
+                    : undefined
+                  return (
+                    <li
+                      key={`${item.committeeSlug}-${index}`}
+                      className="rounded-control border border-border-subtle border-l-2 px-3 py-2 text-sm"
+                      style={
+                        person
+                          ? {
+                              borderLeftColor: person.color,
+                              backgroundColor: person.highlight,
+                            }
+                          : undefined
+                      }
+                    >
+                      <p className="font-medium text-ink">{item.roleLabel}</p>
+                      <p className="text-xs text-ink-subtle">
+                        {item.committeeName} · from “{item.sourceLine}”
+                      </p>
+                      {item.attributedTo ? (
+                        <p
+                          className="mt-1 text-xs font-semibold"
+                          style={{ color: person?.color }}
+                        >
+                          Raised by {item.attributedTo}
+                        </p>
+                      ) : null}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </section>
@@ -240,9 +283,13 @@ export function MessengerAgendaSessionPage() {
 
 function AgendaPreview({ session }: { session: MessengerAgendaSession }) {
   const agenda = session.agenda
+  const index = contributorIndex(session.contributors)
   return (
     <section className="rounded-card border border-border-subtle bg-surface p-4 shadow-xs">
-      <h2 className="text-sm font-semibold text-ink">Meeting agenda</h2>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink">Meeting agenda</h2>
+        <ContributorLegend contributors={session.contributors} />
+      </div>
       <p className="mt-1 text-base font-semibold text-ink">
         {agenda.title || session.title}
       </p>
@@ -252,9 +299,13 @@ function AgendaPreview({ session }: { session: MessengerAgendaSession }) {
       {agenda.goals && agenda.goals.length > 0 ? (
         <div className="mt-3">
           <h3 className="text-xs font-semibold uppercase text-ink-subtle">Goals</h3>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-ink">
-            {agenda.goals.map((goal) => (
-              <li key={goal}>{goal}</li>
+          <ul className="mt-1 space-y-1">
+            {agenda.goals.map((goal, i) => (
+              <AttributedLine
+                key={`goal-${i}`}
+                bullet={goal}
+                contributors={index}
+              />
             ))}
           </ul>
         </div>
@@ -268,9 +319,13 @@ function AgendaPreview({ session }: { session: MessengerAgendaSession }) {
             {section.bullets.length === 0 ? (
               <p className="mt-1 text-sm text-ink-muted">—</p>
             ) : (
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-ink">
-                {section.bullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
+              <ul className="mt-1 space-y-1">
+                {section.bullets.map((bullet, i) => (
+                  <AttributedLine
+                    key={`${section.title}-${i}`}
+                    bullet={bullet}
+                    contributors={index}
+                  />
                 ))}
               </ul>
             )}

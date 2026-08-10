@@ -726,3 +726,185 @@ def list_my_requests(db: Session, profile: Profile) -> dict:
             ).all()
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# My Tasks (campfires)
+# ---------------------------------------------------------------------------
+
+
+def _progress(total: int, done: int) -> dict:
+    percent = round((done / total) * 100) if total else 0
+    return {"total": total, "done": done, "percentComplete": percent}
+
+
+def _event_brief(event: Event) -> dict:
+    return {
+        "id": str(event.id),
+        "name": event.name,
+        "slug": event.slug,
+        "year": event.year,
+        "status": event.status,
+        "startsAt": event.starts_at.isoformat() if event.starts_at else None,
+        "endsAt": event.ends_at.isoformat() if event.ends_at else None,
+    }
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
+
+
+def _campfire_tone(event: Event, now: datetime) -> str:
+    """Mirror the frontend campfire buckets: now vs next up."""
+    if event.status in {"active", "complete"}:
+        return "now"
+    starts = _aware(event.starts_at)
+    ends = _aware(event.ends_at)
+    if starts is not None and starts > now:
+        return "next"
+    if starts is not None and (ends is None or ends >= now):
+        return "now"
+    return "next"
+
+
+def _select_campfire_events(db: Session, now: datetime) -> list[Event]:
+    """Events currently happening or about to start — the circle of fires."""
+    events = list(
+        db.scalars(
+            select(Event)
+            .where(Event.status != "calendar")
+            .order_by(Event.starts_at.is_(None), Event.starts_at, Event.name)
+        ).all()
+    )
+    now_events: list[Event] = []
+    next_events: list[Event] = []
+    for event in events:
+        tone = _campfire_tone(event, now)
+        starts = _aware(event.starts_at)
+        if tone == "now":
+            now_events.append(event)
+        elif (starts is not None and starts > now) or (
+            event.status == "scheduled" and starts is None
+        ):
+            next_events.append(event)
+
+    if now_events:
+        return now_events
+    return next_events[:5]
+
+
+def _assignee_rows(
+    tasks: list[Task], profile: Profile
+) -> list[dict]:
+    buckets: dict[str | None, dict] = {}
+    for task in tasks:
+        key = str(task.assignee_user_id) if task.assignee_user_id else None
+        if key not in buckets:
+            person = _person(task.assignee)
+            buckets[key] = {
+                "id": person["id"] if person else None,
+                "name": person["name"] if person else "Unassigned",
+                "isMe": task.assignee_user_id == profile.id,
+                "total": 0,
+                "done": 0,
+            }
+        buckets[key]["total"] += 1
+        if task.status == "done":
+            buckets[key]["done"] += 1
+
+    rows: list[dict] = []
+    for row in buckets.values():
+        rows.append(
+            {
+                **row,
+                "percentComplete": _progress(row["total"], row["done"])[
+                    "percentComplete"
+                ],
+            }
+        )
+    # Me first, then most incomplete, then name.
+    rows.sort(
+        key=lambda r: (
+            0 if r["isMe"] else 1,
+            r["percentComplete"],
+            (r["name"] or "").lower(),
+        )
+    )
+    return rows
+
+
+def my_tasks_payload(db: Session, profile: Profile) -> dict:
+    """Campfire circle + the caller's tasks and per-person progress.
+
+    Requires `tasks.view_own`. Progress bars use every task linked to the
+    event (the same visibility as the L2 Board), so campers see how the rest
+    of the class is moving without opening the full board.
+    """
+    authz.require_permission(db, profile, pk.TASKS_VIEW_OWN)
+    now = _now()
+    campfire_events = _select_campfire_events(db, now)
+    event_ids = [e.id for e in campfire_events]
+
+    event_tasks: list[Task] = []
+    if event_ids:
+        event_tasks = list(
+            db.scalars(
+                select(Task)
+                .options(
+                    selectinload(Task.assignee),
+                    selectinload(Task.event),
+                    selectinload(Task.origin_task).selectinload(Task.committee),
+                )
+                .where(Task.event_id.in_(event_ids))
+                .order_by(Task.due_on.is_(None), Task.due_on, Task.created_at)
+            ).all()
+        )
+
+    by_event: dict[uuid.UUID, list[Task]] = {eid: [] for eid in event_ids}
+    for task in event_tasks:
+        if task.event_id is not None:
+            by_event.setdefault(task.event_id, []).append(task)
+
+    my_open = 0
+    campfires: list[dict] = []
+    for event in campfire_events:
+        tasks = by_event.get(event.id, [])
+        done = sum(1 for t in tasks if t.status == "done")
+        mine = [t for t in tasks if t.assignee_user_id == profile.id]
+        my_open += sum(1 for t in mine if t.status != "done")
+        campfires.append(
+            {
+                "event": _event_brief(event),
+                "tone": _campfire_tone(event, now),
+                "progress": _progress(len(tasks), done),
+                "myTasks": [task_payload(t) for t in mine],
+                "assignees": _assignee_rows(tasks, profile),
+            }
+        )
+
+    unlinked = list(
+        db.scalars(
+            select(Task)
+            .options(
+                selectinload(Task.assignee),
+                selectinload(Task.event),
+                selectinload(Task.origin_task).selectinload(Task.committee),
+            )
+            .where(
+                Task.assignee_user_id == profile.id,
+                Task.event_id.is_(None),
+            )
+            .order_by(Task.due_on.is_(None), Task.due_on, Task.created_at)
+        ).all()
+    )
+    my_open += sum(1 for t in unlinked if t.status != "done")
+
+    return {
+        "openTaskCount": my_open,
+        "campfires": campfires,
+        "unlinkedTasks": [task_payload(t) for t in unlinked],
+    }

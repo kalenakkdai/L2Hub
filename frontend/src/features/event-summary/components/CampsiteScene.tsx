@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { owlOverTent } from '../lib/owlTents'
+import {
+  owlOverTent,
+  tentPerchPoint,
+  type OwlPerchTarget,
+} from '../lib/owlTents'
 import { Campsite } from './Campsite'
 import { NightSky } from './NightSky'
 import { Owl } from './Owl'
@@ -64,16 +68,26 @@ export function CampsiteScene({
   }, [])
 
   const handleOwlSweep = useCallback(
-    (owlRect: DOMRect) => {
+    (owlRect: DOMRect): OwlPerchTarget | null => {
       const root = backdropRef.current
-      if (!root) return
-      root.querySelectorAll<SVGGElement>('[data-tent]').forEach((node) => {
+      if (!root) return null
+      let target: OwlPerchTarget | null = null
+      for (const node of root.querySelectorAll<SVGGElement>('[data-tent]')) {
         const name = node.getAttribute('data-tent')
-        if (!name) return
+        if (!name) continue
         if (owlOverTent(owlRect, node.getBoundingClientRect())) {
           openDoor(name)
+          const marker = node.querySelector<SVGCircleElement>('[data-tent-perch]')
+          const point = marker
+            ? tentPerchPoint(marker.getBoundingClientRect(), owlRect.height)
+            : null
+          if (point) {
+            target = { ...point, id: name }
+            break
+          }
         }
-      })
+      }
+      return target
     },
     [openDoor],
   )
@@ -97,7 +111,7 @@ export function CampsiteScene({
         <NightSky />
         <Campsite committees={committees} openTents={openTents} />
       </div>
-      {owl ? <Owl onSweep={handleOwlSweep} /> : null}
+      {owl ? <Owl onSweep={handleOwlSweep} fullBleed={fullBleed} /> : null}
     </>
   )
 }

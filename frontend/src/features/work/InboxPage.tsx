@@ -24,6 +24,8 @@ const KIND_LABELS: Record<string, string> = {
   'wrapped.request': 'Wrapped',
   'wrapped.generated': 'Wrapped',
   'wrapped.published': 'Wrapped',
+  'owl.access_revoked': 'Owl',
+  'grades.changed': 'Grades',
 }
 
 function when(iso: string): string {

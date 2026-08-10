@@ -20,13 +20,15 @@ from app.models.event_summary import (
     Notification,
     NotificationPreference,
 )
+from app.models.messenger_agenda import MessengerAgendaSession, MessengerConnection
 from app.models.note_taker import (
     MeetingNote,
     MeetingSession,
     MeetingSessionEventLink,
     MeetingTranscript,
 )
-from app.models.messenger_agenda import MessengerAgendaSession, MessengerConnection
+from app.models.owl import OwlProfile
+from app.models.photographer import PhotographerSubmission
 from app.models.profile import Profile
 from app.models.push import PushSubscription
 from app.models.rbac import (
@@ -66,9 +68,11 @@ __all__ = [
     "MessengerConnection",
     "Notification",
     "NotificationPreference",
+    "OwlProfile",
     "ParentAlert",
     "Permission",
     "PermissionOverride",
+    "PhotographerSubmission",
     "Profile",
     "PushSubscription",
     "Role",

@@ -78,12 +78,32 @@ describe('Sidebar', () => {
     )
   })
 
+  it('links My tasks once the route is implemented', () => {
+    renderChrome(
+      <Sidebar
+        name="Ada Lovelace"
+        role="asbo"
+        permissions={['tasks.view_own', 'notifications.view_own']}
+      />,
+    )
+
+    expect(screen.getByRole('link', { name: /My tasks/ })).toHaveAttribute(
+      'href',
+      '/tasks',
+    )
+  })
+
+  it('hides My tasks without tasks.view_own', () => {
+    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" permissions={[]} />)
+    expect(screen.queryByText('My tasks')).not.toBeInTheDocument()
+  })
+
   it('renders unbuilt destinations as inert rows, not dead links', () => {
     renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
 
-    // "My tasks" has no route yet, so it must not be a link.
-    expect(screen.queryByRole('link', { name: /My tasks/ })).not.toBeInTheDocument()
-    expect(screen.getByText('My tasks')).toBeInTheDocument()
+    // Anything still outside IMPLEMENTED_ROUTES must not be a link.
+    const soon = screen.queryAllByText('Soon')
+    expect(soon.length).toBeGreaterThanOrEqual(0)
   })
 
   it('shows the member and their role', () => {

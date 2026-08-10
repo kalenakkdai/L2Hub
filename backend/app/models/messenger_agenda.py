@@ -36,6 +36,8 @@ class MessengerAgendaSession(Base):
     captured_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
     agenda_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     assignments_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    # JSON list of {name, color, highlight, initials, lineCount}
+    contributors_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     plan_id: Mapped[str | None] = mapped_column(String, nullable=True)
     capturing_started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

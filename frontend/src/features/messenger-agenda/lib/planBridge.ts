@@ -1,5 +1,10 @@
 import type { PlanAgendaDocument } from '../../event-planning/types'
-import type { MessengerAgendaSession } from '../types'
+import type { AgendaBullet, MessengerAgendaSession } from '../types'
+
+/** The plan document is plain text, so attribution rides along in the line. */
+function attributed(bullet: AgendaBullet): string {
+  return bullet.speaker ? `${bullet.text} — ${bullet.speaker}` : bullet.text
+}
 
 /** Map a finalized Messenger agenda onto the event-planning agenda document. */
 export function agendaToPlanDocument(
@@ -10,7 +15,7 @@ export function agendaToPlanDocument(
   const sections = (agenda.sections ?? []).map((section, index) => ({
     roman: roman(index + 1),
     title: section.title,
-    items: section.bullets.map((bullet) => ({ text: bullet })),
+    items: section.bullets.map((bullet) => ({ text: attributed(bullet) })),
   }))
 
   return {
@@ -18,7 +23,7 @@ export function agendaToPlanDocument(
     schoolYear: schoolYearFor(now),
     title: agenda.title || session.title,
     goals: agenda.goals?.length
-      ? [...agenda.goals]
+      ? agenda.goals.map(attributed)
       : agenda.summary
         ? [agenda.summary]
         : ['Review Messenger capture decisions'],

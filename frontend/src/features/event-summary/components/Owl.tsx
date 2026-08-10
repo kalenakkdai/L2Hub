@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { OwlPerchTarget } from '../lib/owlTents'
 
 /**
  * A snowy owl that glides along a path through the night sky, tracking the
@@ -24,6 +25,11 @@ const OWL_SIZE = 116
 const GLIDE_OUT_MS = 420
 /** A hop between waypoints when the page is too short to scroll. */
 const ROAM_MS = 5000
+/** Landing glide, then time spent sitting on the tent before takeoff. */
+const LANDING_MS = 720
+const PERCH_MS = 3200
+/** Stops the same tent immediately catching the owl again after takeoff. */
+const PERCH_COOLDOWN_MS = 8000
 
 /** Eases each segment so the owl slows into a waypoint and accelerates away. */
 function smoothstep(t: number): number {
@@ -62,16 +68,25 @@ export type OwlProps = {
    * Called with the owl's on-screen box every time it moves, so a parent can
    * react to where the owl is flying (e.g. open a tent's doors underneath it).
    */
-  onSweep?: (rect: DOMRect) => void
+  onSweep?: (rect: DOMRect) => OwlPerchTarget | null
+  /** Full-bleed scenes have no desktop sidebar offset. */
+  fullBleed?: boolean
 }
 
-export function Owl({ onSweep }: OwlProps = {}) {
+export function Owl({ onSweep, fullBleed = false }: OwlProps = {}) {
+  const overlayRef = useRef<HTMLDivElement | null>(null)
   const anchorRef = useRef<HTMLDivElement | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [flying, setFlying] = useState(false)
   const [facingLeft, setFacingLeft] = useState(false)
   const [roaming, setRoaming] = useState(false)
+  const [perched, setPerched] = useState(false)
   const lastX = useRef(WAYPOINTS[0].x)
+  const lastProgress = useRef(0)
+  const perchedRef = useRef(false)
+  const lastPerch = useRef<{ id: string; at: number } | null>(null)
+  const landingTimer = useRef(0)
+  const takeoffTimer = useRef(0)
 
   // Kept in a ref so the scroll/roam loops always call the latest handler
   // without needing to resubscribe every time the parent re-renders.
@@ -83,9 +98,49 @@ export function Owl({ onSweep }: OwlProps = {}) {
   // Position is written straight to the node instead of through state: scroll
   // fires every frame, and re-rendering React that often to move one element
   // is wasted work.
-  const moveTo = (progress: number) => {
+  function landOn(target: OwlPerchTarget) {
     const anchor = anchorRef.current
-    if (!anchor) return
+    const overlay = overlayRef.current
+    if (!anchor || !overlay || perchedRef.current) return
+
+    const recent = lastPerch.current
+    if (
+      recent?.id === target.id &&
+      Date.now() - recent.at < PERCH_COOLDOWN_MS
+    ) {
+      return
+    }
+
+    perchedRef.current = true
+    lastPerch.current = { id: target.id, at: Date.now() }
+    setPerched(true)
+    setFlying(true)
+
+    const overlayRect = overlay.getBoundingClientRect()
+    anchor.style.left = `${target.x - overlayRect.left}px`
+    anchor.style.top = `${target.y - overlayRect.top}px`
+
+    window.clearTimeout(landingTimer.current)
+    window.clearTimeout(takeoffTimer.current)
+    landingTimer.current = window.setTimeout(() => {
+      setFlying(false)
+    }, LANDING_MS)
+    takeoffTimer.current = window.setTimeout(() => {
+      perchedRef.current = false
+      setPerched(false)
+      setFlying(true)
+      moveTo(lastProgress.current, false)
+      landingTimer.current = window.setTimeout(
+        () => setFlying(false),
+        GLIDE_OUT_MS,
+      )
+    }, LANDING_MS + PERCH_MS)
+  }
+
+  function moveTo(progress: number, mayPerch = true) {
+    const anchor = anchorRef.current
+    if (!anchor || perchedRef.current) return
+    lastProgress.current = progress
 
     const { x, y } = owlPosition(progress)
     anchor.style.left = `${x}%`
@@ -101,7 +156,8 @@ export function Owl({ onSweep }: OwlProps = {}) {
     // Report where the owl now appears so tents below can react as it passes.
     const svg = svgRef.current
     if (svg && onSweepRef.current) {
-      onSweepRef.current(svg.getBoundingClientRect())
+      const target = onSweepRef.current(svg.getBoundingClientRect())
+      if (target && mayPerch) landOn(target)
     }
   }
 
@@ -140,6 +196,8 @@ export function Owl({ onSweep }: OwlProps = {}) {
       window.removeEventListener('resize', onScroll)
       if (frame) window.cancelAnimationFrame(frame)
       window.clearTimeout(stopTimer)
+      window.clearTimeout(landingTimer.current)
+      window.clearTimeout(takeoffTimer.current)
     }
   }, [])
 
@@ -159,19 +217,32 @@ export function Owl({ onSweep }: OwlProps = {}) {
     return () => window.clearInterval(timer)
   }, [roaming])
 
-  const bodyClass = ['owl-body', flying ? 'owl-body-flying' : '']
+  const bodyClass = [
+    'owl-body',
+    flying ? 'owl-body-flying' : '',
+    perched ? 'owl-body-perched' : '',
+  ]
     .filter(Boolean)
     .join(' ')
 
   return (
     <>
       <div
+        ref={overlayRef}
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-20 lg:left-64"
+        className={`pointer-events-none fixed inset-0 z-20 ${
+          fullBleed ? '' : 'lg:left-64'
+        }`}
       >
         <div
           ref={anchorRef}
-          className={roaming ? 'owl-anchor owl-anchor-roaming' : 'owl-anchor'}
+          className={[
+            'owl-anchor',
+            roaming ? 'owl-anchor-roaming' : '',
+            perched ? 'owl-anchor-perching' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           style={{ left: `${WAYPOINTS[0].x}%`, top: `${WAYPOINTS[0].y}%` }}
         >
           <div className={bodyClass}>
@@ -277,6 +348,12 @@ export function Owl({ onSweep }: OwlProps = {}) {
             top 1200ms cubic-bezier(0.45, 0, 0.25, 1);
         }
 
+        .owl-anchor-perching {
+          transition:
+            left ${LANDING_MS}ms cubic-bezier(0.35, 0, 0.2, 1),
+            top ${LANDING_MS}ms cubic-bezier(0.35, 0, 0.2, 1);
+        }
+
         .owl-body {
           animation: owlBob 3.6s ease-in-out infinite;
           filter: drop-shadow(0 6px 14px rgb(5 9 15 / 0.55));
@@ -285,6 +362,22 @@ export function Owl({ onSweep }: OwlProps = {}) {
         /* Mid-flight the owl leans into the direction it is travelling. */
         .owl-body-flying {
           animation: owlSwoop 900ms ease-in-out infinite;
+        }
+
+        /* Sitting still on a roof: wings fold, feet grip, and the body only
+         * breathes instead of hovering several pixels above the perch. */
+        .owl-body-perched {
+          animation: owlPerched 2.8s ease-in-out infinite;
+        }
+
+        .owl-body-perched .owl-wing-far,
+        .owl-body-perched .owl-wing-near {
+          animation: none;
+          transform: rotate(0deg);
+        }
+
+        .owl-body-perched .owl-feet {
+          opacity: 1;
         }
 
         /* Each wing turns about its own shoulder — a wing pivoting on the
@@ -332,6 +425,11 @@ export function Owl({ onSweep }: OwlProps = {}) {
         @keyframes owlSwoop {
           0%, 100% { transform: translateY(0) rotate(-3deg); }
           50% { transform: translateY(-10px) rotate(4deg); }
+        }
+
+        @keyframes owlPerched {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(1px) rotate(0deg); }
         }
 
         @keyframes owlGlideNear {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { owlOverTent, rectsOverlap, type Rect } from './owlTents'
+import {
+  owlOverTent,
+  rectsOverlap,
+  tentPerchPoint,
+  type Rect,
+} from './owlTents'
 
 const box = (left: number, top: number, width: number, height: number): Rect => ({
   left,
@@ -53,5 +58,18 @@ describe('owlOverTent', () => {
   it('never triggers against an unmeasured (zero-size) tent', () => {
     // jsdom / pre-layout nodes report empty rects; those must not fire.
     expect(owlOverTent(box(0, 0, 50, 50), box(0, 0, 0, 0))).toBe(false)
+  })
+})
+
+describe('tentPerchPoint', () => {
+  it('centres the owl over the roof and rests its feet on the marker', () => {
+    expect(tentPerchPoint(box(118, 190, 4, 4), 100)).toEqual({
+      x: 120,
+      y: 156,
+    })
+  })
+
+  it('ignores an unmeasured perch marker', () => {
+    expect(tentPerchPoint(box(0, 0, 0, 0), 116)).toBeNull()
   })
 })

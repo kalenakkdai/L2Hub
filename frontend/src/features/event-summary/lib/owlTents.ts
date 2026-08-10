@@ -16,6 +16,15 @@ export type Rect = {
   bottom: number
 }
 
+export type PerchPoint = {
+  x: number
+  y: number
+}
+
+export type OwlPerchTarget = PerchPoint & {
+  id: string
+}
+
 /** True when two boxes share any area. Edges that merely touch do not count. */
 export function rectsOverlap(a: Rect, b: Rect): boolean {
   return (
@@ -39,4 +48,21 @@ export function owlOverTent(
   if (tent.right <= tent.left || tent.bottom <= tent.top) return false
   const zone: Rect = { ...tent, top: tent.top - Math.max(0, overhang) }
   return rectsOverlap(owl, zone)
+}
+
+/**
+ * Viewport point for the owl's centre when its feet rest on a tent peak.
+ *
+ * The feet sit near 86% of the owl SVG's height, so moving its centre upward
+ * by 36% of the rendered height places the talons on the measured perch.
+ */
+export function tentPerchPoint(
+  perch: Rect,
+  owlHeight: number,
+): PerchPoint | null {
+  if (perch.right <= perch.left || perch.bottom <= perch.top) return null
+  return {
+    x: (perch.left + perch.right) / 2,
+    y: (perch.top + perch.bottom) / 2 - owlHeight * 0.36,
+  }
 }

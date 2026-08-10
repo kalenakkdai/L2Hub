@@ -49,6 +49,7 @@ export function EventPlanningPage() {
           roleLabel: string
           committeeSlug: string
           committeeName: string
+          attributedTo?: string | null
         }>
       }
       void createPlan
@@ -60,7 +61,9 @@ export function EventPlanningPage() {
             targetType: 'committee' as const,
             committeeId: `com-${item.committeeSlug}`,
             committeeName: item.committeeName,
-            roleLabel: item.roleLabel,
+            roleLabel: item.attributedTo
+              ? `${item.roleLabel} (raised by ${item.attributedTo})`
+              : item.roleLabel,
           })),
         })
         .then((plan) => {
