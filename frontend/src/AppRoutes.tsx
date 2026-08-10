@@ -61,33 +61,19 @@ import {
   AssignmentRequestsPage,
   CommitteeGradeEntryPage,
   EventGradebookPage,
+  FastApiGradebookAuthProvider,
+  FastApiGradebookCommandProvider,
+  FastApiGradebookDataProvider,
   GradeAssignmentPage,
   GradebookProvider,
   GradesLayout,
   GradesPage,
-  MockGradebookAuthProvider,
-  MockGradebookCommandProvider,
-  MockGradebookDataProvider,
   StudentGradebookPage,
 } from './features/grades'
 
-const gradebookDataProvider = new MockGradebookDataProvider()
-const gradebookCommandProvider = new MockGradebookCommandProvider(
-  gradebookDataProvider,
-)
-const gradebookAuthProvider = new MockGradebookAuthProvider([
-  'gradebook.view_own',
-  'gradebook.view_event',
-  'gradebook.view_student',
-  // Dev default: Jan/Jadon operator — full control.
-  'gradebook.assign',
-  'gradebook.grade',
-  'gradebook.grade_committee',
-  'gradebook.request_assignment',
-  'gradebook.publish',
-  'gradebook.mark_excused',
-  'debrief.reopen',
-])
+const gradebookDataProvider = new FastApiGradebookDataProvider()
+const gradebookCommandProvider = new FastApiGradebookCommandProvider()
+const gradebookAuthProvider = new FastApiGradebookAuthProvider()
 
 const eventPlanningDataProvider = new MockEventPlanningDataProvider()
 const eventPlanningAuthProvider = new MockEventPlanningAuthProvider([

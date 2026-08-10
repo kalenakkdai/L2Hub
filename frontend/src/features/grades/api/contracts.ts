@@ -65,6 +65,15 @@ export interface GradebookCommandProvider {
   submitCommitteeGrades?(
     input: CommitteeGradeBatchInput,
   ): Promise<CommitteeGradeRoster>
+  /** Jan/Jadon create a new gradebook assignment and enroll the class. */
+  createAssignment?(input: {
+    title: string
+    categoryId: string
+    pointsPossible?: number
+    assignmentType?: string
+    description?: string | null
+    dueAt?: string | null
+  }): Promise<{ id: string; title: string }>
 }
 
 /**

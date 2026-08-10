@@ -16,6 +16,13 @@ export {
 } from './api/mockGradebookAdapter'
 
 export {
+  FastApiGradebookDataProvider,
+  FastApiGradebookCommandProvider,
+  FastApiGradebookAuthProvider,
+  fetchGradeAssignments,
+} from './api/fastapiGradebookAdapter'
+
+export {
   SupabaseGradebookDataProvider,
   mapSupabaseGradeEntry,
   mapSupabaseHistoryItem,

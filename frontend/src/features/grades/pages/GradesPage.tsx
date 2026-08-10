@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { GradeFilters } from '../components/GradeFilters'
 import { GradeSummary } from '../components/GradeSummary'
@@ -12,7 +12,12 @@ import {
   EmptyGradesState,
   GradesErrorState,
 } from '../components/EmptyGradesState'
-import { useGradebook } from '../hooks/useGradebook'
+import { fetchGradeAssignments } from '../api/fastapiGradebookAdapter'
+import {
+  gradebookKeys,
+  useGradebook,
+  useGradebookCommands,
+} from '../hooks/useGradebook'
 import { useGradebookContext } from '../context/GradebookProvider'
 import type { GradebookFilters, GradebookSortField, GradebookTab } from '../types'
 import {
@@ -21,6 +26,14 @@ import {
   isAssignmentGradebookTab,
   parseGradebookTab,
 } from '../utils/tabs'
+
+const CATEGORY_OPTIONS = [
+  { id: 'cat-debriefs', label: 'Event debriefs' },
+  { id: 'cat-reflections', label: 'Reflections' },
+  { id: 'cat-deliverables', label: 'Deliverables' },
+  { id: 'cat-participation', label: 'Participation' },
+  { id: 'cat-committee-grades', label: 'Committee grades' },
+]
 
 function parseSort(value: string | null): GradebookSortField {
   const allowed: GradebookSortField[] = [
@@ -35,6 +48,139 @@ function parseSort(value: string | null): GradebookSortField {
     return value as GradebookSortField
   }
   return 'default'
+}
+
+function OperatorCreatePanel() {
+  const commands = useGradebookCommands()
+  const queryClient = useQueryClient()
+  const [title, setTitle] = useState('')
+  const [categoryId, setCategoryId] = useState('cat-debriefs')
+  const [pointsPossible, setPointsPossible] = useState('20')
+  const [createdId, setCreatedId] = useState<string | null>(null)
+
+  const assignmentsQuery = useQuery({
+    queryKey: ['gradebook', 'assignments'],
+    queryFn: fetchGradeAssignments,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!commands?.createAssignment) {
+        throw new Error('Create assignment unavailable')
+      }
+      return commands.createAssignment({
+        title: title.trim(),
+        categoryId,
+        pointsPossible: Number(pointsPossible) || 10,
+        assignmentType: 'custom',
+      })
+    },
+    onSuccess: async (assignment) => {
+      setCreatedId(assignment.id)
+      setTitle('')
+      await queryClient.invalidateQueries({ queryKey: gradebookKeys.me() })
+      await queryClient.invalidateQueries({
+        queryKey: ['gradebook', 'assignments'],
+      })
+    },
+  })
+
+  if (!commands?.createAssignment) return null
+
+  return (
+    <section className="mb-4 rounded-card border border-border-subtle bg-surface-sunken p-4">
+      <h2 className="text-sm font-semibold text-ink">Create assignment</h2>
+      <p className="mt-1 text-xs text-ink-subtle">
+        Jan / Jadon only. Enrolls every active camper, then open the roster to
+        score and publish.
+      </p>
+      <form
+        className="mt-3 flex flex-wrap items-end gap-3"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (!title.trim()) return
+          createMutation.mutate()
+        }}
+      >
+        <label className="min-w-[12rem] flex-1 text-xs text-ink-muted">
+          Title
+          <input
+            className="mt-1 w-full rounded-control border border-border-subtle bg-surface px-2.5 py-1.5 text-sm text-ink"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+          />
+        </label>
+        <label className="text-xs text-ink-muted">
+          Category
+          <select
+            className="mt-1 block rounded-control border border-border-subtle bg-surface px-2.5 py-1.5 text-sm text-ink"
+            value={categoryId}
+            onChange={(event) => setCategoryId(event.target.value)}
+          >
+            {CATEGORY_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="w-24 text-xs text-ink-muted">
+          Points
+          <input
+            type="number"
+            min={1}
+            className="mt-1 w-full rounded-control border border-border-subtle bg-surface px-2.5 py-1.5 text-sm text-ink"
+            value={pointsPossible}
+            onChange={(event) => setPointsPossible(event.target.value)}
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={createMutation.isPending || !title.trim()}
+          className="rounded-control border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface-muted disabled:opacity-50"
+        >
+          {createMutation.isPending ? 'Creating…' : 'Create'}
+        </button>
+      </form>
+      {createMutation.isError ? (
+        <p className="mt-2 text-xs text-status-danger" role="alert">
+          {createMutation.error instanceof Error
+            ? createMutation.error.message
+            : 'Could not create assignment.'}
+        </p>
+      ) : null}
+      {createdId ? (
+        <p className="mt-2 text-xs text-ink-muted">
+          Created.{' '}
+          <Link
+            to={`/grades/events/${createdId}`}
+            className="font-medium text-accent-ink underline-offset-2 hover:underline"
+          >
+            Open roster to grade
+          </Link>
+        </p>
+      ) : null}
+      {(assignmentsQuery.data?.length ?? 0) > 0 ? (
+        <ul className="mt-3 space-y-1 border-t border-border-divider pt-3">
+          {assignmentsQuery.data!.map((assignment) => (
+            <li key={assignment.id} className="text-xs text-ink">
+              <Link
+                to={`/grades/events/${assignment.id}`}
+                className="font-medium underline-offset-2 hover:underline"
+              >
+                {assignment.title}
+              </Link>
+              <span className="text-ink-subtle">
+                {' '}
+                · {assignment.pointsPossible} pts · mass grade
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  )
 }
 
 export function GradesPage() {
@@ -97,6 +243,8 @@ export function GradesPage() {
     return filterEntriesByTab(gradebookQuery.data?.entries ?? [], tab)
   }, [gradebookQuery.data?.entries, tab])
 
+  const canAssign = authProvider.hasPermission('gradebook.assign')
+
   return (
     <div>
       <header className="mb-4 border-b border-border-subtle pb-4">
@@ -120,7 +268,7 @@ export function GradesPage() {
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {authProvider.hasPermission('gradebook.request_assignment') ||
-          authProvider.hasPermission('gradebook.assign') ? (
+          canAssign ? (
             <Link
               to="/grades/requests"
               className="text-xs font-medium text-ink underline-offset-2 hover:underline"
@@ -136,16 +284,10 @@ export function GradesPage() {
               Committee grades
             </Link>
           ) : null}
-          {authProvider.hasPermission('gradebook.view_event') ? (
-            <Link
-              to="/grades/events/evt-maze"
-              className="text-xs font-medium text-ink underline-offset-2 hover:underline"
-            >
-              Event mass grading
-            </Link>
-          ) : null}
         </div>
       </header>
+
+      {canAssign && userQuery.isSuccess ? <OperatorCreatePanel /> : null}
 
       {gradebookQuery.isPending ? (
         <p className="text-sm text-ink-muted" role="status">

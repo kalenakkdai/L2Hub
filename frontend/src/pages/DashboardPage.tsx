@@ -60,15 +60,21 @@ export function DashboardPage() {
       header={
         <DashboardHeader
           firstName={firstName}
-          stats={data.stats}
+          stats={
+            data.stats ?? {
+              gradeLetter: null,
+              gradePercent: null,
+              openCount: 0,
+            }
+          }
           permissions={profile.permissions}
         />
       }
       rail={
         <DashboardRail
-          committee={data.committeeSnapshot}
-          debrief={data.liveDebrief}
-          upcoming={data.upcoming}
+          committee={data.committeeSnapshot ?? null}
+          debrief={data.liveDebrief ?? null}
+          upcoming={data.upcoming ?? []}
         />
       }
     >
@@ -83,7 +89,9 @@ export function DashboardPage() {
               description="When an event needs you, it will appear here."
             />
           )}
-          {data.calendar.length > 0 && <CalendarRail days={data.calendar} />}
+          {(data.calendar?.length ?? 0) > 0 && (
+            <CalendarRail days={data.calendar ?? []} />
+          )}
         </Section>
 
         <Section
@@ -91,14 +99,14 @@ export function DashboardPage() {
           revealIndex={1}
           aside={<span className="text-[13px] text-ink-subtle">Ranked by urgency</span>}
         >
-          {data.attention.length === 0 ? (
+          {(data.attention?.length ?? 0) === 0 ? (
             <EmptyState
               icon={Inbox}
               title="You are all caught up"
               description="Nothing is waiting on you right now."
             />
           ) : (
-            <AttentionList items={data.attention} />
+            <AttentionList items={data.attention ?? []} />
           )}
         </Section>
 
@@ -114,27 +122,51 @@ export function DashboardPage() {
             </Link>
           }
         >
-          {data.grades.rows.length === 0 ? (
+          {(data.grades?.rows?.length ?? 0) === 0 ? (
             <EmptyState
               title="No assignments yet"
               description="Graded work will show up here as it is assigned."
             />
           ) : (
-            <GradesPanel grades={data.grades} />
+            <GradesPanel
+              grades={
+                data.grades ?? {
+                  completed: 0,
+                  missing: 0,
+                  open: 0,
+                  pointsEarned: 0,
+                  pointsPossible: 0,
+                  rows: [],
+                }
+              }
+            />
           )}
         </Section>
 
         <Section title="My progress" revealIndex={3}>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ProgressPanel progress={data.progress} />
-            {data.activity.length === 0 ? (
+            <ProgressPanel
+              progress={
+                data.progress ?? {
+                  gradeLetter: null,
+                  gradePercent: null,
+                  nextBand: null,
+                  nextBandMin: null,
+                  streakWeeks: 0,
+                  tasksDone: 0,
+                  participationRate: 0,
+                  note: null,
+                }
+              }
+            />
+            {(data.activity?.length ?? 0) === 0 ? (
               <EmptyState
                 icon={Inbox}
                 title="No activity yet"
                 description="Grades, check-ins, and submissions will show up here."
               />
             ) : (
-              <ActivityFeed items={data.activity} />
+              <ActivityFeed items={data.activity ?? []} />
             )}
           </div>
         </Section>

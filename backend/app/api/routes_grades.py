@@ -1,13 +1,9 @@
-"""Protected grade endpoints.
-
-Persistence is still a stub; the routes exist so the Jan/Jadon operator
-matrix, head draft requests, committee-category grades, and mass grading
-can be exercised — and so peer transparency notifications fire on writes.
-"""
+"""Protected grade endpoints with persisted assignments and scores."""
 
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -21,6 +17,24 @@ from app.services import gradebook
 from app.services.gradebook_operators import is_gradebook_operator
 
 router = APIRouter(prefix="/grades", tags=["grades"])
+
+
+class CreateAssignmentBody(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    category_id: str = Field(alias="categoryId")
+    points_possible: float = Field(default=10, alias="pointsPossible")
+    assignment_type: str = Field(default="custom", alias="assignmentType")
+    description: str | None = None
+    event_id: uuid.UUID | None = Field(default=None, alias="eventId")
+    committee_id: uuid.UUID | None = Field(default=None, alias="committeeId")
+    due_at: datetime | None = Field(default=None, alias="dueAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class GradeEntryBody(BaseModel):
+    score: float | None = None
+    status: str | None = None
 
 
 class PublishBody(BaseModel):
@@ -79,14 +93,20 @@ class CommitteeGradeScore(BaseModel):
 
 
 class CommitteeGradesBody(BaseModel):
-    """Class-wide scores in the Committee grades category (separate from assignments)."""
-
     committee_id: uuid.UUID = Field(alias="committeeId")
     assignment_title: str | None = Field(default=None, alias="assignmentTitle")
     points_possible: float = Field(default=10, alias="pointsPossible")
     scores: list[CommitteeGradeScore] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
+
+
+def _require_operator(profile: CurrentProfile, detail: str) -> None:
+    if not is_gradebook_operator(profile):
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=detail,
+        )
 
 
 @router.get("/me")
@@ -97,37 +117,50 @@ def read_own_grades(profile: CurrentProfile, db: DbSession) -> dict:
         pk.GRADES_VIEW_OWN,
         resource_owner_id=profile.id,
     )
-    return {
-        "user_id": str(profile.id),
-        "entries": [],
-        "summary": {"earnedPoints": 0, "possiblePoints": 0},
-        # Students only ever see published rows once the store is live.
-        "visibility": "published_only",
-        "categories": [
-            {"id": "cat-debriefs", "name": "Event debriefs", "weightPercent": 35},
-            {"id": "cat-reflections", "name": "Reflections", "weightPercent": 20},
-            {"id": "cat-deliverables", "name": "Deliverables", "weightPercent": 15},
-            {"id": "cat-participation", "name": "Participation", "weightPercent": 10},
-            {
-                "id": "cat-committee-grades",
-                "name": "Committee grades",
-                "weightPercent": 20,
-            },
-        ],
-    }
+    return gradebook.own_gradebook(db, profile)
 
 
 @router.get("/all")
 def read_all_grades(profile: CurrentProfile, db: DbSession) -> dict:
     authz.require_permission(db, profile, pk.GRADES_VIEW_ALL)
-    return {"entries": [], "scope": "all"}
+    _require_operator(profile, "Only Jan and Jadon can view the full gradebook.")
+    return gradebook.all_gradebook(db)
 
 
 @router.get("/pending")
 def read_pending_grades(profile: CurrentProfile, db: DbSession) -> dict:
-    """Scores waiting to be published for students."""
     authz.require_permission(db, profile, pk.GRADES_PUBLISH)
-    return {"entries": [], "scope": "pending_publish"}
+    _require_operator(profile, "Only Jan and Jadon can view the publish queue.")
+    return gradebook.pending_gradebook(db)
+
+
+@router.get("/assignments")
+def list_assignments(profile: CurrentProfile, db: DbSession) -> dict:
+    authz.require_permission(db, profile, pk.GRADES_ASSIGN)
+    _require_operator(profile, "Only Jan and Jadon can list gradebook assignments.")
+    return gradebook.list_assignments(db)
+
+
+@router.get("/assignments/{assignment_id}")
+def read_assignment(
+    assignment_id: uuid.UUID, profile: CurrentProfile, db: DbSession
+) -> dict:
+    authz.require_permission(
+        db,
+        profile,
+        pk.GRADES_VIEW_OWN,
+        resource_owner_id=profile.id,
+    )
+    return gradebook.assignment_detail_for_caller(db, assignment_id, profile)
+
+
+@router.get("/assignments/{assignment_id}/roster")
+def read_assignment_roster(
+    assignment_id: uuid.UUID, profile: CurrentProfile, db: DbSession
+) -> dict:
+    authz.require_permission(db, profile, pk.GRADES_VIEW_ALL)
+    _require_operator(profile, "Only Jan and Jadon can view assignment rosters.")
+    return gradebook.assignment_roster(db, assignment_id)
 
 
 @router.get("/users/{user_id}")
@@ -142,29 +175,53 @@ def read_user_grades(
             resource_owner_id=user_id,
         )
     else:
-        # Another student's grades require org-wide grade access.
         authz.require_permission(db, profile, pk.GRADES_VIEW_ALL)
-    return {"user_id": str(user_id), "entries": []}
+        _require_operator(profile, "Only Jan and Jadon can view another student's grades.")
+    return gradebook.user_gradebook(db, user_id, viewer=profile)
 
 
 @router.post("/assignments", status_code=201)
-def create_assignment(profile: CurrentProfile, db: DbSession) -> dict:
-    """Configure a gradebook item. Jan and Jadon only."""
+def create_assignment(
+    body: CreateAssignmentBody, profile: CurrentProfile, db: DbSession
+) -> dict:
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can configure gradebook assignments.",
-        )
+    _require_operator(
+        profile, "Only Jan and Jadon can configure gradebook assignments."
+    )
+    assignment = gradebook.create_assignment(
+        db,
+        profile,
+        title=body.title,
+        category_id=body.category_id,
+        points_possible=body.points_possible,
+        assignment_type=body.assignment_type,
+        description=body.description,
+        event_id=body.event_id,
+        committee_id=body.committee_id,
+        due_at=body.due_at,
+    )
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
         action="configured an assignment",
-        detail="A gradebook assignment was created or updated.",
-        payload={"href": "/grades"},
+        detail=f'Created "{assignment.title}".',
+        payload={
+            "assignmentId": str(assignment.id),
+            "href": f"/grades/events/{assignment.id}",
+        },
     )
     db.commit()
-    return {"ok": True, "assignment": None}
+    return {
+        "ok": True,
+        "assignment": {
+            "id": str(assignment.id),
+            "title": assignment.title,
+            "categoryId": assignment.category_id,
+            "assignmentType": assignment.assignment_type,
+            "pointsPossible": assignment.points_possible,
+            "dueAt": assignment.due_at.isoformat() if assignment.due_at else None,
+        },
+    }
 
 
 @router.put("/assignments/{assignment_id}/rubric")
@@ -174,13 +231,9 @@ def update_assignment_rubric(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Change rubric criteria. Jan and Jadon only."""
+    """MVP stub — rubrics are not persisted yet."""
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can change rubrics.",
-        )
+    _require_operator(profile, "Only Jan and Jadon can change rubrics.")
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
@@ -199,16 +252,19 @@ def update_assignment_rubric(
 @router.post("/entries/{entry_id}/grade")
 def grade_entry(
     entry_id: uuid.UUID,
+    body: GradeEntryBody,
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Enter a score on an individual assignment. Jan and Jadon only."""
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can grade individual assignments.",
-        )
+    _require_operator(profile, "Only Jan and Jadon can grade individual assignments.")
+    entry = gradebook.grade_entry(
+        db,
+        profile,
+        entry_id,
+        score=body.score,
+        status=body.status,
+    )
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
@@ -219,8 +275,9 @@ def grade_entry(
     db.commit()
     return {
         "ok": True,
-        "entryId": str(entry_id),
-        "publicationStatus": "pending_publish",
+        "entry": gradebook._entry_payload(entry, include_student=True),
+        "entryId": str(entry.id),
+        "publicationStatus": entry.publication_status,
     }
 
 
@@ -230,21 +287,28 @@ def bulk_grade_entries(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Mass-grade multiple entries at once. Jan and Jadon only."""
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can mass grade.",
-        )
-    count = len(body.items)
+    _require_operator(profile, "Only Jan and Jadon can mass grade.")
+    graded = gradebook.bulk_grade(
+        db,
+        profile,
+        [
+            {
+                "entry_id": item.entry_id,
+                "score": item.score,
+                "status": item.status,
+            }
+            for item in body.items
+        ],
+    )
+    count = len(graded)
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
         action="mass graded",
         detail=f"Applied scores to {count} entr{'y' if count == 1 else 'ies'}.",
         payload={
-            "entryIds": [str(item.entry_id) for item in body.items],
+            "entryIds": [str(e.id) for e in graded],
             "href": "/grades",
         },
     )
@@ -252,28 +316,27 @@ def bulk_grade_entries(
     return {
         "ok": True,
         "gradedCount": count,
-        "entryIds": [str(item.entry_id) for item in body.items],
+        "entries": [
+            gradebook._entry_payload(e, include_student=True) for e in graded
+        ],
+        "entryIds": [str(e.id) for e in graded],
         "publicationStatus": "pending_publish",
     }
 
 
 @router.post("/publish")
 def publish_grades(body: PublishBody, profile: CurrentProfile, db: DbSession) -> dict:
-    """Release scores so students can see them. Jan and Jadon only."""
     authz.require_permission(db, profile, pk.GRADES_PUBLISH)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can publish grades.",
-        )
-    count = len(body.entry_ids)
+    _require_operator(profile, "Only Jan and Jadon can publish grades.")
+    published = gradebook.publish_entries(db, body.entry_ids)
+    count = len(published)
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
         action="published grades",
         detail=f"Released {count} grade{'s' if count != 1 else ''} to students.",
         payload={
-            "entryIds": [str(i) for i in body.entry_ids],
+            "entryIds": [str(e.id) for e in published],
             "href": "/grades",
         },
     )
@@ -281,13 +344,15 @@ def publish_grades(body: PublishBody, profile: CurrentProfile, db: DbSession) ->
     return {
         "ok": True,
         "publishedCount": count,
-        "entryIds": [str(i) for i in body.entry_ids],
+        "entries": [
+            gradebook._entry_payload(e, include_student=True) for e in published
+        ],
+        "entryIds": [str(e.id) for e in published],
     }
 
 
 @router.get("/assignment-requests")
 def list_assignment_requests(profile: CurrentProfile, db: DbSession) -> dict:
-    """Draft assignment requests from heads (operators) or own requests (heads)."""
     ctx = authz.build_auth_context(db, profile)
     can_review = pk.GRADES_ASSIGN in ctx.permissions and is_gradebook_operator(profile)
     can_request = pk.GRADES_REQUEST_ASSIGNMENT in ctx.permissions
@@ -305,7 +370,6 @@ def create_assignment_request(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Committee head sends a draft assignment request to Jan for approval."""
     ctx = authz.build_auth_context(db, profile)
     scoped = body.committee_id
     if scoped is None and len(ctx.headed_committee_ids) == 1:
@@ -345,13 +409,8 @@ def review_assignment_request(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Jan or Jadon approves or rejects a head's draft assignment request."""
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
-    if not is_gradebook_operator(profile):
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only Jan and Jadon can approve assignment requests.",
-        )
+    _require_operator(profile, "Only Jan and Jadon can approve assignment requests.")
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
@@ -374,11 +433,6 @@ def submit_committee_grades(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    """Enter class-wide scores in the Committee grades category.
-
-    Heads are scoped to committees they lead. Jan/Jadon may enter for any
-    committee. These scores stay separate from individual assignment grades.
-    """
     authz.require_permission(
         db, profile, pk.GRADES_GRADE_COMMITTEE, committee_id=body.committee_id
     )
@@ -411,7 +465,6 @@ def submit_committee_grades(
         "categoryId": "cat-committee-grades",
         "gradedCount": count,
         "publicationStatus": "pending_publish",
-        "assignmentTitle": body.assignment_title
-        or "Committee performance",
+        "assignmentTitle": body.assignment_title or "Committee performance",
         "pointsPossible": body.points_possible,
     }

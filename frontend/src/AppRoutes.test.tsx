@@ -16,11 +16,56 @@ const { AppRoutes } = await import('./AppRoutes')
 const mock = supabase as unknown as SupabaseMock
 
 function mockApi(body: unknown, status = 200) {
-  return vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => body,
-  } as Response)
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    let payload: unknown = body
+    if (url.includes('/dashboard') && !url.includes('/auth/dashboard')) {
+      payload = {
+        committee: null,
+        campsiteCount: 0,
+        stats: { gradeLetter: null, gradePercent: null, openCount: 0 },
+        nextEvent: null,
+        calendar: [],
+        attention: [],
+        grades: {
+          completed: 0,
+          missing: 0,
+          open: 0,
+          pointsEarned: 0,
+          pointsPossible: 0,
+          rows: [],
+        },
+        progress: {
+          gradeLetter: null,
+          gradePercent: null,
+          nextBand: null,
+          nextBandMin: null,
+          streakWeeks: 0,
+          tasksDone: 0,
+          participationRate: 0,
+          note: null,
+        },
+        activity: [],
+        committeeSnapshot: null,
+        liveDebrief: null,
+        upcoming: [],
+      }
+    } else if (url.includes('/grades/me')) {
+      payload = {
+        entries: [],
+        summary: {},
+        categories: [],
+        student: { id: PROFILE.id, name: PROFILE.full_name },
+      }
+    } else if (url.includes('/auth/me') || url.endsWith('/me')) {
+      payload = { ...PROFILE, permissions: [] }
+    }
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => payload,
+    } as Response
+  })
 }
 
 const PROFILE = {

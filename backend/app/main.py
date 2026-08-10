@@ -6,6 +6,7 @@ from app.api.routes_auth import router as auth_router
 from app.api.routes_calendar import router as calendar_router
 from app.api.routes_campsite import router as campsite_router
 from app.api.routes_committees import router as committees_router
+from app.api.routes_dashboard import router as dashboard_router
 from app.api.routes_events import router as events_router
 from app.api.routes_feedback import router as feedback_router
 from app.api.routes_grades import router as grades_router
@@ -32,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(dashboard_router)
 app.include_router(attendance_router)
 app.include_router(campsite_router)
 app.include_router(calendar_router)
