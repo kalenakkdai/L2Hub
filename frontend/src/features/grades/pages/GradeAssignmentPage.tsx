@@ -191,10 +191,16 @@ export function GradeAssignmentPage() {
                   : undefined
               }
             />
+            {canGrade && canPublish ? (
+              <p className="mt-2 text-[12.5px] text-ink-subtle">
+                Jan and Jadon share full gradebook control. Each change notifies
+                the other so nothing is invisible.
+              </p>
+            ) : null}
             {canGrade && !canPublish ? (
               <p className="mt-2 text-[12.5px] text-ink-subtle">
-                Saving a score sends it to Mr. Jan to publish before students
-                see it.
+                Saving a score sends it to Jan or Jadon to publish before
+                students see it.
               </p>
             ) : null}
             {canAssign && !canGrade ? (

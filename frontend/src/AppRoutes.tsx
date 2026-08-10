@@ -70,9 +70,11 @@ const gradebookAuthProvider = new MockGradebookAuthProvider([
   'gradebook.view_own',
   'gradebook.view_event',
   'gradebook.view_student',
-  // Dev default: Jan-like — assign + publish, no score entry.
+  // Dev default: Jan/Jadon operator — full control.
   'gradebook.assign',
+  'gradebook.grade',
   'gradebook.publish',
+  'gradebook.mark_excused',
   'debrief.reopen',
 ])
 

@@ -346,7 +346,7 @@ def seed_development_users(db: Session) -> dict[str, Profile]:
         db,
         user_id=SEED_USER_IDS["president"],
         email="president@l2hub.local",
-        full_name="Brittany Lu",
+        full_name="Jadon Li",
     )
     asbo = _ensure_user(
         db,

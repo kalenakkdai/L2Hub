@@ -29,7 +29,7 @@ with seed_users (
         (
             '99999999-9999-4999-8999-999999999999'::uuid,
             'president@l2hub.local',
-            'Brittany Lu'
+            'Jadon Li'
         ),
         (
             'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
@@ -164,7 +164,7 @@ from (
         (
             '99999999-9999-4999-8999-999999999999'::uuid,
             'president@l2hub.local',
-            'Brittany Lu'
+            'Jadon Li'
         ),
         (
             'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,

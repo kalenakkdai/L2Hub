@@ -77,6 +77,8 @@ SOURCED_EVENT_TYPES = frozenset(
         "event_created",
         # Jan's three-month "start planning" reminder (Activities Calendar).
         "event_starting",
+        # Jan ↔ Jadon gradebook transparency notices.
+        "gradebook_activity",
     }
 )
 
@@ -113,6 +115,7 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "event.created": "event_created",
     "event.starting": "event_starting",
     "event.planning_start": "event_starting",
+    "grades.changed": "gradebook_activity",
     "committee.announcement": "crew_announcement",
     "points.awarded": "points_awarded",
     "level.up": "level_up",

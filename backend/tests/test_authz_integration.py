@@ -61,24 +61,52 @@ def test_committee_head_grades_all_forbidden_but_can_grade_own(
     )
 
 
-def test_jan_can_assign_and_publish_but_not_grade(client, make_token, seeded):
-    from app.db.seed import SEED_COMMITTEE_IDS
+def test_jan_and_jadon_can_assign_publish_and_grade(
+    client, make_token, seeded, db_session
+):
+    from app.models import Notification
+    from sqlalchemy import select
 
-    headers = auth_header(make_token, seeded["ac"].id)
-    assert client.get("/grades/pending", headers=headers).status_code == 200
-    assert client.post("/grades/assignments", headers=headers).status_code == 201
+    jan = auth_header(make_token, seeded["ac"].id)
+    jadon = auth_header(make_token, seeded["president"].id)
+    entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+    assert client.get("/grades/pending", headers=jan).status_code == 200
+    assert client.post("/grades/assignments", headers=jadon).status_code == 201
     assert (
-        client.post("/grades/publish", json={"entryIds": []}, headers=headers).status_code
+        client.post("/grades/publish", json={"entryIds": []}, headers=jan).status_code
         == 200
     )
-    entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
-    community = SEED_COMMITTEE_IDS["community"]
-    denied = client.post(
-        f"/grades/entries/{entry_id}/grade",
-        params={"committee_id": str(community)},
-        headers=headers,
+    assert (
+        client.post(f"/grades/entries/{entry_id}/grade", headers=jadon).status_code
+        == 200
     )
-    assert denied.status_code == 403
+    assert (
+        client.post(f"/grades/entries/{entry_id}/grade", headers=jan).status_code
+        == 200
+    )
+
+    # Transparency: each operator is notified about the other's writes.
+    jan_types = [
+        n.type
+        for n in db_session.scalars(
+            select(Notification).where(
+                Notification.recipient_user_id == seeded["ac"].id
+            )
+        ).all()
+        if n.type == "grades.changed"
+    ]
+    jadon_types = [
+        n.type
+        for n in db_session.scalars(
+            select(Notification).where(
+                Notification.recipient_user_id == seeded["president"].id
+            )
+        ).all()
+        if n.type == "grades.changed"
+    ]
+    assert jan_types  # Jadon assigned + graded
+    assert jadon_types  # Jan published + graded
 
 
 def test_member_own_grades_ok_other_forbidden(client, make_token, seeded):

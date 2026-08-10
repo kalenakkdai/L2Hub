@@ -187,9 +187,10 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
 
     # Gradebook workflow:
     # - Committee heads enter scores for the committees they lead.
-    # - Jan assigns assignments and publishes; he does not enter scores.
+    # - Jan (AC) and Jadon (ASB President) share full gradebook control and
+    #   notify each other on every change (see gradebook_operators).
     # - Legacy grades.edit never grants score entry on its own.
-    from app.services.jan import is_jan
+    from app.services.gradebook_operators import is_gradebook_operator
 
     allowed.discard(pk.GRADES_EDIT)
 
@@ -204,17 +205,22 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
     else:
         allowed.discard(pk.GRADES_GRADE_COMMITTEE)
 
-    if is_jan(user):
+    if is_gradebook_operator(user):
+        # Full control: assign, enter scores anywhere, publish, view all.
         allowed.add(pk.GRADES_ASSIGN)
         allowed.add(pk.GRADES_PUBLISH)
         allowed.add(pk.GRADES_VIEW_ALL)
-        allowed.discard(pk.GRADES_GRADE_COMMITTEE)
-        permission_committee_map.pop(pk.GRADES_GRADE_COMMITTEE, None)
+        allowed.add(pk.GRADES_GRADE_COMMITTEE)
+        allowed.add(pk.GRADES_VIEW_COMMITTEE)
+        # Empty scope set = unrestricted for committee-scoped checks.
+        permission_committee_map[pk.GRADES_GRADE_COMMITTEE] = set()
+        permission_committee_map[pk.GRADES_VIEW_COMMITTEE] = set()
     elif ROLE_AC in {r["slug"] for r in roles_payload} or ROLE_PRESIDENT in {
         r["slug"] for r in roles_payload
     }:
-        # Other AC / President peers may still assign and publish, but scoring
-        # stays with heads unless they also head a committee.
+        # Other AC / President accounts that are not on the Jan/Jadon
+        # allowlist still assign and publish, but scoring stays with heads
+        # unless they also head a committee.
         allowed.add(pk.GRADES_ASSIGN)
         allowed.add(pk.GRADES_PUBLISH)
 

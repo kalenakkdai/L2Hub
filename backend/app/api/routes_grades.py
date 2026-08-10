@@ -1,20 +1,22 @@
 """Protected grade endpoints.
 
 Persistence is still a stub; the routes exist so the assign → head-grade →
-Jan-publish permission matrix can be exercised and the UI can wire against
-real keys.
+publish permission matrix can be exercised and so Jan ↔ Jadon transparency
+notifications fire on every write.
 """
 
 from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi import status as http_status
 from pydantic import BaseModel, Field
 
 from app.api.deps import CurrentProfile, DbSession
 from app.core import permission_keys as pk
 from app.services import authorization as authz
+from app.services import gradebook
 
 router = APIRouter(prefix="/grades", tags=["grades"])
 
@@ -50,7 +52,7 @@ def read_all_grades(profile: CurrentProfile, db: DbSession) -> dict:
 
 @router.get("/pending")
 def read_pending_grades(profile: CurrentProfile, db: DbSession) -> dict:
-    """Scores heads have entered that are waiting for Jan to publish."""
+    """Scores waiting to be published for students."""
     authz.require_permission(db, profile, pk.GRADES_PUBLISH)
     return {"entries": [], "scope": "pending_publish"}
 
@@ -74,8 +76,16 @@ def read_user_grades(
 
 @router.post("/assignments", status_code=201)
 def create_assignment(profile: CurrentProfile, db: DbSession) -> dict:
-    """Jan configures gradebook items. Body is accepted once the store lands."""
+    """Configure a gradebook item. Jan and Jadon both may do this."""
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
+    gradebook.notify_peer_gradebook_change(
+        db,
+        profile,
+        action="configured an assignment",
+        detail="A gradebook assignment was created or updated.",
+        payload={"href": "/grades"},
+    )
+    db.commit()
     return {"ok": True, "assignment": None}
 
 
@@ -86,36 +96,64 @@ def grade_entry(
     db: DbSession,
     committee_id: uuid.UUID | None = None,
 ) -> dict:
-    """Heads enter a score; the entry stays unpublished until Jan releases it."""
+    """Enter a score. Heads are scoped to their committee; Jan/Jadon are org-wide."""
     ctx = authz.build_auth_context(db, profile)
-    scoped = committee_id
-    if scoped is None and len(ctx.headed_committee_ids) == 1:
-        scoped = next(iter(ctx.headed_committee_ids))
-    if scoped is None:
-        from fastapi import HTTPException
-        from fastapi import status as http_status
+    scopes = ctx.permission_committee_map.get(pk.GRADES_GRADE_COMMITTEE, set())
+    org_wide = pk.GRADES_GRADE_COMMITTEE in ctx.permissions and len(scopes) == 0
 
+    scoped = committee_id
+    if org_wide:
+        # Jan / Jadon: full control, committee tag optional.
+        pass
+    elif scoped is None and len(ctx.headed_committee_ids) == 1:
+        scoped = next(iter(ctx.headed_committee_ids))
+        authz.require_permission(
+            db, profile, pk.GRADES_GRADE_COMMITTEE, committee_id=scoped
+        )
+    elif scoped is not None:
+        authz.require_permission(
+            db, profile, pk.GRADES_GRADE_COMMITTEE, committee_id=scoped
+        )
+    else:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail="committeeId is required when grading for more than one committee.",
         )
-    authz.require_permission(
-        db, profile, pk.GRADES_GRADE_COMMITTEE, committee_id=scoped
+
+    gradebook.notify_peer_gradebook_change(
+        db,
+        profile,
+        action="entered a grade",
+        detail=f"Score saved for entry {entry_id}.",
+        payload={"entryId": str(entry_id), "href": "/grades"},
     )
+    db.commit()
     return {
         "ok": True,
         "entryId": str(entry_id),
-        "committeeId": str(scoped),
+        "committeeId": str(scoped) if scoped else None,
         "publicationStatus": "pending_publish",
     }
 
 
 @router.post("/publish")
 def publish_grades(body: PublishBody, profile: CurrentProfile, db: DbSession) -> dict:
-    """Jan releases head-entered scores so students can see them."""
+    """Release scores so students can see them. Jan and Jadon both may publish."""
     authz.require_permission(db, profile, pk.GRADES_PUBLISH)
+    count = len(body.entry_ids)
+    gradebook.notify_peer_gradebook_change(
+        db,
+        profile,
+        action="published grades",
+        detail=f"Released {count} grade{'s' if count != 1 else ''} to students.",
+        payload={
+            "entryIds": [str(i) for i in body.entry_ids],
+            "href": "/grades",
+        },
+    )
+    db.commit()
     return {
         "ok": True,
-        "publishedCount": len(body.entry_ids),
+        "publishedCount": count,
         "entryIds": [str(i) for i in body.entry_ids],
     }

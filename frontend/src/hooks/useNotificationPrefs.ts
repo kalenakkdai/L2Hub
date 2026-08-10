@@ -15,6 +15,7 @@ export const EVENT_TYPES = [
   'wrapped_activity',
   'committee_request',
   'whereabouts_ping',
+  'gradebook_activity',
 ] as const
 
 export const CHANNELS = ['email', 'sms', 'in_app'] as const
@@ -41,6 +42,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   wrapped_activity: 'Event Wrapped updates',
   committee_request: 'Committee requests',
   whereabouts_ping: 'Whereabouts pings',
+  gradebook_activity: 'Gradebook changes (Jan ↔ Jadon)',
 }
 
 /**
@@ -64,6 +66,7 @@ export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'committee_request',
   'event_created',
   'event_starting',
+  'gradebook_activity',
 ]
 
 /** What each offered row actually gates, for the grid's own description. */
@@ -78,6 +81,8 @@ export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, stri
   event_created: 'When a new event is published to The Quad',
   event_starting:
     'When Jan is reminded to start planning (~3 months before an Activities Calendar event)',
+  gradebook_activity:
+    'When Jan or Jadon assigns, grades, or publishes — each is notified of the other’s changes',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

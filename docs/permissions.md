@@ -141,14 +141,16 @@ Responses never include author metadata.
 | `wrapped.view_published` | Yes | Yes | Yes | Yes | Yes |
 | `agenda.generate` | Yes | Yes | No | No | No |
 | `notifications.view_own` | Yes | Yes | Yes | Yes | Yes |
-| `grades.assign` | Yes (Jan) | Yes (Jan) | **No** | No | No |
-| `grades.grade_committee` | No | No | **No** | Yes (own) | No |
-| `grades.publish` | Yes (Jan) | Yes (Jan) | **No** | No | No |
+| `grades.assign` | Yes (Jadon) | Yes (Jan) | **No** | No | No |
+| `grades.grade_committee` | Yes (Jadon, all) | Yes (Jan, all) | **No** | Yes (own) | No |
+| `grades.publish` | Yes (Jadon) | Yes (Jan) | **No** | No | No |
 | `grades.edit` | Legacy (unused) | Legacy (unused) | **No** | No | No |
 
 Gradebook workflow: committee heads enter scores for their crew; those scores
-stay unpublished until Jan releases them (`grades.publish`). Jan configures
-assignments (`grades.assign`) but does not enter scores.
+stay unpublished until Jan or Jadon (ASB President) releases them
+(`grades.publish`). Jan and Jadon share full gradebook control (assign, grade,
+publish, view all). Every change one makes notifies the other so the book stays
+transparent between them.
 
 See [event-summary.md](./event-summary.md) for the full workflow.
 
@@ -161,17 +163,17 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 | View all grades | Yes | Yes | Yes | No | No |
 | View own grades | Yes | Yes | Yes | Yes (own) | Yes |
 | View committee grades | Yes | Yes | Yes | Yes (own) | No |
-| Assign gradebook items | Yes | Yes (Jan) | No | No | No |
-| Enter grades | No* | No* | No | Yes (own committee) | No |
-| Publish grades | Yes | Yes (Jan) | No | No | No |
+| Assign gradebook items | Yes (Jadon) | Yes (Jan) | No | No | No |
+| Enter grades | Yes (Jadon, all) | Yes (Jan, all) | No | Yes (own committee) | No |
+| Publish grades | Yes (Jadon) | Yes (Jan) | No | No | No |
 | View private/anonymous feedback | Yes | Yes | No | No | No |
 | Manage users (Users page) | Yes | Yes | No by default | No | No |
 | View other committees | Yes | Yes | Yes | No | No |
 | Manage own committee tasks | Yes | Yes | Yes | Yes (own) | No |
 
-\* AC / President may also enter scores only if they head a committee; Jan is
-explicitly barred from score entry and publishes instead.
-## Dashboard modules
+Jan and Jadon are gradebook operators (email/name allowlist, same pattern as
+attendance). Other AC/President accounts that are not on that list keep assign
+and publish through the role bundle but do not get org-wide score entry.## Dashboard modules
 
 `GET /auth/dashboard` returns `{ roles, permissions, modules }` derived from
 effective permissions.

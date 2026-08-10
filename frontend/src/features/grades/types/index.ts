@@ -49,6 +49,16 @@ export function mapBackendGradePermissions(
     mapped.push('gradebook.grade', 'gradebook.mark_excused')
   }
   if (set.has('grades.publish')) mapped.push('gradebook.publish')
+  // Operators with assign+publish+grade get the full UI surface.
+  if (
+    set.has('grades.assign') &&
+    set.has('grades.publish') &&
+    set.has('grades.grade_committee')
+  ) {
+    if (!mapped.includes('gradebook.grade')) {
+      mapped.push('gradebook.grade', 'gradebook.mark_excused')
+    }
+  }
   if (set.has('debrief.reopen')) mapped.push('debrief.reopen')
   return mapped
 }
