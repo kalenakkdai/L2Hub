@@ -187,8 +187,17 @@ def board_payload(db: Session, profile: Profile) -> dict:
 
     One query per table rather than one per committee: a dozen committees on
     one page should not be a dozen round trips.
+
+    Missing Leadership 2 committees are upserted here so a database that was
+    seeded with only the first few columns still shows the full board.
     """
     authz.require_permission(db, profile, pk.TASKS_VIEW_ALL)
+
+    from app.services.campers import ensure_roster_committees
+
+    committee_counts = ensure_roster_committees(db)
+    if committee_counts["committees_created"] or committee_counts["committees_updated"]:
+        db.commit()
 
     committees = db.scalars(select(Committee).order_by(Committee.name)).all()
     tasks = db.scalars(

@@ -54,6 +54,8 @@ export function syncRosterMemberships(): Promise<{
   asbos_marked: number
   babies_marked?: number
   class_officers_marked?: number
+  committees_created?: number
+  committees_updated?: number
   student_ids_enrolled?: number
   student_ids_updated?: number
   student_ids_skipped?: number

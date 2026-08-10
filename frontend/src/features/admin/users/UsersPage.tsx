@@ -233,15 +233,17 @@ export function UsersPage() {
     mutationFn: syncRosterMemberships,
     onSuccess: (result) => {
       const enrolled = result.student_ids_enrolled ?? 0
-      const idNote = result.student_ids_missing_file
-        ? ' (no student ID file on server)'
-        : enrolled
-          ? `, ${enrolled} student IDs enrolled`
-          : ''
-      setSyncMessage(
-        `Synced roster: ${result.memberships_created} memberships created${idNote}.`,
-      )
+      const created = result.committees_created ?? 0
+      const parts = [`${result.memberships_created} memberships created`]
+      if (created) parts.push(`${created} committees added`)
+      if (result.student_ids_missing_file) {
+        parts.push('no student ID file on server')
+      } else if (enrolled) {
+        parts.push(`${enrolled} student IDs enrolled`)
+      }
+      setSyncMessage(`Synced roster: ${parts.join(', ')}.`)
       void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      void queryClient.invalidateQueries({ queryKey: ['board'] })
     },
     onError: () => {
       setSyncMessage('Could not sync roster memberships.')

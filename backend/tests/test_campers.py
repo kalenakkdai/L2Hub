@@ -53,5 +53,32 @@ def test_sync_roster_memberships_links_matching_profile(db_session):
     assert committees["community"].slug == "community"
 
 
+def test_ensure_roster_committees_creates_missing_columns(db_session):
+    """A database with only the first few seed committees still gets all twelve."""
+    from app.models import Committee
+    from app.services.campers import ensure_roster_committees
+    from sqlalchemy import select
+
+    keep = {"activities", "community", "elections", "fundraising"}
+    for committee in list(db_session.scalars(select(Committee)).all()):
+        if committee.slug not in keep:
+            db_session.delete(committee)
+    db_session.commit()
+
+    first = ensure_roster_committees(db_session)
+    db_session.commit()
+    assert first["committees_created"] == 8
+    slugs = {c.slug for c in db_session.scalars(select(Committee)).all()}
+    assert {slug for slug, *_ in L2_ROSTER_COMMITTEES}.issubset(slugs)
+
+    again = ensure_roster_committees(db_session)
+    assert again["committees_created"] == 0
+    assert again["committees_updated"] == 0
+
 def test_roster_covers_twelve_committees():
     assert len(L2_ROSTER_COMMITTEES) == 12
+    names = [name for _slug, name, *_rest in L2_ROSTER_COMMITTEES]
+    assert "Campus" in names
+    assert "Publicity" in names
+    assert "Videography/Photography" in names
+    assert "Spirit" not in names  # legacy seed-only, not on the L2 roster

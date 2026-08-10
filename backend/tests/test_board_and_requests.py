@@ -58,7 +58,32 @@ def test_board_lists_every_committee_with_its_tasks(client, make_token, seeded):
     # Every committee appears, including the ones with nothing on them — an
     # empty column is information.
     assert committees[SPIRIT]["tasks"] == []
+    # The twelve Leadership 2 committees from the roster catalog are all present.
+    from app.db.l2_roster import L2_ROSTER_COMMITTEES
 
+    slugs = {c["slug"] for c in board.json()["committees"]}
+    assert {slug for slug, *_ in L2_ROSTER_COMMITTEES}.issubset(slugs)
+
+
+def test_board_backfills_missing_roster_committees(client, make_token, seeded, db_session):
+    """Opening the board creates any Leadership 2 columns a partial seed omitted."""
+    from app.db.l2_roster import L2_ROSTER_COMMITTEES
+    from app.models import Committee
+
+    # Leave only the four committees the production screenshot showed.
+    keep = {"activities", "community", "elections", "fundraising"}
+    for committee in list(db_session.scalars(select(Committee)).all()):
+        if committee.slug not in keep:
+            db_session.delete(committee)
+    db_session.commit()
+
+    board = client.get("/board", headers=auth_header(make_token, seeded["ac"].id))
+    assert board.status_code == 200
+    slugs = {c["slug"] for c in board.json()["committees"]}
+    assert {slug for slug, *_ in L2_ROSTER_COMMITTEES}.issubset(slugs)
+    assert {"Campus", "Publicity", "Tech", "Videography/Photography"}.issubset(
+        {c["name"] for c in board.json()["committees"]}
+    )
 
 def test_the_whole_class_can_open_the_board(client, make_token, seeded):
     """Reading the board is not a privilege — it is the point of the board."""

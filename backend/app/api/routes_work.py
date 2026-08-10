@@ -68,6 +68,11 @@ def board_committees(profile: CurrentProfile, db: DbSession) -> dict:
     can still populate its target list.
     """
     authz.require_permission(db, profile, pk.COMMITTEES_VIEW)
+    from app.services.campers import ensure_roster_committees
+
+    counts = ensure_roster_committees(db)
+    if counts["committees_created"] or counts["committees_updated"]:
+        db.commit()
     committees = db.scalars(select(Committee).order_by(Committee.name)).all()
     writable = work.writable_committee_ids(db, profile)
     return {

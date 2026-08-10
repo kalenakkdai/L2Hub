@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.l2_roster import L2_ROSTER_PEOPLE
+from app.db.l2_roster import L2_ROSTER_COMMITTEES, L2_ROSTER_PEOPLE
 from app.models import Committee, CommitteeMembership, Profile, Role, UserRoleAssignment
 from app.schemas.auth import CommitteeSummary, RoleAssignmentOut, UserListItem
 from app.services import authorization as authz
@@ -28,6 +28,30 @@ def normalize_person_name(name: str) -> str:
 
 def roster_placeholder_id(name: str) -> uuid.UUID:
     return uuid.uuid5(_ROSTER_NS, normalize_person_name(name))
+
+
+def ensure_roster_committees(db: Session) -> dict[str, int]:
+    """Upsert every Leadership 2 committee from the spreadsheet catalog.
+
+    Older environments only had the first few seed committees. The board lists
+    whatever is in the table, so a partial catalog silently drops Campus,
+    Publicity, Tech, and the rest. Sync must create the missing rows before
+    membership linking runs.
+    """
+    existing = {c.slug: c for c in db.scalars(select(Committee)).all()}
+    created = 0
+    updated = 0
+    for slug, display, _email, _heads, _members in L2_ROSTER_COMMITTEES:
+        committee = existing.get(slug)
+        if committee is None:
+            db.add(Committee(slug=slug, name=display))
+            created += 1
+        elif committee.name != display:
+            committee.name = display
+            updated += 1
+    if created or updated:
+        db.flush()
+    return {"committees_created": created, "committees_updated": updated}
 
 
 def _role_payload(assignment: UserRoleAssignment) -> RoleAssignmentOut:
@@ -240,8 +264,14 @@ def list_campers(db: Session) -> list[UserListItem]:
     return items
 
 
-def sync_roster_memberships(db: Session) -> dict[str, int]:
-    """Attach signed-up profiles to committees when email or name matches the roster."""
+def sync_roster_memberships(db: Session) -> dict[str, int | bool]:
+    """Attach signed-up profiles to committees when email or name matches the roster.
+
+    Also upserts the twelve Leadership 2 committees so environments that were
+    seeded with a partial catalog still get every column on the L2 Board.
+    """
+    committee_counts = ensure_roster_committees(db)
+
     profiles = list(db.scalars(select(Profile)).all())
     by_name = {
         normalize_person_name(p.full_name or ""): p
@@ -329,6 +359,8 @@ def sync_roster_memberships(db: Session) -> dict[str, int]:
         "asbos_marked": asbos,
         "babies_marked": babies,
         "class_officers_marked": class_officers,
+        "committees_created": committee_counts["committees_created"],
+        "committees_updated": committee_counts["committees_updated"],
         "student_ids_enrolled": id_sync["enrolled"],
         "student_ids_updated": id_sync["updated"],
         "student_ids_skipped": id_sync["skipped"],
