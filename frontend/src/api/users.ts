@@ -52,6 +52,12 @@ export function syncRosterMemberships(): Promise<{
   memberships_created: number
   heads_marked: number
   asbos_marked: number
+  babies_marked?: number
+  class_officers_marked?: number
+  student_ids_enrolled?: number
+  student_ids_updated?: number
+  student_ids_skipped?: number
+  student_ids_missing_file?: boolean
 }> {
   return apiFetch('/admin/users/sync-roster', { method: 'POST' })
 }

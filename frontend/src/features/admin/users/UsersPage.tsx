@@ -232,8 +232,14 @@ export function UsersPage() {
   const syncMutation = useMutation({
     mutationFn: syncRosterMemberships,
     onSuccess: (result) => {
+      const enrolled = result.student_ids_enrolled ?? 0
+      const idNote = result.student_ids_missing_file
+        ? ' (no student ID file on server)'
+        : enrolled
+          ? `, ${enrolled} student IDs enrolled`
+          : ''
       setSyncMessage(
-        `Synced roster: ${result.memberships_created} memberships created.`,
+        `Synced roster: ${result.memberships_created} memberships created${idNote}.`,
       )
       void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
     },
