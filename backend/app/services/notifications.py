@@ -51,6 +51,9 @@ EVENT_TYPES = (
     "wrapped_activity",
     "committee_request",
     "whereabouts_ping",
+    "gradebook_activity",
+    "gradebook_requests",
+    "owl_access",
 )
 
 #: The event types something in this codebase actually emits.
@@ -81,6 +84,8 @@ SOURCED_EVENT_TYPES = frozenset(
         "gradebook_activity",
         # Head draft assignment requests and committee-category submissions.
         "gradebook_requests",
+        # Owl customization paused when a camper drops below the A+ threshold.
+        "owl_access",
     }
 )
 
@@ -120,6 +125,7 @@ TYPE_TO_EVENT_TYPE: dict[str, str] = {
     "grades.changed": "gradebook_activity",
     "grades.assignment_requested": "gradebook_requests",
     "grades.committee_submitted": "gradebook_requests",
+    "owl.access_revoked": "owl_access",
     "committee.announcement": "crew_announcement",
     "points.awarded": "points_awarded",
     "level.up": "level_up",

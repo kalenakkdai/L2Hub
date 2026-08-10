@@ -17,6 +17,7 @@ export const EVENT_TYPES = [
   'whereabouts_ping',
   'gradebook_activity',
   'gradebook_requests',
+  'owl_access',
 ] as const
 
 export const CHANNELS = ['email', 'sms', 'in_app'] as const
@@ -45,6 +46,7 @@ export const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   whereabouts_ping: 'Whereabouts pings',
   gradebook_activity: 'Gradebook changes (Jan ↔ Jadon)',
   gradebook_requests: 'Assignment requests & committee grades',
+  owl_access: 'Owl customization paused',
 }
 
 /**
@@ -70,6 +72,7 @@ export const SOURCED_EVENT_TYPES: NotificationEventType[] = [
   'event_starting',
   'gradebook_activity',
   'gradebook_requests',
+  'owl_access',
 ]
 
 /** What each offered row actually gates, for the grid's own description. */
@@ -88,6 +91,8 @@ export const EVENT_TYPE_DESCRIPTIONS: Partial<Record<NotificationEventType, stri
     'When Jan or Jadon assigns, grades, or publishes — each is notified of the other’s changes',
   gradebook_requests:
     'When a committee head sends Jan a draft assignment request or submits committee grades',
+  owl_access:
+    'When your grade drops below A+ and campsite owl customization is paused',
 }
 
 export const CHANNEL_LABELS: Record<NotificationChannel, string> = {

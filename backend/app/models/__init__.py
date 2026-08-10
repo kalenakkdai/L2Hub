@@ -20,7 +20,7 @@ from app.models.event_summary import (
     Notification,
     NotificationPreference,
 )
-from app.models.gradebook import GradeAssignment, GradeEntry
+from app.models.gradebook import GradeAssignment, GradeAssignmentRequest, GradeEntry
 from app.models.messenger_agenda import MessengerAgendaSession, MessengerConnection
 from app.models.note_taker import (
     MeetingNote,
@@ -62,6 +62,7 @@ __all__ = [
     "EventSummary",
     "EventSummaryRequest",
     "GradeAssignment",
+    "GradeAssignmentRequest",
     "GradeEntry",
     "MeetingNote",
     "MeetingSession",

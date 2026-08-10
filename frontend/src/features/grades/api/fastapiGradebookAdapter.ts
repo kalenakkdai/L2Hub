@@ -162,6 +162,29 @@ export class FastApiGradebookCommandProvider implements GradebookCommandProvider
     return body.entries ?? []
   }
 
+  async submitAssignmentRequest(
+    input: import('../types').AssignmentRequestInput,
+  ): Promise<AssignmentDraftRequest> {
+    return apiFetch<AssignmentDraftRequest>('/grades/assignment-requests', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+  }
+
+  async reviewAssignmentRequest(
+    requestId: string,
+    decision: 'approve' | 'reject',
+    note?: string,
+  ): Promise<AssignmentDraftRequest> {
+    return apiFetch<AssignmentDraftRequest>(
+      `/grades/assignment-requests/${requestId}/review`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ decision, note: note ?? null }),
+      },
+    )
+  }
+
   async createAssignment(input: {
     title: string
     categoryId: string

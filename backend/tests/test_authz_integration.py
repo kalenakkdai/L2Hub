@@ -52,11 +52,26 @@ def test_committee_head_grades_all_forbidden_but_can_request_and_committee_grade
     headers = auth_header(make_token, seeded["community_head"].id)
     assert client.get("/grades/all", headers=headers).status_code == 403
     assert client.get("/grades/pending", headers=headers).status_code == 403
-    assert client.post("/grades/assignments", headers=headers).status_code == 403
+    assert (
+        client.post(
+            "/grades/assignments",
+            headers=headers,
+            json={
+                "title": "Head should not create",
+                "categoryId": "cat-deliverables",
+                "pointsPossible": 10,
+            },
+        ).status_code
+        == 403
+    )
     # Heads may not grade individual assignment entries.
     entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     assert (
-        client.post(f"/grades/entries/{entry_id}/grade", headers=headers).status_code
+        client.post(
+            f"/grades/entries/{entry_id}/grade",
+            headers=headers,
+            json={"score": 5, "status": "graded"},
+        ).status_code
         == 403
     )
     # Heads may send draft assignment requests and enter committee-category grades.
@@ -87,42 +102,89 @@ def test_committee_head_grades_all_forbidden_but_can_request_and_committee_grade
 def test_jan_and_jadon_can_assign_publish_and_grade(
     client, make_token, seeded, db_session
 ):
-    from app.models import Notification
     from sqlalchemy import select
+
+    from app.models import Notification
 
     jan = auth_header(make_token, seeded["ac"].id)
     jadon = auth_header(make_token, seeded["president"].id)
-    entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
     assert client.get("/grades/pending", headers=jan).status_code == 200
-    assert client.post("/grades/assignments", headers=jadon).status_code == 201
+
+    # Jadon configures an assignment; every active camper is enrolled.
+    created = client.post(
+        "/grades/assignments",
+        headers=jadon,
+        json={
+            "title": "Leadership check-in",
+            "categoryId": "cat-deliverables",
+            "pointsPossible": 10,
+        },
+    )
+    assert created.status_code == 201, created.text
+    assignment_id = created.json()["assignment"]["id"]
+
+    roster = client.get(f"/grades/assignments/{assignment_id}/roster", headers=jan)
+    assert roster.status_code == 200
+    entry_ids = [row["entryId"] for row in roster.json()["rows"]]
+    assert len(entry_ids) >= 2
+
+    # Jadon grades one entry, Jan grades another.
     assert (
-        client.post("/grades/publish", json={"entryIds": []}, headers=jan).status_code
+        client.post(
+            f"/grades/entries/{entry_ids[0]}/grade",
+            headers=jadon,
+            json={"score": 9, "status": "graded"},
+        ).status_code
         == 200
     )
     assert (
-        client.post(f"/grades/entries/{entry_id}/grade", headers=jadon).status_code
+        client.post(
+            f"/grades/entries/{entry_ids[1]}/grade",
+            headers=jan,
+            json={"score": 8, "status": "graded"},
+        ).status_code
         == 200
     )
+
+    # Jan publishes the graded entries.
     assert (
-        client.post(f"/grades/entries/{entry_id}/grade", headers=jan).status_code
+        client.post(
+            "/grades/publish",
+            json={"entryIds": entry_ids[:2]},
+            headers=jan,
+        ).status_code
         == 200
     )
+
+    # Jadon bulk-grades an entry.
     assert (
         client.post(
             "/grades/entries/bulk-grade",
             headers=jadon,
             json={
                 "items": [
-                    {"entryId": entry_id, "score": 10, "status": "graded"},
+                    {"entryId": entry_ids[0], "score": 10, "status": "graded"},
                 ]
             },
         ).status_code
         == 200
     )
+
+    # A member proposal, approved by Jan, becomes a real assignment.
+    proposal = client.post(
+        "/grades/assignment-requests",
+        headers=auth_header(make_token, seeded["community_member"].id),
+        json={
+            "title": "Member idea",
+            "proposedCategoryId": "cat-reflections",
+            "proposedPoints": 5,
+        },
+    )
+    assert proposal.status_code == 201, proposal.text
     assert (
         client.post(
-            f"/grades/assignment-requests/{entry_id}/review",
+            f"/grades/assignment-requests/{proposal.json()['id']}/review",
             headers=jan,
             json={"decision": "approve"},
         ).status_code

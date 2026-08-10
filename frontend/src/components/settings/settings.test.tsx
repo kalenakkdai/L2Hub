@@ -170,11 +170,14 @@ describe('NotificationsGrid', () => {
       <NotificationsGrid profile={profile()} status="idle" save={noop} saveNow={noop} />,
     )
 
-    // The row used to be labelled "New event created" while gating the Wrapped
-    // lifecycle. The label and the emitter have to describe the same thing.
+    // The Wrapped row used to be mislabelled "New event created" while gating
+    // the Wrapped lifecycle. Now each has its own row and its own emitter, so
+    // the label and the emitter describe the same thing.
     expect(screen.getByText('Event Wrapped updates')).toBeInTheDocument()
     expect(screen.getByText(/requested, finishes generating, or is published/)).toBeInTheDocument()
-    expect(screen.queryByText('New event created')).not.toBeInTheDocument()
+    // event_created is now sourced in its own right (web push), so its row is
+    // offered separately from Wrapped.
+    expect(screen.getByText('New event created')).toBeInTheDocument()
   })
 
   it('does not promise that quiet-hours notifications arrive later', () => {

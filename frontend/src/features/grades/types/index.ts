@@ -48,9 +48,8 @@ export function mapBackendGradePermissions(
     mapped.push('gradebook.view_event', 'gradebook.view_student')
   }
   if (set.has('grades.assign')) mapped.push('gradebook.assign')
-  if (set.has('grades.request_assignment')) {
-    mapped.push('gradebook.request_assignment')
-  }
+  // Every member may propose an assignment; Jan/Jadon remain the reviewers.
+  if (set.has('grades.view_own')) mapped.push('gradebook.request_assignment')
   // Committee-category class grades (heads) — separate from individual grading.
   if (set.has('grades.grade_committee')) {
     mapped.push('gradebook.grade_committee')
@@ -384,19 +383,20 @@ export type BulkGradeItem = {
 
 export type AssignmentRequestStatus = 'pending' | 'approved' | 'rejected'
 
-/** Head → Jan draft proposal for a new gradebook assignment. */
+/** Member → Jan/Jadon proposal for a new gradebook assignment. */
 export interface AssignmentDraftRequest {
   id: string
   title: string
   description?: string | null
   proposedCategoryId?: string | null
   proposedPoints?: number | null
-  committeeId: string
+  committeeId?: string | null
   committeeName?: string | null
   status: AssignmentRequestStatus
   submittedBy: { id: string; name: string }
   submittedAt: string
   reviewNote?: string | null
+  createdAssignmentId?: string | null
 }
 
 export interface AssignmentRequestInput {

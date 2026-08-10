@@ -138,3 +138,43 @@ class GradeEntry(Base):
     assignment: Mapped[GradeAssignment] = relationship(back_populates="entries")
     student = relationship("Profile", foreign_keys=[student_id])
     graded_by = relationship("Profile", foreign_keys=[graded_by_user_id])
+
+
+class GradeAssignmentRequest(Base):
+    """A member-authored proposal awaiting Jan/Jadon's decision."""
+
+    __tablename__ = "grade_assignment_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    proposed_category_id: Mapped[str] = mapped_column(String, nullable=False)
+    proposed_points: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
+    committee_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("committees.id", ondelete="SET NULL"), nullable=True
+    )
+    submitted_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_assignment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("grade_assignments.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    committee = relationship("Committee")
+    submitted_by = relationship("Profile", foreign_keys=[submitted_by_user_id])
+    reviewed_by = relationship("Profile", foreign_keys=[reviewed_by_user_id])
+    created_assignment = relationship("GradeAssignment")

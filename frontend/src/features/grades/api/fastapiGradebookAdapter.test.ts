@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FastApiGradebookDataProvider } from './fastapiGradebookAdapter'
+import {
+  FastApiGradebookCommandProvider,
+  FastApiGradebookDataProvider,
+} from './fastapiGradebookAdapter'
 
 vi.mock('../../../api/client', () => ({
   apiFetch: vi.fn(),
@@ -82,5 +85,43 @@ describe('FastApiGradebookDataProvider', () => {
     expect(apiFetch).toHaveBeenCalledWith('/grades/assignments/a1/roster')
     expect(detail.entry.assignmentId).toBe('a1')
     expect(roster?.assignmentId).toBe('a1')
+  })
+
+  it('submits and reviews assignment proposals through FastAPI', async () => {
+    const proposal = {
+      id: 'r1',
+      title: 'Reflection',
+      proposedCategoryId: 'cat-reflections',
+      proposedPoints: 10,
+      status: 'pending' as const,
+      submittedBy: { id: 'u1', name: 'Ada' },
+      submittedAt: '2026-08-10T12:00:00Z',
+    }
+    vi.mocked(apiFetch)
+      .mockResolvedValueOnce(proposal)
+      .mockResolvedValueOnce({
+        ...proposal,
+        status: 'approved',
+        createdAssignmentId: 'a1',
+      })
+
+    const commands = new FastApiGradebookCommandProvider()
+    await commands.submitAssignmentRequest?.({
+      title: 'Reflection',
+      proposedCategoryId: 'cat-reflections',
+      proposedPoints: 10,
+    })
+    await commands.reviewAssignmentRequest?.('r1', 'approve')
+
+    expect(apiFetch).toHaveBeenNthCalledWith(
+      1,
+      '/grades/assignment-requests',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(apiFetch).toHaveBeenNthCalledWith(
+      2,
+      '/grades/assignment-requests/r1/review',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })

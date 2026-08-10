@@ -147,3 +147,84 @@ def test_asbo_non_operator_denied_assign(client, make_token, seeded):
         headers=headers,
     )
     assert response.status_code == 403
+
+
+def test_every_member_can_propose_and_only_operators_see_all(
+    client, make_token, seeded
+):
+    member = seeded["community_member"]
+    other = seeded["spirit_member"]
+    jan = seeded["ac"]
+
+    proposal = client.post(
+        "/grades/assignment-requests",
+        json={
+            "title": "Community event reflection",
+            "description": "A short reflection after the event.",
+            "proposedCategoryId": "cat-reflections",
+            "proposedPoints": 10,
+        },
+        headers=auth_header(make_token, member.id),
+    )
+    assert proposal.status_code == 201, proposal.text
+    proposal_id = proposal.json()["id"]
+    assert proposal.json()["status"] == "pending"
+
+    mine = client.get(
+        "/grades/assignment-requests",
+        headers=auth_header(make_token, member.id),
+    )
+    assert [row["id"] for row in mine.json()["requests"]] == [proposal_id]
+
+    someone_else = client.get(
+        "/grades/assignment-requests",
+        headers=auth_header(make_token, other.id),
+    )
+    assert someone_else.json()["requests"] == []
+
+    all_proposals = client.get(
+        "/grades/assignment-requests",
+        headers=auth_header(make_token, jan.id),
+    )
+    assert [row["id"] for row in all_proposals.json()["requests"]] == [proposal_id]
+
+
+def test_jan_approval_creates_assignment_and_cannot_review_twice(
+    client, make_token, seeded
+):
+    member_headers = auth_header(make_token, seeded["community_member"].id)
+    jan_headers = auth_header(make_token, seeded["ac"].id)
+    proposal = client.post(
+        "/grades/assignment-requests",
+        json={
+            "title": "Approved reflection",
+            "proposedCategoryId": "cat-reflections",
+            "proposedPoints": 12,
+        },
+        headers=member_headers,
+    ).json()
+
+    approved = client.post(
+        f"/grades/assignment-requests/{proposal['id']}/review",
+        json={"decision": "approve", "note": "Add this to the quarter."},
+        headers=jan_headers,
+    )
+    assert approved.status_code == 200, approved.text
+    body = approved.json()
+    assert body["status"] == "approved"
+    assert body["createdAssignmentId"] == body["assignment"]["id"]
+
+    roster = client.get(
+        f"/grades/assignments/{body['createdAssignmentId']}/roster",
+        headers=jan_headers,
+    )
+    assert roster.status_code == 200
+    assert roster.json()["assignmentTitle"] == "Approved reflection"
+    assert roster.json()["completionTotal"] > 0
+
+    second_review = client.post(
+        f"/grades/assignment-requests/{proposal['id']}/review",
+        json={"decision": "reject"},
+        headers=jan_headers,
+    )
+    assert second_review.status_code == 409

@@ -58,8 +58,10 @@ class BulkGradeBody(BaseModel):
 class AssignmentRequestBody(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str | None = None
-    proposed_category_id: str | None = Field(default=None, alias="proposedCategoryId")
-    proposed_points: float | None = Field(default=None, alias="proposedPoints")
+    proposed_category_id: str = Field(
+        default="cat-deliverables", alias="proposedCategoryId"
+    )
+    proposed_points: float = Field(default=10, gt=0, alias="proposedPoints")
     committee_id: uuid.UUID | None = Field(default=None, alias="committeeId")
 
     model_config = {"populate_by_name": True}
@@ -122,8 +124,9 @@ def read_own_grades(profile: CurrentProfile, db: DbSession) -> dict:
 
 @router.get("/all")
 def read_all_grades(profile: CurrentProfile, db: DbSession) -> dict:
+    # grades.view_all covers ASBO/AC/President; only assign/publish are
+    # restricted to the Jan/Jadon operator pair.
     authz.require_permission(db, profile, pk.GRADES_VIEW_ALL)
-    _require_operator(profile, "Only Jan and Jadon can view the full gradebook.")
     return gradebook.all_gradebook(db)
 
 
@@ -353,15 +356,14 @@ def publish_grades(body: PublishBody, profile: CurrentProfile, db: DbSession) ->
 
 @router.get("/assignment-requests")
 def list_assignment_requests(profile: CurrentProfile, db: DbSession) -> dict:
-    ctx = authz.build_auth_context(db, profile)
-    can_review = pk.GRADES_ASSIGN in ctx.permissions and is_gradebook_operator(profile)
-    can_request = pk.GRADES_REQUEST_ASSIGNMENT in ctx.permissions
-    if not can_review and not can_request:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Permission denied.",
-        )
-    return {"requests": [], "scope": "all" if can_review else "own"}
+    authz.require_permission(
+        db, profile, pk.GRADES_VIEW_OWN, resource_owner_id=profile.id
+    )
+    can_review = is_gradebook_operator(profile)
+    return {
+        "requests": gradebook.list_assignment_requests(db, profile),
+        "scope": "all" if can_review else "own",
+    }
 
 
 @router.post("/assignment-requests", status_code=201)
@@ -370,36 +372,27 @@ def create_assignment_request(
     profile: CurrentProfile,
     db: DbSession,
 ) -> dict:
-    ctx = authz.build_auth_context(db, profile)
-    scoped = body.committee_id
-    if scoped is None and len(ctx.headed_committee_ids) == 1:
-        scoped = next(iter(ctx.headed_committee_ids))
-    if scoped is None:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail="committeeId is required when heading more than one committee.",
-        )
     authz.require_permission(
-        db, profile, pk.GRADES_REQUEST_ASSIGNMENT, committee_id=scoped
+        db, profile, pk.GRADES_VIEW_OWN, resource_owner_id=profile.id
     )
-    request_id = uuid.uuid4()
-    gradebook.notify_operators_assignment_request(
+    row = gradebook.create_assignment_request(
         db,
         profile,
         title=body.title,
-        request_id=request_id,
-        committee_id=scoped,
+        description=body.description,
+        category_id=body.proposed_category_id,
+        points=body.proposed_points,
+        committee_id=body.committee_id,
+    )
+    gradebook.notify_operators_assignment_request(
+        db,
+        profile,
+        title=row.title,
+        request_id=row.id,
+        committee_id=row.committee_id,
     )
     db.commit()
-    return {
-        "ok": True,
-        "id": str(request_id),
-        "title": body.title,
-        "committeeId": str(scoped),
-        "status": "pending",
-        "proposedCategoryId": body.proposed_category_id,
-        "proposedPoints": body.proposed_points,
-    }
+    return gradebook._request_payload(row)
 
 
 @router.post("/assignment-requests/{request_id}/review")
@@ -411,6 +404,13 @@ def review_assignment_request(
 ) -> dict:
     authz.require_permission(db, profile, pk.GRADES_ASSIGN)
     _require_operator(profile, "Only Jan and Jadon can approve assignment requests.")
+    row, assignment = gradebook.review_assignment_request(
+        db,
+        profile,
+        request_id,
+        decision=body.decision,
+        note=body.note,
+    )
     gradebook.notify_peer_gradebook_change(
         db,
         profile,
@@ -419,12 +419,16 @@ def review_assignment_request(
         payload={"requestId": str(request_id), "href": "/grades/requests"},
     )
     db.commit()
-    return {
-        "ok": True,
-        "id": str(request_id),
-        "status": "approved" if body.decision == "approve" else "rejected",
-        "note": body.note,
-    }
+    result = gradebook._request_payload(row)
+    result["assignment"] = (
+        {
+            "id": str(assignment.id),
+            "title": assignment.title,
+        }
+        if assignment
+        else None
+    )
+    return result
 
 
 @router.post("/committee-grades", status_code=201)

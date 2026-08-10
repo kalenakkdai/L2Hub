@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.gradebook import (
     ASSIGNMENT_TYPES,
     GradeAssignment,
+    GradeAssignmentRequest,
     GradeEntry,
 )
 from app.models.profile import Profile
@@ -82,7 +83,7 @@ def notify_operators_assignment_request(
     *,
     title: str,
     request_id: uuid.UUID,
-    committee_id: uuid.UUID,
+    committee_id: uuid.UUID | None,
 ) -> None:
     """Notify Jan (and Jadon) that a head sent a draft assignment request."""
     recipients = resolve_gradebook_operator_ids(db)
@@ -97,7 +98,7 @@ def notify_operators_assignment_request(
         body=f'Draft: "{title}" — review and approve to add it to the gradebook.',
         payload={
             "requestId": str(request_id),
-            "committeeId": str(committee_id),
+            "committeeId": str(committee_id) if committee_id else None,
             "href": "/grades/requests",
         },
         dedupe_key=f"grades.assignment_requested:{request_id}",
@@ -354,6 +355,126 @@ def create_assignment(
     return assignment
 
 
+def _request_payload(row: GradeAssignmentRequest) -> dict[str, Any]:
+    submitter = row.submitted_by
+    committee = row.committee
+    return {
+        "id": str(row.id),
+        "title": row.title,
+        "description": row.description,
+        "proposedCategoryId": row.proposed_category_id,
+        "proposedPoints": row.proposed_points,
+        "committeeId": str(row.committee_id) if row.committee_id else None,
+        "committeeName": committee.name if committee else None,
+        "status": row.status,
+        "submittedBy": {
+            "id": str(row.submitted_by_user_id),
+            "name": _actor_label(submitter) if submitter else "Member",
+        },
+        "submittedAt": _iso(row.created_at),
+        "reviewNote": row.review_note,
+        "createdAssignmentId": (
+            str(row.created_assignment_id) if row.created_assignment_id else None
+        ),
+    }
+
+
+def _request_query():
+    return select(GradeAssignmentRequest).options(
+        selectinload(GradeAssignmentRequest.submitted_by),
+        selectinload(GradeAssignmentRequest.committee),
+    )
+
+
+def list_assignment_requests(db: Session, viewer: Profile) -> list[dict[str, Any]]:
+    query = _request_query().order_by(GradeAssignmentRequest.created_at.desc())
+    if not is_gradebook_operator(viewer):
+        query = query.where(
+            GradeAssignmentRequest.submitted_by_user_id == viewer.id
+        )
+    return [_request_payload(row) for row in db.scalars(query).all()]
+
+
+def create_assignment_request(
+    db: Session,
+    actor: Profile,
+    *,
+    title: str,
+    description: str | None,
+    category_id: str,
+    points: float,
+    committee_id: uuid.UUID | None,
+) -> GradeAssignmentRequest:
+    if category_id not in CATEGORY_IDS:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown proposedCategoryId. Expected one of: {sorted(CATEGORY_IDS)}",
+        )
+    if points <= 0:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="proposedPoints must be greater than zero.",
+        )
+    row = GradeAssignmentRequest(
+        title=title.strip(),
+        description=description,
+        proposed_category_id=category_id,
+        proposed_points=float(points),
+        committee_id=committee_id,
+        submitted_by_user_id=actor.id,
+    )
+    db.add(row)
+    db.flush()
+    db.refresh(row)
+    return row
+
+
+def review_assignment_request(
+    db: Session,
+    actor: Profile,
+    request_id: uuid.UUID,
+    *,
+    decision: str,
+    note: str | None,
+) -> tuple[GradeAssignmentRequest, GradeAssignment | None]:
+    row = db.scalars(
+        _request_query().where(GradeAssignmentRequest.id == request_id)
+    ).first()
+    if row is None:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Assignment proposal not found.",
+        )
+    if row.status != "pending":
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="Assignment proposal has already been reviewed.",
+        )
+
+    assignment = None
+    if decision == "approve":
+        assignment = create_assignment(
+            db,
+            actor,
+            title=row.title,
+            category_id=row.proposed_category_id,
+            points_possible=row.proposed_points,
+            assignment_type="custom",
+            description=row.description,
+            committee_id=row.committee_id,
+        )
+        row.status = "approved"
+        row.created_assignment_id = assignment.id
+    else:
+        row.status = "rejected"
+    row.reviewed_by_user_id = actor.id
+    row.reviewed_at = _now()
+    row.review_note = note
+    row.updated_at = _now()
+    db.flush()
+    return row, assignment
+
+
 def grade_entry(
     db: Session,
     actor: Profile,
@@ -370,12 +491,15 @@ def grade_entry(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Grade entry not found.",
         )
-    if score is not None and entry.assignment is not None:
-        if score < 0 or score > entry.assignment.points_possible:
-            raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Score must be between 0 and pointsPossible.",
-            )
+    if (
+        score is not None
+        and entry.assignment is not None
+        and (score < 0 or score > entry.assignment.points_possible)
+    ):
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Score must be between 0 and pointsPossible.",
+        )
     if status == "excused":
         entry.status = "excused"
         entry.score = None
@@ -528,13 +652,13 @@ def assignment_detail_for_caller(
         not is_gradebook_operator(profile)
         and entry.publication_status != "published"
         and entry.status not in {"not_started", "draft", "submitted", "late"}
+        and entry.score is not None
     ):
         # Students may open their own ungraded work; hide unpublished graded scores.
-        if entry.publication_status != "published" and entry.score is not None:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Assignment not found for this student.",
-            )
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found for this student.",
+        )
     points = entry.assignment.points_possible if entry.assignment else 10
     return {
         "entry": _entry_payload(entry),
