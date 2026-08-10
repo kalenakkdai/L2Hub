@@ -44,10 +44,32 @@ set campsite_id = (select id from public.campsite_settings where singleton)
 where campsite_id is null;
 
 alter table public.committee_requests
-    alter column campsite_id set not null,
-    alter column campsite_id set default (
-        select id from public.campsite_settings where singleton
-    );
+    alter column campsite_id set not null;
+
+-- Postgres forbids subqueries in DEFAULT expressions (SQLSTATE 0A000).
+-- Fill campsite_id on insert from the singleton instead.
+create or replace function public.committee_requests_set_campsite_id()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+    if new.campsite_id is null then
+        select id into new.campsite_id
+        from public.campsite_settings
+        where singleton
+        limit 1;
+    end if;
+    return new;
+end;
+$$;
+
+drop trigger if exists committee_requests_set_campsite_id on public.committee_requests;
+create trigger committee_requests_set_campsite_id
+    before insert on public.committee_requests
+    for each row
+    execute function public.committee_requests_set_campsite_id();
 
 create index if not exists committee_requests_campsite_idx
     on public.committee_requests (campsite_id, status);
