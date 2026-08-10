@@ -139,7 +139,7 @@ export function WhereaboutsMapPage() {
               ))}
 
               {entries.data?.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/35 text-sm font-medium text-ink-muted backdrop-blur-[1px]">
+                <div className="absolute inset-0 flex items-center justify-center bg-white/35 text-sm font-bold text-ink-muted backdrop-blur-[1px]">
                   Everyone is in the room.
                 </div>
               ) : null}
