@@ -109,7 +109,10 @@ In this repository, `App.tsx` wires mock providers for local development.
 | `gradebook.view_own` | Student Grades page |
 | `gradebook.view_event` | Event roster gradebook |
 | `gradebook.view_student` | Admin student view |
-| `gradebook.edit` | Show edit grade controls |
+| `gradebook.grade` | Show score-entry controls (committee heads) |
+| `gradebook.assign` | Configure assignments (Jan) |
+| `gradebook.publish` | Release head-entered scores to students (Jan) |
+| `gradebook.edit` | Legacy — unused; prefer `gradebook.grade` |
 | `gradebook.mark_excused` | Mark excused |
 | `debrief.reopen` | Reopen submission |
 

@@ -46,9 +46,39 @@ def test_every_camper_reads_every_committees_tasks(client, make_token, seeded):
         assert client.get("/committees/spirit/tasks", headers=headers).status_code == 200, who
 
 
-def test_committee_head_grades_all_forbidden(client, make_token, seeded):
+def test_committee_head_grades_all_forbidden_but_can_grade_own(
+    client, make_token, seeded
+):
     headers = auth_header(make_token, seeded["community_head"].id)
     assert client.get("/grades/all", headers=headers).status_code == 403
+    assert client.get("/grades/pending", headers=headers).status_code == 403
+    assert client.post("/grades/assignments", headers=headers).status_code == 403
+    # Heads may enter scores (stub) for their committee.
+    entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    assert (
+        client.post(f"/grades/entries/{entry_id}/grade", headers=headers).status_code
+        == 200
+    )
+
+
+def test_jan_can_assign_and_publish_but_not_grade(client, make_token, seeded):
+    from app.db.seed import SEED_COMMITTEE_IDS
+
+    headers = auth_header(make_token, seeded["ac"].id)
+    assert client.get("/grades/pending", headers=headers).status_code == 200
+    assert client.post("/grades/assignments", headers=headers).status_code == 201
+    assert (
+        client.post("/grades/publish", json={"entryIds": []}, headers=headers).status_code
+        == 200
+    )
+    entry_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    community = SEED_COMMITTEE_IDS["community"]
+    denied = client.post(
+        f"/grades/entries/{entry_id}/grade",
+        params={"committee_id": str(community)},
+        headers=headers,
+    )
+    assert denied.status_code == 403
 
 
 def test_member_own_grades_ok_other_forbidden(client, make_token, seeded):

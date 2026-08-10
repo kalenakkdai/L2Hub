@@ -28,8 +28,32 @@ export type GradebookPermission =
   | 'gradebook.view_event'
   | 'gradebook.view_student'
   | 'gradebook.edit'
+  | 'gradebook.assign'
+  | 'gradebook.grade'
+  | 'gradebook.publish'
   | 'gradebook.mark_excused'
   | 'debrief.reopen'
+
+/** Maps backend `grades.*` keys onto the Grades UI permission namespace. */
+export function mapBackendGradePermissions(
+  permissions: readonly string[],
+): GradebookPermission[] {
+  const set = new Set(permissions)
+  const mapped: GradebookPermission[] = []
+  if (set.has('grades.view_own')) mapped.push('gradebook.view_own')
+  if (set.has('grades.view_committee') || set.has('grades.view_all')) {
+    mapped.push('gradebook.view_event', 'gradebook.view_student')
+  }
+  if (set.has('grades.assign')) mapped.push('gradebook.assign')
+  if (set.has('grades.grade_committee')) {
+    mapped.push('gradebook.grade', 'gradebook.mark_excused')
+  }
+  if (set.has('grades.publish')) mapped.push('gradebook.publish')
+  if (set.has('debrief.reopen')) mapped.push('debrief.reopen')
+  return mapped
+}
+
+export type GradePublicationStatus = 'draft' | 'pending_publish' | 'published'
 
 export type SubmissionHistoryType =
   | 'draft_created'
@@ -96,6 +120,9 @@ export interface GradebookEntry {
   closedAt?: string | null
   submittedAt?: string | null
   gradedAt?: string | null
+  /** When heads score work, it waits here until Jan publishes. */
+  publicationStatus?: GradePublicationStatus | null
+  publishedAt?: string | null
   isLate?: boolean
   canSubmit?: boolean
   canResubmit?: boolean

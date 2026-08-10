@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core import permission_keys as pk
 from app.models.profile import Profile
-from app.services.authorization import build_auth_context, has_permission
+from app.services.authorization import build_auth_context
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,11 @@ MODULE_CATALOG: tuple[DashboardModule, ...] = (
         "committee_members",
         "Committee members",
         (pk.COMMITTEES_VIEW_MEMBERS,),
+    ),
+    DashboardModule(
+        "committee_grading",
+        "Committee grading",
+        (pk.GRADES_GRADE_COMMITTEE,),
     ),
     DashboardModule(
         "committee_tasks",
@@ -50,7 +55,16 @@ MODULE_CATALOG: tuple[DashboardModule, ...] = (
         "Live monitor",
         (pk.DEBRIEF_VIEW_ALL, pk.ATTENDANCE_VIEW_ALL),
     ),
-    DashboardModule("gradebook", "Gradebook", (pk.GRADES_VIEW_ALL, pk.GRADES_EDIT)),
+    DashboardModule(
+        "gradebook",
+        "Gradebook",
+        (pk.GRADES_VIEW_ALL, pk.GRADES_ASSIGN, pk.GRADES_PUBLISH),
+    ),
+    DashboardModule(
+        "grade_publish_queue",
+        "Publish grades",
+        (pk.GRADES_PUBLISH,),
+    ),
     DashboardModule(
         "agenda_tools",
         "Agenda tools",
@@ -73,12 +87,19 @@ MODULE_CATALOG: tuple[DashboardModule, ...] = (
 
 
 def resolve_dashboard_modules(db: Session, user: Profile) -> list[dict]:
+    """Modules unlocked by any matching permission the caller holds.
+
+    Committee-scoped keys are checked against the caller's permission set, not
+    `has_permission(..., committee_id=None)` — that helper requires a committee
+    id and would hide every committee module from heads.
+    """
+    ctx = build_auth_context(db, user)
     modules: list[dict] = []
     seen: set[str] = set()
     for module in MODULE_CATALOG:
         if module.key in seen:
             continue
-        if any(has_permission(db, user, key) for key in module.required_any):
+        if any(key in ctx.permissions for key in module.required_any):
             modules.append({"key": module.key, "title": module.title})
             seen.add(module.key)
     return modules

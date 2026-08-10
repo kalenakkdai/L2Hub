@@ -16,8 +16,10 @@ from sqlalchemy.orm import Session, selectinload
 from app.core import permission_keys as pk
 from app.core.role_catalog import (
     COMMITTEE_HEAD_PERMISSIONS,
+    ROLE_AC,
     ROLE_ASBO,
     ROLE_MEMBER,
+    ROLE_PRESIDENT,
     ROLE_RANK,
     SUPERADMIN_ROLES,
 )
@@ -182,6 +184,39 @@ def build_auth_context(db: Session, user: Profile) -> AuthContext:
         permission_committee_map.setdefault(pk.ATTENDANCE_VIEW_ALL, set())
     else:
         allowed.discard(pk.ATTENDANCE_MANAGE_ALL)
+
+    # Gradebook workflow:
+    # - Committee heads enter scores for the committees they lead.
+    # - Jan assigns assignments and publishes; he does not enter scores.
+    # - Legacy grades.edit never grants score entry on its own.
+    from app.services.jan import is_jan
+
+    allowed.discard(pk.GRADES_EDIT)
+
+    if headed:
+        for committee_id in headed:
+            permission_committee_map.setdefault(pk.GRADES_GRADE_COMMITTEE, set()).add(
+                committee_id
+            )
+            permission_committee_map.setdefault(pk.GRADES_VIEW_COMMITTEE, set()).add(
+                committee_id
+            )
+    else:
+        allowed.discard(pk.GRADES_GRADE_COMMITTEE)
+
+    if is_jan(user):
+        allowed.add(pk.GRADES_ASSIGN)
+        allowed.add(pk.GRADES_PUBLISH)
+        allowed.add(pk.GRADES_VIEW_ALL)
+        allowed.discard(pk.GRADES_GRADE_COMMITTEE)
+        permission_committee_map.pop(pk.GRADES_GRADE_COMMITTEE, None)
+    elif ROLE_AC in {r["slug"] for r in roles_payload} or ROLE_PRESIDENT in {
+        r["slug"] for r in roles_payload
+    }:
+        # Other AC / President peers may still assign and publish, but scoring
+        # stays with heads unless they also head a committee.
+        allowed.add(pk.GRADES_ASSIGN)
+        allowed.add(pk.GRADES_PUBLISH)
 
     return AuthContext(
         user=user,

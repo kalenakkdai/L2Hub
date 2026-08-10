@@ -74,6 +74,8 @@ function buildEntries(): GradebookEntry[] {
       lateDueAt: ISO.lateDue,
       submittedAt: ISO.submitted,
       gradedAt: ISO.graded,
+      publicationStatus: 'pending_publish',
+      publishedAt: null,
       isLate: false,
       canSubmit: false,
       canResubmit: false,
@@ -580,6 +582,12 @@ export class MockGradebookDataProvider implements GradebookDataProvider {
     return this.entries.find((entry) => entry.id === entryId)
   }
 
+  /** Swap a row in place so consumers holding the old reference see a change. */
+  replaceEntry(next: GradebookEntry): void {
+    const index = this.entries.findIndex((entry) => entry.id === next.id)
+    if (index >= 0) this.entries[index] = next
+  }
+
   async getSubmissionHistory(
     assignmentId: string,
   ): Promise<SubmissionHistoryItem[]> {
@@ -694,10 +702,17 @@ export class MockGradebookCommandProvider implements GradebookCommandProvider {
       ) {
         entry.score = detail.rubricEvaluation.earnedPoints
         entry.status = 'graded'
+        // Heads submit scores to Jan — students do not see them until publish.
+        entry.publicationStatus = 'pending_publish'
+        entry.publishedAt = null
       }
     }
 
-    if (typeof input.score === 'number') entry.score = input.score
+    if (typeof input.score === 'number') {
+      entry.score = input.score
+      entry.publicationStatus = 'pending_publish'
+      entry.publishedAt = null
+    }
     if (input.status) entry.status = input.status
     return entry
   }
@@ -708,6 +723,24 @@ export class MockGradebookCommandProvider implements GradebookCommandProvider {
 
   async reopenSubmission(_assignmentId: string, _studentId: string): Promise<void> {
     return
+  }
+
+  async publishGrades(entryIds: string[]): Promise<GradebookEntry[]> {
+    const now = new Date().toISOString()
+    const published: GradebookEntry[] = []
+    for (const id of entryIds) {
+      const entry = this.data.getEntryById(id)
+      if (!entry) continue
+      // Replace the row so React Query structural sharing notices the change.
+      const next: GradebookEntry = {
+        ...entry,
+        publicationStatus: 'published',
+        publishedAt: now,
+      }
+      this.data.replaceEntry(next)
+      published.push(next)
+    }
+    return published
   }
 }
 
@@ -724,8 +757,8 @@ export class MockGradebookAuthProvider implements GradebookAuthProvider {
       'gradebook.view_own',
       'gradebook.view_event',
       'gradebook.view_student',
-      'gradebook.edit',
-      'gradebook.mark_excused',
+      'gradebook.assign',
+      'gradebook.publish',
       'debrief.reopen',
     ],
     user: {

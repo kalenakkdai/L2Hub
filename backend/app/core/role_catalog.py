@@ -100,6 +100,9 @@ COMMITTEE_HEAD_PERMISSIONS: Final[frozenset[str]] = frozenset(
         pk.MATERIALS_VIEW_COMMITTEE,
         pk.MATERIALS_MANAGE_COMMITTEE,
         pk.NOTIFICATIONS_VIEW_OWN,
+        # Heads enter scores for their crew; Jan publishes before students see them.
+        pk.GRADES_VIEW_COMMITTEE,
+        pk.GRADES_GRADE_COMMITTEE,
         # tasks.view_all and requests.view_all arrive with the member baseline;
         # a head reads the board like everyone else and writes to the committee
         # they actually head.
@@ -120,6 +123,9 @@ ASBO_DENIED: Final[frozenset[str]] = frozenset(
         pk.ROLES_ASSIGN,
         pk.USERS_MANAGE,
         pk.GRADES_EDIT,
+        pk.GRADES_ASSIGN,
+        pk.GRADES_GRADE_COMMITTEE,
+        pk.GRADES_PUBLISH,
         pk.WRAPPED_APPROVE,
         pk.WRAPPED_GENERATE,
         pk.WRAPPED_EDIT,

@@ -21,16 +21,29 @@ def seeded(db_session):
     return seed_development_users(db_session)
 
 
-def test_ac_has_all_permissions(db_session, seeded):
+def test_ac_has_superadmin_permissions_except_head_only_grading(db_session, seeded):
+    """Jan/AC keeps org-wide keys, but score entry is head work."""
     ctx = authz.build_auth_context(db_session, seeded["ac"])
     assert FEEDBACK_PERMISSIONS <= ctx.permissions
-    assert ALL_PERMISSION_KEYS <= ctx.permissions
+    assert pk.GRADES_EDIT not in ctx.permissions
+    assert pk.GRADES_ASSIGN in ctx.permissions
+    assert pk.GRADES_PUBLISH in ctx.permissions
+    assert pk.GRADES_VIEW_ALL in ctx.permissions
+    assert pk.GRADES_GRADE_COMMITTEE not in ctx.permissions
+    # Jan is also an attendance operator.
+    assert pk.ATTENDANCE_MANAGE_ALL in ctx.permissions
+    # Org-wide catalog keys still land on AC (minus legacy edit + head grading).
+    stripped = {pk.GRADES_EDIT, pk.GRADES_GRADE_COMMITTEE}
+    assert (ALL_PERMISSION_KEYS - stripped) <= ctx.permissions
 
 
 def test_asbo_can_view_all_grades_but_not_edit_or_feedback(db_session, seeded):
     asbo = seeded["asbo"]
     assert authz.has_permission(db_session, asbo, pk.GRADES_VIEW_ALL)
     assert not authz.has_permission(db_session, asbo, pk.GRADES_EDIT)
+    assert not authz.has_permission(db_session, asbo, pk.GRADES_ASSIGN)
+    assert not authz.has_permission(db_session, asbo, pk.GRADES_PUBLISH)
+    assert not authz.has_permission(db_session, asbo, pk.GRADES_GRADE_COMMITTEE)
     assert not authz.has_permission(db_session, asbo, pk.FEEDBACK_VIEW_PRIVATE)
     assert not authz.has_permission(db_session, asbo, pk.FEEDBACK_VIEW_ANONYMOUS)
     assert not authz.has_permission(db_session, asbo, pk.FEEDBACK_MANAGE)
@@ -49,12 +62,17 @@ def test_president_matches_ac_superadmin_permissions(db_session, seeded):
         pk.WRAPPED_APPROVE,
         pk.WRAPPED_GENERATE,
         pk.WRAPPED_PUBLISH,
-        pk.GRADES_EDIT,
+        pk.GRADES_ASSIGN,
+        pk.GRADES_PUBLISH,
         pk.FEEDBACK_VIEW_PRIVATE,
         pk.AGENDA_GENERATE,
     ):
         assert authz.has_permission(db_session, president, key)
         assert authz.has_permission(db_session, ac, key)
+    # Neither enters scores unless they also head a committee.
+    assert not authz.has_permission(db_session, president, pk.GRADES_GRADE_COMMITTEE)
+    assert not authz.has_permission(db_session, ac, pk.GRADES_GRADE_COMMITTEE)
+    assert not authz.has_permission(db_session, ac, pk.GRADES_EDIT)
 
 
 def test_committee_head_own_vs_other_committee(db_session, seeded):
@@ -76,12 +94,36 @@ def test_committee_head_own_vs_other_committee(db_session, seeded):
     )
 
 
-def test_committee_head_cannot_view_or_edit_grades(db_session, seeded):
+def test_committee_head_can_grade_own_committee_but_not_publish(
+    db_session, seeded
+):
     head = seeded["community_head"]
+    community = SEED_COMMITTEE_IDS["community"]
+    spirit = SEED_COMMITTEE_IDS["spirit"]
+
+    assert authz.has_permission(
+        db_session, head, pk.GRADES_VIEW_COMMITTEE, committee_id=community
+    )
+    assert authz.has_permission(
+        db_session, head, pk.GRADES_GRADE_COMMITTEE, committee_id=community
+    )
+    assert not authz.has_permission(
+        db_session, head, pk.GRADES_GRADE_COMMITTEE, committee_id=spirit
+    )
     assert not authz.has_permission(db_session, head, pk.GRADES_VIEW_ALL)
-    assert not authz.has_permission(db_session, head, pk.GRADES_VIEW_COMMITTEE)
+    assert not authz.has_permission(db_session, head, pk.GRADES_ASSIGN)
+    assert not authz.has_permission(db_session, head, pk.GRADES_PUBLISH)
     assert not authz.has_permission(db_session, head, pk.GRADES_EDIT)
     assert not authz.has_permission(db_session, head, pk.FEEDBACK_VIEW_PRIVATE)
+
+
+def test_jan_assigns_and_publishes_but_does_not_enter_scores(db_session, seeded):
+    jan = seeded["ac"]
+    assert authz.has_permission(db_session, jan, pk.GRADES_ASSIGN)
+    assert authz.has_permission(db_session, jan, pk.GRADES_PUBLISH)
+    assert authz.has_permission(db_session, jan, pk.GRADES_VIEW_ALL)
+    assert not authz.has_permission(db_session, jan, pk.GRADES_GRADE_COMMITTEE)
+    assert not authz.has_permission(db_session, jan, pk.GRADES_EDIT)
 
 
 def test_member_own_grades_only(db_session, seeded):
@@ -175,12 +217,21 @@ def test_expired_scoped_role_stops_access(db_session, seeded):
 def test_dashboard_modules_hide_feedback_for_asbo(db_session, seeded):
     modules = {m["key"] for m in resolve_dashboard_modules(db_session, seeded["asbo"])}
     assert "gradebook" in modules
+    assert "grade_publish_queue" not in modules
     assert "feedback_review" not in modules
     assert "system_settings" not in modules
 
     ac_modules = {m["key"] for m in resolve_dashboard_modules(db_session, seeded["ac"])}
     assert "feedback_review" in ac_modules
     assert "system_settings" in ac_modules
+    assert "grade_publish_queue" in ac_modules
+    assert "committee_grading" not in ac_modules
+
+    head_modules = {
+        m["key"] for m in resolve_dashboard_modules(db_session, seeded["community_head"])
+    }
+    assert "committee_grading" in head_modules
+    assert "grade_publish_queue" not in head_modules
 
     member_modules = {
         m["key"] for m in resolve_dashboard_modules(db_session, seeded["community_member"])

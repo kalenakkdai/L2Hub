@@ -347,7 +347,7 @@ describe('GradeAssignmentPage', () => {
       path: '/grades/:assignmentId',
       authProvider: new MockGradebookAuthProvider([
         'gradebook.view_own',
-        'gradebook.edit',
+        'gradebook.grade',
         'gradebook.mark_excused',
         'debrief.reopen',
       ]),
@@ -418,7 +418,7 @@ describe('GradeAssignmentPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('lets assigners grade individual rubric parts', async () => {
+  it('lets heads grade individual rubric parts', async () => {
     const user = userEvent.setup()
     const data = new MockGradebookDataProvider()
     renderWithGradebook(<GradeAssignmentPage />, {
@@ -426,7 +426,7 @@ describe('GradeAssignmentPage', () => {
       path: '/grades/:assignmentId',
       authProvider: new MockGradebookAuthProvider([
         'gradebook.view_own',
-        'gradebook.edit',
+        'gradebook.grade',
       ]),
       commandProvider: new MockGradebookCommandProvider(data),
     })
@@ -437,6 +437,29 @@ describe('GradeAssignmentPage', () => {
     await user.click(screen.getByTestId('save-rubric-grades'))
     await waitFor(() => {
       expect(screen.getByTestId('rubric-score-ratings')).toHaveValue(3)
+    })
+  })
+
+  it('lets Jan publish a head-entered score', async () => {
+    const user = userEvent.setup()
+    const data = new MockGradebookDataProvider()
+    renderWithGradebook(<GradeAssignmentPage />, {
+      route: '/grades/asg-maze-debrief',
+      path: '/grades/:assignmentId',
+      authProvider: new MockGradebookAuthProvider([
+        'gradebook.view_own',
+        'gradebook.assign',
+        'gradebook.publish',
+      ]),
+      commandProvider: new MockGradebookCommandProvider(data),
+    })
+    await screen.findByTestId('publish-grade-button')
+    expect(screen.queryByTestId('edit-grade-control')).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('publish-grade-button'))
+    await waitFor(() => {
+      expect(data.getEntryById('entry-maze-debrief')?.publicationStatus).toBe(
+        'published',
+      )
     })
   })
 
@@ -476,7 +499,7 @@ describe('GradeAssignmentPage', () => {
       path: '/grades/:assignmentId',
       authProvider: new MockGradebookAuthProvider([
         'gradebook.view_own',
-        'gradebook.edit',
+        'gradebook.grade',
         'gradebook.mark_excused',
         'debrief.reopen',
       ]),

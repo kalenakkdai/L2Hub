@@ -33,6 +33,8 @@ export interface GradebookCommandProvider {
   ): Promise<GradebookEntry>
   markExcused?(entryId: string): Promise<GradebookEntry>
   reopenSubmission?(assignmentId: string, studentId: string): Promise<void>
+  /** Jan releases head-entered scores to students. */
+  publishGrades?(entryIds: string[]): Promise<GradebookEntry[]>
 }
 
 /**

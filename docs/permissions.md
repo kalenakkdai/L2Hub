@@ -12,7 +12,7 @@ Frontend checks are convenience only. Every API route must call
 |------|------|------|---------|
 | AC | `ac` | 100 | Administrator. Unrestricted access. |
 | President | `president` | 100 | Second super-admin; same permission bundle as AC. |
-| ASBO | `asbo` | 80 | Broad operational access; no private/anonymous feedback; no grades.edit. |
+| ASBO | `asbo` | 80 | Broad operational access; no private/anonymous feedback; no grade assign/publish/edit. |
 | Committee Head | `committee_head` | 50 | Scoped to committees they lead. |
 | Class Officer | `class_officer` | 25 | Senior/Junior Class Officers. Edit Class Officers fundraiser and homecoming plans. |
 | Class Advisor | `class_advisor` | 20 | Faculty advisors (two per class). View Class Officers progress only. |
@@ -141,7 +141,14 @@ Responses never include author metadata.
 | `wrapped.view_published` | Yes | Yes | Yes | Yes | Yes |
 | `agenda.generate` | Yes | Yes | No | No | No |
 | `notifications.view_own` | Yes | Yes | Yes | Yes | Yes |
-| `grades.edit` | Yes | Yes | **No** | No | No |
+| `grades.assign` | Yes (Jan) | Yes (Jan) | **No** | No | No |
+| `grades.grade_committee` | No | No | **No** | Yes (own) | No |
+| `grades.publish` | Yes (Jan) | Yes (Jan) | **No** | No | No |
+| `grades.edit` | Legacy (unused) | Legacy (unused) | **No** | No | No |
+
+Gradebook workflow: committee heads enter scores for their crew; those scores
+stay unpublished until Jan releases them (`grades.publish`). Jan configures
+assignments (`grades.assign`) but does not enter scores.
 
 See [event-summary.md](./event-summary.md) for the full workflow.
 
@@ -153,12 +160,17 @@ See [event-summary.md](./event-summary.md) for the full workflow.
 | Start debrief | Yes | Yes | Yes | No (unless later granted) | No |
 | View all grades | Yes | Yes | Yes | No | No |
 | View own grades | Yes | Yes | Yes | Yes (own) | Yes |
-| Edit grades | Yes | Yes | No | No | No |
+| View committee grades | Yes | Yes | Yes | Yes (own) | No |
+| Assign gradebook items | Yes | Yes (Jan) | No | No | No |
+| Enter grades | No* | No* | No | Yes (own committee) | No |
+| Publish grades | Yes | Yes (Jan) | No | No | No |
 | View private/anonymous feedback | Yes | Yes | No | No | No |
 | Manage users (Users page) | Yes | Yes | No by default | No | No |
 | View other committees | Yes | Yes | Yes | No | No |
 | Manage own committee tasks | Yes | Yes | Yes | Yes (own) | No |
 
+\* AC / President may also enter scores only if they head a committee; Jan is
+explicitly barred from score entry and publishes instead.
 ## Dashboard modules
 
 `GET /auth/dashboard` returns `{ roles, permissions, modules }` derived from

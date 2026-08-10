@@ -30,7 +30,11 @@ export function GradeAssignmentPage() {
   const commands = useGradebookCommands()
   const queryClient = useQueryClient()
 
-  const canEdit = hasPermission('gradebook.edit') && Boolean(commands?.updateGrade)
+  const canGrade =
+    hasPermission('gradebook.grade') && Boolean(commands?.updateGrade)
+  const canAssign = hasPermission('gradebook.assign')
+  const canPublish =
+    hasPermission('gradebook.publish') && Boolean(commands?.publishGrades)
   const canExcuse =
     hasPermission('gradebook.mark_excused') && Boolean(commands?.markExcused)
   const canReopen =
@@ -76,6 +80,18 @@ export function GradeAssignmentPage() {
     },
   })
 
+  const publishMutation = useMutation({
+    mutationFn: async (entryId: string) => {
+      if (!commands?.publishGrades) throw new Error('Publish unavailable')
+      return commands.publishGrades([entryId])
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: gradebookKeys.assignment(assignmentId),
+      })
+      await queryClient.invalidateQueries({ queryKey: ['gradebook', 'me'] })
+    },
+  })
   if (detailQuery.isPending) {
     return (
       <p className="text-sm text-ink-muted" role="status">
@@ -167,14 +183,26 @@ export function GradeAssignmentPage() {
               submittedAt={
                 detail.submission?.submittedAt ?? entry.submittedAt
               }
-              editable={canEdit}
+              editable={canGrade}
               busy={rubricMutation.isPending}
               onSave={
-                canEdit
+                canGrade
                   ? (scores) => rubricMutation.mutate(scores)
                   : undefined
               }
             />
+            {canGrade && !canPublish ? (
+              <p className="mt-2 text-[12.5px] text-ink-subtle">
+                Saving a score sends it to Mr. Jan to publish before students
+                see it.
+              </p>
+            ) : null}
+            {canAssign && !canGrade ? (
+              <p className="mt-2 text-[12.5px] text-ink-subtle">
+                You configure assignments. Committee heads enter the scores;
+                you publish them when ready.
+              </p>
+            ) : null}
           </div>
 
           {detail.feedback ? (
@@ -232,12 +260,33 @@ export function GradeAssignmentPage() {
               Reopen Submission
             </button>
           ) : null}
-          {canEdit ? (
+          {canGrade ? (
             <span
               data-testid="edit-grade-control"
               className="rounded-control border border-dashed border-border-strong px-3 py-1.5 text-xs text-ink-muted"
             >
               Edit rubric parts above
+            </span>
+          ) : null}
+          {canPublish &&
+          entry.status === 'graded' &&
+          entry.publicationStatus !== 'published' ? (
+            <button
+              type="button"
+              data-testid="publish-grade-button"
+              disabled={publishMutation.isPending}
+              onClick={() => publishMutation.mutate(entry.id)}
+              className="rounded-control bg-accent-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-700 disabled:opacity-50"
+            >
+              {publishMutation.isPending ? 'Publishing…' : 'Publish grade'}
+            </button>
+          ) : null}
+          {canPublish && entry.publicationStatus === 'published' ? (
+            <span className="rounded-control border border-border-subtle px-3 py-1.5 text-xs text-ink-muted">
+              Published
+              {entry.publishedAt
+                ? ` · ${new Date(entry.publishedAt).toLocaleDateString()}`
+                : ''}
             </span>
           ) : null}
           {entry.canResubmit ? (
