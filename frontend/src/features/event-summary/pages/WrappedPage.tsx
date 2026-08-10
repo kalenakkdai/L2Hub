@@ -4,10 +4,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { ApiError } from '../../../api/client'
 import { FullPageMessage } from '../../../components/FullPageMessage'
+import { Button, ButtonLink } from '../../../components/ui/Button'
 import { ErrorState } from '../../../components/ui/ErrorState'
 import { CampsiteScene } from '../components/CampsiteScene'
 import { FeedbackConstellation } from '../components/FeedbackConstellation'
 import { fetchWrapped, markWrappedPresented } from '../api'
+
+/** The campsite backdrop both Wrapped views sit on. */
+const CAMPSITE_BACKDROP =
+  'relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,#14532d_0%,#062016_55%,#03140d_100%)] text-emerald-50'
+
+/** Matches the translucent card the events list uses over the same backdrop. */
+const SECTION =
+  'overflow-hidden rounded-card border border-white/12 bg-white/[0.07] shadow-card backdrop-blur-sm'
 
 type Slide =
   | { id: string; title: string; body: React.ReactNode }
@@ -401,57 +410,83 @@ export function WrappedPage() {
 
   if (listMode || reducedMotion) {
     return (
-      <div className="min-h-screen bg-[#062016] px-4 py-8 text-emerald-50">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-2xl font-semibold text-white">
-              {wrappedQuery.data.event.name} Wrapped
-            </h1>
-            <div className="flex flex-wrap items-center gap-3">
+      <div className={CAMPSITE_BACKDROP}>
+        <CampsiteScene committees={wrappedCommittees} fullBleed owl={false} />
+
+        <div className="on-navy relative z-10 mx-auto max-w-4xl px-4 pb-16 sm:px-8">
+          <header className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-white/12 pt-6 pb-4">
+            <div>
+              <p className="text-xs font-semibold tracking-wide text-navy-ink-muted uppercase">
+                Event Wrapped
+              </p>
+              <h1 className="mt-1 text-display font-semibold text-navy-ink">
+                {wrappedQuery.data.event.name} Wrapped
+              </h1>
+              <p className="mt-1 text-sm text-navy-ink-muted">
+                Every card from the deck, on one scrollable page.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               {canPresent && !alreadyPresented ? (
-                <button
+                <Button
                   type="button"
-                  className="rounded-control border border-emerald-300/40 px-3 py-1.5 text-sm font-medium text-emerald-100 disabled:opacity-50"
+                  variant="navy"
+                  size="sm"
                   disabled={presentMutation.isPending || presentMutation.isSuccess}
                   onClick={() => presentMutation.mutate()}
                 >
                   {presentMutation.isSuccess
                     ? 'Recap unlocked'
                     : 'Mark reviewed with class'}
-                </button>
+                </Button>
               ) : null}
               {!reducedMotion ? (
-                <button
+                <Button
                   type="button"
-                  className="text-sm underline"
+                  variant="navy"
+                  size="sm"
                   onClick={() => setListMode(false)}
                 >
                   Story view
-                </button>
+                </Button>
               ) : null}
+              <ButtonLink
+                to={`/events/${eventId}/summary`}
+                variant="navy"
+                size="sm"
+              >
+                Exit
+              </ButtonLink>
             </div>
-          </div>
-          <div className="space-y-10">
-            {slides.map((s) => (
-              <section key={s.id}>
-                <h2 className="mb-4 text-lg font-semibold text-white">{s.title}</h2>
-                {s.body}
+          </header>
+
+          <div className="space-y-5">
+            {slides.map((s, position) => (
+              <section key={s.id} aria-label={s.title} className={SECTION}>
+                <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-white/12 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-navy-ink">{s.title}</h2>
+                  <span className="rounded-control bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-navy-ink-muted">
+                    {position + 1} / {slides.length}
+                  </span>
+                </header>
+                <div className="px-4 py-5">{s.body}</div>
               </section>
             ))}
           </div>
-          <Link
-            to={`/events/${eventId}/summary`}
-            className="mt-10 inline-block text-sm text-emerald-200 underline"
-          >
-            Exit
-          </Link>
+
+          {/*
+            Scroll clearance for the campsite, which is pinned to the viewport
+            rather than scrolled with the page. Full-bleed here, so there is no
+            sidebar width to subtract as there is on the events list.
+          */}
+          <div aria-hidden="true" className="h-[31.25vw]" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,#14532d_0%,#062016_55%,#03140d_100%)] text-emerald-50">
+    <div className={CAMPSITE_BACKDROP}>
       <CampsiteScene committees={wrappedCommittees} fullBleed owl={false} />
       <div className="relative z-10 flex min-h-screen flex-col">
         <header className="flex items-center justify-between px-4 py-4 sm:px-8">
