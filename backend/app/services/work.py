@@ -300,12 +300,17 @@ def create_task(
     db.flush()
 
     if assignee_user_id is not None and assignee_user_id != profile.id:
+        assignee = db.get(Profile, assignee_user_id)
+        assignee_name = _actor_label(assignee) if assignee else "a camper"
+        actor = _actor_label(profile)
         notifications.deliver(
             db,
-            recipient_ids=[assignee_user_id],
+            recipient_ids=_activity_audience(
+                db, committee_id, exclude=profile.id
+            ),
             type="task.assigned",
-            title=f"New task: {task.title}",
-            body=f"{committee.name} assigned this to you.",
+            title=f"{actor} assigned “{task.title}” to {assignee_name}",
+            body=committee.name,
             payload={"taskId": str(task.id), "committeeId": str(committee_id)},
         )
 
@@ -368,12 +373,18 @@ def update_task(
         require_assignee_in_committee(db, task.committee_id, assignee_user_id)
         task.assignee_user_id = assignee_user_id
         if assignee_user_id != profile.id:
+            assignee = db.get(Profile, assignee_user_id)
+            assignee_name = _actor_label(assignee) if assignee else "a camper"
+            actor = _actor_label(profile)
+            committee = db.get(Committee, task.committee_id)
             notifications.deliver(
                 db,
-                recipient_ids=[assignee_user_id],
+                recipient_ids=_activity_audience(
+                    db, task.committee_id, exclude=profile.id
+                ),
                 type="task.assigned",
-                title=f"New task: {task.title}",
-                body="This was just assigned to you.",
+                title=f"{actor} assigned “{task.title}” to {assignee_name}",
+                body=committee.name if committee else "Committee",
                 payload={
                     "taskId": str(task.id),
                     "committeeId": str(task.committee_id),
@@ -391,18 +402,56 @@ def update_task(
 # ---------------------------------------------------------------------------
 
 
-def _committee_recipients(db: Session, committee_id: uuid.UUID) -> list[uuid.UUID]:
-    """Who hears about a request: the heads, or everyone if there is no head.
+def _committee_members(db: Session, committee_id: uuid.UUID) -> list[uuid.UUID]:
+    """Every camper in the committee — members and heads alike."""
+    return list(
+        db.scalars(
+            select(CommitteeMembership.user_id).where(
+                CommitteeMembership.committee_id == committee_id
+            )
+        ).all()
+    )
 
-    A committee with no head is not a reason for the request to go unseen.
+
+def _asbo_user_ids(db: Session) -> list[uuid.UUID]:
+    """ASBO / President see activity across every committee."""
+    from app.models.rbac import Role, UserRoleAssignment
+
+    return list(
+        db.scalars(
+            select(UserRoleAssignment.user_id)
+            .join(Role, Role.id == UserRoleAssignment.role_id)
+            .where(Role.slug.in_(("asbo", "president")))
+        ).all()
+    )
+
+
+def _activity_audience(
+    db: Session,
+    *committee_ids: uuid.UUID,
+    exclude: uuid.UUID | None = None,
+) -> list[uuid.UUID]:
+    """Who hears about committee work.
+
+    Members and heads of the involved committees, plus every ASBO/President.
+    The actor is dropped so you are not notified about your own click.
     """
-    memberships = db.scalars(
-        select(CommitteeMembership).where(
-            CommitteeMembership.committee_id == committee_id
-        )
-    ).all()
-    heads = [m.user_id for m in memberships if m.is_head]
-    return heads or [m.user_id for m in memberships]
+    recipients: set[uuid.UUID] = set()
+    for committee_id in dict.fromkeys(committee_ids):
+        recipients.update(_committee_members(db, committee_id))
+    recipients.update(_asbo_user_ids(db))
+    if exclude is not None:
+        recipients.discard(exclude)
+    return list(recipients)
+
+
+def _committee_recipients(db: Session, committee_id: uuid.UUID) -> list[uuid.UUID]:
+    """Backward-compatible alias: whole committee, not heads-only."""
+    return _committee_members(db, committee_id)
+
+
+def _actor_label(profile: Profile) -> str:
+    return (profile.full_name or "").strip() or (profile.email or "Someone")
 
 
 def _open_request(
@@ -416,7 +465,7 @@ def _open_request(
     due_on: date | None,
     source_task: Task | None = None,
 ) -> CommitteeRequest:
-    """Writes one request row and tells the target committee about it."""
+    """Writes one request row and tells both committees + ASBO about it."""
     request = CommitteeRequest(
         requesting_committee_id=requesting_committee.id,
         target_committee_id=target_committee.id,
@@ -430,12 +479,18 @@ def _open_request(
     db.add(request)
     db.flush()
 
+    actor = _actor_label(profile)
     notifications.deliver(
         db,
-        recipient_ids=_committee_recipients(db, target_committee.id),
+        recipient_ids=_activity_audience(
+            db,
+            requesting_committee.id,
+            target_committee.id,
+            exclude=profile.id,
+        ),
         type="request.received",
-        title=f"{requesting_committee.name} needs {target_committee.name}",
-        body=title,
+        title=f"{actor} requested {title}",
+        body=f"{requesting_committee.name} → {target_committee.name}",
         payload={"requestId": str(request.id)},
     )
     return request
@@ -520,12 +575,18 @@ def respond_to_request(
     request.updated_at = _now()
 
     notice_type, verb = _RESPONSE_NOTICE[status]
+    actor = _actor_label(profile)
     notifications.deliver(
         db,
-        recipient_ids=_committee_recipients(db, request.requesting_committee_id),
+        recipient_ids=_activity_audience(
+            db,
+            request.requesting_committee_id,
+            request.target_committee_id,
+            exclude=profile.id,
+        ),
         type=notice_type,
-        title=f"{request.target_committee.name} {verb} your request",
-        body=request.title,
+        title=f"{actor} {verb} “{request.title}”",
+        body=f"{request.target_committee.name} → {request.requesting_committee.name}",
         payload={"requestId": str(request.id)},
     )
 

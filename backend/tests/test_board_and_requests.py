@@ -159,13 +159,35 @@ def test_listing_a_task_fans_out_requests_to_the_committees_it_needs(
     # The trail back to the task is what makes this readable months later.
     assert request["sourceTaskId"] == created["task"]["id"]
 
-    # Spirit's head hears about it without anyone chasing them.
-    notes = db_session.scalars(
+    # Spirit's whole crew + ASBO hear about it — not just the head.
+    spirit_notes = db_session.scalars(
         select(Notification).where(
             Notification.recipient_user_id == seeded["spirit_head"].id
         )
     ).all()
-    assert [n.type for n in notes] == ["request.received"]
+    assert [n.type for n in spirit_notes] == ["request.received"]
+    assert "requested Winter fundraiser" in spirit_notes[0].title
+
+    member_notes = db_session.scalars(
+        select(Notification).where(
+            Notification.recipient_user_id == seeded["spirit_member"].id
+        )
+    ).all()
+    assert [n.type for n in member_notes] == ["request.received"]
+
+    community_member_notes = db_session.scalars(
+        select(Notification).where(
+            Notification.recipient_user_id == seeded["community_member"].id
+        )
+    ).all()
+    assert [n.type for n in community_member_notes] == ["request.received"]
+
+    asbo_notes = db_session.scalars(
+        select(Notification).where(
+            Notification.recipient_user_id == seeded["asbo"].id
+        )
+    ).all()
+    assert [n.type for n in asbo_notes] == ["request.received"]
 
 
 def test_fan_out_ignores_the_owning_committee_and_duplicates(
