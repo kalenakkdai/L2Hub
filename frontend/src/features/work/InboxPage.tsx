@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Inbox as InboxIcon, Loader } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { useCurrentUser } from '../../auth/useCurrentUser'
+import { notificationHref } from '../../components/layout/notificationLinks'
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -24,6 +26,8 @@ const KIND_LABELS: Record<string, string> = {
   'wrapped.request': 'Wrapped',
   'wrapped.generated': 'Wrapped',
   'wrapped.published': 'Wrapped',
+  'event.created': 'Event',
+  'whereabouts.ping': 'Whereabouts',
 }
 
 function when(iso: string): string {
@@ -45,6 +49,7 @@ function NotificationRow({ note }: { note: AppNotification }) {
   })
 
   const unread = !note.readAt
+  const href = notificationHref(note)
 
   return (
     <li className="flex items-start gap-3 border-b border-border-divider px-5 py-3.5 last:border-b-0">
@@ -57,7 +62,20 @@ function NotificationRow({ note }: { note: AppNotification }) {
         }
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-ink">{note.title}</p>
+        <p className="text-sm font-medium text-ink">
+          {href ? (
+            // Following a notification is reading it, the same as in the bell.
+            <Link
+              to={href}
+              onClick={() => unread && read.mutate()}
+              className="underline-offset-2 hover:text-accent-ink hover:underline"
+            >
+              {note.title}
+            </Link>
+          ) : (
+            note.title
+          )}
+        </p>
         <p className="mt-0.5 text-[13px] text-ink-muted">{note.body}</p>
         <p className="mt-1 font-mono text-[11.5px] text-ink-subtle">
           {KIND_LABELS[note.type] ?? 'Update'} · {when(note.createdAt)}

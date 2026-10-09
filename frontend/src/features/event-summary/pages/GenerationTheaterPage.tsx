@@ -65,7 +65,7 @@ export function GenerationTheaterPage() {
   if (meQuery.isError || !meQuery.data) {
     return (
       <FullPageMessage>
-        <ErrorState title="Could not load profile" description="Sign in again." />
+        <ErrorState title="Could not load profile" description="Refresh the page. If it keeps happening, sign out and back in." />
       </FullPageMessage>
     )
   }

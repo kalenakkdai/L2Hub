@@ -34,29 +34,38 @@ function renderChrome(ui: React.ReactElement, route = '/dashboard') {
   )
 }
 
-describe('Tools section', () => {
-  const tools = NAV_SECTIONS.find((section) => section.title === 'Tools')
+describe('Note Taker', () => {
+  const events = NAV_SECTIONS.find((section) => section.title === 'Events')
 
-  it('holds Note Taker rather than the Work section', () => {
-    expect(tools?.items.map((item) => item.label)).toContain('Note Taker')
+  it('sits with events, where its meeting logs end up', () => {
+    expect(events?.items.map((item) => item.label)).toContain('Note Taker')
 
     const work = NAV_SECTIONS.find((section) => section.title === 'Work')
     expect(work?.items.map((item) => item.label)).not.toContain('Note Taker')
   })
 
-  it('points at routes that exist, so neither row reads as "coming soon"', () => {
-    for (const item of tools?.items ?? []) {
-      expect(IMPLEMENTED_ROUTES.has(item.to)).toBe(true)
+  it('hides Note Taker from campers without note_taker.view', () => {
+    const [filtered] = filterNavSections([events!], ['something.else'], undefined)
+    expect(filtered?.items.map((item) => item.label)).not.toContain('Note Taker')
+  })
+})
+
+describe('navigation data', () => {
+  it('only points at routes that exist', () => {
+    for (const section of NAV_SECTIONS) {
+      for (const item of section.items) {
+        expect(IMPLEMENTED_ROUTES.has(item.to), item.to).toBe(true)
+      }
     }
   })
 
-  it('hides Note Taker from campers without note_taker.view', () => {
-    const [filtered] = filterNavSections(
-      [tools!],
-      ['something.else'],
-      undefined,
-    )
-    expect(filtered.items.map((item) => item.label)).not.toContain('Note Taker')
+  it('carries no made-up counts', () => {
+    // Badges come from live data (the Inbox) or not at all.
+    for (const section of NAV_SECTIONS) {
+      for (const item of section.items) {
+        expect(item.badge, item.label).toBeUndefined()
+      }
+    }
   })
 })
 
@@ -78,12 +87,15 @@ describe('Sidebar', () => {
     )
   })
 
-  it('renders unbuilt destinations as inert rows, not dead links', () => {
-    renderChrome(<Sidebar name="Ada Lovelace" role="asbo" />)
+  it('links My tasks for campers who can see the board', () => {
+    renderChrome(
+      <Sidebar name="Ada Lovelace" role="asbo" permissions={['tasks.view_all']} />,
+    )
 
-    // "My tasks" has no route yet, so it must not be a link.
-    expect(screen.queryByRole('link', { name: /My tasks/ })).not.toBeInTheDocument()
-    expect(screen.getByText('My tasks')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'My tasks' })).toHaveAttribute(
+      'href',
+      '/tasks',
+    )
   })
 
   it('shows the member and their role', () => {

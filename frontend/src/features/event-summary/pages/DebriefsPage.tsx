@@ -38,7 +38,7 @@ export function DebriefsPage() {
   if (meQuery.isError || !meQuery.data) {
     return (
       <FullPageMessage>
-        <ErrorState title="Could not load profile" description="Sign in again." />
+        <ErrorState title="Could not load profile" description="Refresh the page. If it keeps happening, sign out and back in." />
       </FullPageMessage>
     )
   }
@@ -65,7 +65,7 @@ export function DebriefsPage() {
       {eventsQuery.isError ? (
         <ErrorState
           title="Could not load debriefs"
-          description="Check that the backend is running."
+          description="Something went wrong on our end. Try again in a moment."
           onRetry={() => void eventsQuery.refetch()}
         />
       ) : null}

@@ -11,6 +11,7 @@ import { dateStamp, timeOfDay } from '../dashboard/formatDate'
 import { useCommittee } from './useCommittees'
 import type { CommitteeDetail } from './types'
 import { initials } from '../../lib/initials'
+import { SampleDataNotice } from '../../components/ui/SampleDataNotice'
 
 function Roster({ committee }: { committee: CommitteeDetail }) {
   return (
@@ -97,6 +98,10 @@ export function CommitteeDetailPage() {
       permissions={profile.permissions}
       header={header}
     >
+      <SampleDataNotice>
+        This roster and its numbers are placeholders until committees are
+        connected.
+      </SampleDataNotice>
       {query.isPending && (
         <div role="status" aria-busy="true" className="flex flex-col gap-4">
           <span className="sr-only">Loading committee…</span>

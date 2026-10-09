@@ -4,6 +4,7 @@ import { useCurrentUser } from '../auth/useCurrentUser'
 import { AppShell } from '../components/layout/AppShell'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
+import { SampleDataNotice } from '../components/ui/SampleDataNotice'
 import { Section } from '../components/ui/Section'
 import { ActivityFeed } from '../features/dashboard/ActivityFeed'
 import { AttentionList } from '../features/dashboard/AttentionList'
@@ -72,6 +73,10 @@ export function DashboardPage() {
         />
       }
     >
+      <SampleDataNotice>
+        Events, grades, points, and progress on this dashboard are placeholders
+        until it is connected. The Requests list in the side panel is real.
+      </SampleDataNotice>
       <div className="flex flex-col gap-8">
         <Section title="Next event">
           {data.nextEvent ? (

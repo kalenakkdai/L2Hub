@@ -7,6 +7,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../../features/event-summary/api'
+import { notificationHref } from './notificationLinks'
 
 /**
  * Notifications panel for the app chrome.
@@ -79,8 +80,7 @@ export function NotificationBell() {
               <li className="px-3 py-4 text-sm text-navy-ink-muted">No notifications yet.</li>
             ) : (
               notifications.slice(0, 8).map((note) => {
-                const slug =
-                  typeof note.payload?.eventSlug === 'string' ? note.payload.eventSlug : null
+                const href = notificationHref(note)
                 const unreadNote = !note.readAt
 
                 const inner = (
@@ -107,9 +107,9 @@ export function NotificationBell() {
 
                 return (
                   <li key={note.id} className="border-b border-navy-800 last:border-b-0">
-                    {slug ? (
+                    {href ? (
                       <Link
-                        to={`/events/${slug}/summary`}
+                        to={href}
                         className="block px-3 py-2 hover:bg-navy-800"
                         onClick={onOpen}
                       >
@@ -129,6 +129,14 @@ export function NotificationBell() {
               })
             )}
           </ul>
+
+          <Link
+            to="/inbox"
+            onClick={() => setOpen(false)}
+            className="block border-t border-navy-700 px-3 py-2 text-center text-[12px] text-accent-400 hover:bg-navy-800"
+          >
+            See all in Inbox
+          </Link>
         </div>
       )}
     </div>

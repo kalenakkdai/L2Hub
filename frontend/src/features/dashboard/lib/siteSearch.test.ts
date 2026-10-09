@@ -5,6 +5,7 @@ describe('searchSiteDestinations', () => {
   const member = [
     'note_taker.view',
     'notifications.view_own',
+    'tasks.view_all',
   ]
 
   it('returns starter destinations when the query is empty', () => {
@@ -38,15 +39,13 @@ describe('searchSiteDestinations', () => {
     expect(hits.map((hit) => hit.to)).not.toContain('/grades')
   })
 
-  it('marks unimplemented routes without dropping them from discovery', () => {
-    // Resources used to be the example here; it has a real page now (the
-    // request log). My tasks is the remaining placeholder.
+  it('finds My tasks as a real destination now that it has a page', () => {
     const hits = searchSiteDestinations('tasks', member)
     const tasks = hits.find((hit) => hit.to === '/tasks')
     expect(tasks).toEqual(
       expect.objectContaining({
         label: 'My tasks',
-        implemented: false,
+        implemented: true,
       }),
     )
   })

@@ -23,7 +23,11 @@ function useRefreshRequests() {
   }
 }
 
-function InboundRow({ request }: { request: CommitteeRequest }) {
+/**
+ * Accept, decline, or finish a request — for the committee it was sent to.
+ * Shared by the dashboard widget and the Requests page.
+ */
+export function RequestActions({ request }: { request: CommitteeRequest }) {
   const refresh = useRefreshRequests()
   const respond = useMutation({
     mutationFn: (status: 'accepted' | 'done' | 'declined') =>
@@ -31,6 +35,44 @@ function InboundRow({ request }: { request: CommitteeRequest }) {
     onSuccess: refresh,
   })
 
+  if (request.status === 'open') {
+    return (
+      <>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={respond.isPending}
+          onClick={() => respond.mutate('accepted')}
+        >
+          Accept
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={respond.isPending}
+          onClick={() => respond.mutate('declined')}
+        >
+          Decline
+        </Button>
+      </>
+    )
+  }
+  if (request.status === 'accepted') {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={respond.isPending}
+        onClick={() => respond.mutate('done')}
+      >
+        Mark done
+      </Button>
+    )
+  }
+  return null
+}
+
+function InboundRow({ request }: { request: CommitteeRequest }) {
   return (
     <li className="border-b border-border-divider py-2.5 last:border-b-0">
       <p className="text-[13.5px] text-ink">{request.title}</p>
@@ -38,42 +80,13 @@ function InboundRow({ request }: { request: CommitteeRequest }) {
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <RequestStatusBadge status={request.status} />
-        {request.status === 'open' && (
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={respond.isPending}
-              onClick={() => respond.mutate('accepted')}
-            >
-              Accept
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={respond.isPending}
-              onClick={() => respond.mutate('declined')}
-            >
-              Decline
-            </Button>
-          </>
-        )}
-        {request.status === 'accepted' && (
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={respond.isPending}
-            onClick={() => respond.mutate('done')}
-          >
-            Mark done
-          </Button>
-        )}
+        <RequestActions request={request} />
       </div>
     </li>
   )
 }
 
-function NewRequestForm({
+export function NewRequestForm({
   myCommittees,
   onDone,
 }: {
@@ -178,11 +191,10 @@ function NewRequestForm({
 }
 
 /**
- * Requests, scoped to the caller's own committee.
+ * Requests, scoped to the caller's own committee — the dashboard glance.
  *
- * The cross-org /requests page is leadership-only, so this is where everyone
- * else lives: what has been asked of us, what we have asked for, and the form
- * to ask for something new.
+ * The Requests page holds the full log and the same controls; this is the
+ * short list of what is outstanding for us right now.
  */
 export function RequestsWidget() {
   const [filing, setFiling] = useState(false)

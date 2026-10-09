@@ -13,6 +13,7 @@ from app.core.security import AuthConfigurationError, AuthError, verify_token
 from app.db.session import get_db
 from app.mail.factory import get_email_sender_singleton
 from app.mail.protocol import EmailSender
+from app.models import PermissionOverride, Role, RolePermission, UserRoleAssignment
 from app.models.profile import Profile
 from app.services import authorization as authz
 from app.storage.factory import get_storage_singleton
@@ -114,10 +115,20 @@ def get_current_profile(claims: TokenClaims, db: DbSession) -> Profile:
     profile = db.get(
         Profile,
         user_id,
+        # Load the whole permission chain up front. Every request builds an
+        # auth context from this profile, and anything left lazy here becomes
+        # one round trip per permission — 80-odd queries against a remote
+        # database, which is most of a page load.
         options=(
-            selectinload(Profile.role_assignments),
+            selectinload(Profile.role_assignments)
+            .selectinload(UserRoleAssignment.role)
+            .selectinload(Role.permissions)
+            .selectinload(RolePermission.permission),
+            selectinload(Profile.role_assignments).selectinload(UserRoleAssignment.committee),
             selectinload(Profile.committee_memberships),
-            selectinload(Profile.permission_overrides),
+            selectinload(Profile.permission_overrides).selectinload(
+                PermissionOverride.permission
+            ),
         ),
     )
 

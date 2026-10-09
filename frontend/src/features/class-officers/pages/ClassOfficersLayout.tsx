@@ -4,6 +4,7 @@ import { fetchCurrentUser, hasPermission } from '../../../api/auth'
 import { AppShell } from '../../../components/layout/AppShell'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
+import { SampleDataNotice } from '../../../components/ui/SampleDataNotice'
 
 const TABS = [
   { to: '/class-officers', label: 'Overview', end: true },
@@ -18,7 +19,7 @@ export function ClassOfficersLayout() {
   if (meQuery.isError || !meQuery.data) {
     return (
       <FullPageMessage>
-        <ErrorState title="Could not load profile" description="Sign in again." />
+        <ErrorState title="Could not load profile" description="Refresh the page. If it keeps happening, sign out and back in." />
       </FullPageMessage>
     )
   }
@@ -57,6 +58,11 @@ export function ClassOfficersLayout() {
             : ' View-only — ask a Class Officer to update figures.'}
         </p>
       </header>
+
+      <SampleDataNotice>
+        Fundraiser and Homecoming figures are placeholders and reset when the
+        page reloads.
+      </SampleDataNotice>
 
       <nav
         aria-label="Class Officers sections"

@@ -129,6 +129,45 @@ def test_task_status_moves(client, make_token, seeded):
     assert response.json()["task"]["status"] == "done"
 
 
+def test_the_assignee_moves_their_own_task(client, make_token, seeded):
+    head = auth_header(make_token, seeded["community_head"].id)
+    member = seeded["community_member"]
+    task = make_task(client, head, assigneeUserId=str(member.id))["task"]
+
+    response = client.patch(
+        f"/board/tasks/{task['id']}",
+        json={"status": "doing"},
+        headers=auth_header(make_token, member.id),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["task"]["status"] == "doing"
+
+
+def test_a_member_cannot_move_a_task_that_is_not_theirs(client, make_token, seeded):
+    head = auth_header(make_token, seeded["community_head"].id)
+    task = make_task(client, head)["task"]
+
+    response = client.patch(
+        f"/board/tasks/{task['id']}",
+        json={"status": "done"},
+        headers=auth_header(make_token, seeded["community_member"].id),
+    )
+    assert response.status_code == 403
+
+
+def test_the_assignee_cannot_hand_their_task_away(client, make_token, seeded):
+    head = auth_header(make_token, seeded["community_head"].id)
+    member = seeded["community_member"]
+    task = make_task(client, head, assigneeUserId=str(member.id))["task"]
+
+    response = client.patch(
+        f"/board/tasks/{task['id']}",
+        json={"clearAssignee": True},
+        headers=auth_header(make_token, member.id),
+    )
+    assert response.status_code == 403
+
+
 def test_unknown_task_status_is_refused(client, make_token, seeded):
     head = auth_header(make_token, seeded["community_head"].id)
     task = make_task(client, head)["task"]

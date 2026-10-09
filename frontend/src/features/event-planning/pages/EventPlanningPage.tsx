@@ -14,6 +14,7 @@ import {
   usePlanningCommands,
 } from '../hooks/useEventPlanning'
 import type { EventPlan } from '../types'
+import { SampleDataNotice } from '../../../components/ui/SampleDataNotice'
 
 export function EventPlanningPage() {
   const navigate = useNavigate()
@@ -31,7 +32,7 @@ export function EventPlanningPage() {
   if (meQuery.isError || !meQuery.data) {
     return (
       <FullPageMessage>
-        <ErrorState title="Could not load profile" description="Sign in again." />
+        <ErrorState title="Could not load profile" description="Refresh the page. If it keeps happening, sign out and back in." />
       </FullPageMessage>
     )
   }
@@ -56,6 +57,11 @@ export function EventPlanningPage() {
           enable a plan before people can accept their assignments.
         </p>
       </header>
+
+      <SampleDataNotice>
+        The plans listed here are placeholders and reset when the page
+        reloads. Meeting logs on the fire pits are real.
+      </SampleDataNotice>
 
       <div className="mb-4">
         <EventCampfireBoard permissions={me.permissions} />

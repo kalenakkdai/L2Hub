@@ -272,7 +272,7 @@ export function UsersPage() {
       {usersQuery.isError ? (
         <ErrorState
           title="Could not load users"
-          description="Check that the backend is running and your account still has users.view."
+          description="Try again in a moment. If it keeps happening, your access may have changed — ask an adviser."
         />
       ) : null}
 

@@ -13,6 +13,8 @@ type BoardCompactRowProps = {
   onAddTask: () => void
   onReassign: (task: BoardTask) => void
   today: string
+  /** The signed-in camper, who may move tasks assigned to them. */
+  viewerId?: string
 }
 
 /**
@@ -29,6 +31,7 @@ export function BoardCompactRow({
   onAddTask,
   onReassign,
   today,
+  viewerId,
 }: BoardCompactRowProps) {
   const panelId = `board-committee-${column.id}`
   const summary = summarizeColumn(column, today)
@@ -112,6 +115,7 @@ export function BoardCompactRow({
                 task={task}
                 canEdit={column.canAddTask}
                 today={today}
+                viewerId={viewerId}
                 onReassign={onReassign}
               />
             ))}

@@ -39,7 +39,7 @@ export function NoteTakerListPage() {
       {sessions.isError ? (
         <ErrorState
           title="Could not load meetings"
-          description="Check that the backend is running."
+          description="Something went wrong on our end. Try again in a moment."
           onRetry={() => void sessions.refetch()}
         />
       ) : null}

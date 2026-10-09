@@ -152,6 +152,7 @@ export function L2BoardPage() {
                     setAssigning({ task, committeeName: column.name })
                   }
                   today={today}
+                  viewerId={profile.id}
                 />
               ))}
             </ul>
@@ -167,6 +168,7 @@ export function L2BoardPage() {
                   setAssigning({ task, committeeName: column.name })
                 }
                 today={today}
+                viewerId={profile.id}
               />
             ))}
           </div>

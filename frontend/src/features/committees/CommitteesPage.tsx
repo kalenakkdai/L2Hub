@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useCommittees } from './useCommittees'
 import { SAMPLE_COMMITTEE_CAMPER_TOTAL } from './fixtures/sampleCommittees'
+import { SampleDataNotice } from '../../components/ui/SampleDataNotice'
 
 export function CommitteesPage() {
   // Kept as one object so `shell` narrows `profile` to non-null below.
@@ -32,6 +33,10 @@ export function CommitteesPage() {
       permissions={profile.permissions}
       header={header}
     >
+      <SampleDataNotice>
+        Committee heads and rosters here are placeholders. The L2 Board shows
+        each committee&rsquo;s real tasks.
+      </SampleDataNotice>
       <p className="mb-5 max-w-[70ch] text-sm text-ink-subtle">
         Twelve committees run the L2 Campsite. Everyone can see all of them; you can only
         be assigned tasks inside the committees you belong to.

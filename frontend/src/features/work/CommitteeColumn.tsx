@@ -9,6 +9,8 @@ type CommitteeColumnProps = {
   onAddTask: () => void
   onReassign: (task: BoardTask) => void
   today: string
+  /** The signed-in camper, who may move tasks assigned to them. */
+  viewerId?: string
 }
 
 /** One committee as a column in the side-by-side layout. */
@@ -17,6 +19,7 @@ export function CommitteeColumn({
   onAddTask,
   onReassign,
   today,
+  viewerId,
 }: CommitteeColumnProps) {
   return (
     <section className="flex w-[286px] shrink-0 flex-col rounded-card border border-border-subtle bg-surface">
@@ -43,6 +46,7 @@ export function CommitteeColumn({
               task={task}
               canEdit={column.canAddTask}
               today={today}
+              viewerId={viewerId}
               onReassign={onReassign}
             />
           ))}

@@ -25,7 +25,6 @@ const ALIASES: Record<string, string[]> = {
   '/class-officers': ['fundraiser', 'homecoming', 'advisors'],
   '/attendance': ['check in', 'scanner', 'barcode', 'passkey', 'id'],
   '/whereabouts': ['map', 'errand', 'checkout', 'ping'],
-  '/tools': ['utilities'],
   '/note-taker': ['notes', 'otter', 'transcript', 'meeting', 'record', 'mic'],
   '/settings': ['profile', 'account', 'preferences'],
   '/settings/campsite': ['modules', 'admin settings'],

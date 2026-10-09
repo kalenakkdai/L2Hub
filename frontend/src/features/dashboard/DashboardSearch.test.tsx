@@ -37,14 +37,15 @@ describe('DashboardSearch', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/note-taker')
   })
 
-  it('does not navigate to Soon destinations', async () => {
+  it('finds My tasks', async () => {
     const user = userEvent.setup()
-    renderSearch()
+    renderSearch(['tasks.view_all'])
 
     const input = screen.getByRole('combobox', { name: 'Search pages' })
     await user.click(input)
     await user.type(input, 'my tasks')
-    expect(screen.getByRole('option', { name: /My tasks/i })).toBeDisabled()
-    expect(screen.getByTestId('location')).toHaveTextContent('/dashboard')
+    await user.click(screen.getByRole('option', { name: /My tasks/i }))
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/tasks')
   })
 })

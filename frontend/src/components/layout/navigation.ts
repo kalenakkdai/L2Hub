@@ -10,7 +10,6 @@ import {
   MapPinned,
   ScanLine,
   Send,
-  Settings2,
   SlidersHorizontal,
   Sparkles,
   SquareKanban,
@@ -47,45 +46,54 @@ export type NavSection = {
  * Navigation is data, not markup, so the sidebar and the mobile drawer render
  * exactly the same destinations from one source.
  *
- * Badge counts are placeholders until the endpoints that would supply them
- * exist; they are presentational and carry no authorization meaning.
+ * Grouped by what a camper is trying to do: their own work first, then the
+ * class's shared work, then events from plan to debrief, then the staff-only
+ * surfaces. Counts only appear where a real number exists — the Inbox badge is
+ * supplied live by the sidebar.
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
     items: [
       { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+      { label: 'Inbox', to: '/inbox', icon: Inbox },
       {
-        label: 'Grades',
-        to: '/grades',
-        module: 'grades',
-        icon: BookOpenCheck,
-        badge: { kind: 'count', value: 2, tone: 'accent' },
+        label: 'My tasks',
+        to: '/tasks',
+        icon: ClipboardList,
+        permission: 'tasks.view_all',
       },
-      {
-        label: 'Campers',
-        to: '/admin/users',
-        icon: Users,
-        permission: 'users.view',
-      },
+      { label: 'Grades', to: '/grades', module: 'grades', icon: BookOpenCheck },
     ],
   },
   {
     title: 'Work',
     items: [
+      // Both are readable by the whole class — tasks.view_all and
+      // requests.view_all are in the Member baseline. The keys stay on the
+      // items so the rows follow the grants if that ever changes.
       {
-        label: 'My tasks',
-        to: '/tasks',
-        icon: ClipboardList,
-        badge: { kind: 'count', value: 3, tone: 'accent' },
+        label: 'L2 Board',
+        to: '/board',
+        icon: SquareKanban,
+        permission: 'tasks.view_all',
       },
-      { label: 'Inbox', to: '/inbox', icon: Inbox },
+      {
+        label: 'Requests',
+        to: '/requests',
+        icon: Send,
+        permission: 'requests.view_all',
+      },
       {
         label: 'Committees',
         to: '/committees',
         module: 'committees',
         icon: UsersRound,
-        badge: { kind: 'count', value: 12, tone: 'muted' },
       },
+    ],
+  },
+  {
+    title: 'Events',
+    items: [
       { label: 'Events', to: '/events', module: 'events', icon: CalendarDays },
       { label: 'Event planning', to: '/event-planning', icon: ClipboardCheck },
       {
@@ -93,7 +101,12 @@ export const NAV_SECTIONS: NavSection[] = [
         to: '/debriefs',
         module: 'debriefs',
         icon: MessagesSquare,
-        badge: { kind: 'live' },
+      },
+      {
+        label: 'Note Taker',
+        to: '/note-taker',
+        icon: Mic,
+        permission: 'note_taker.view',
       },
     ],
   },
@@ -118,24 +131,11 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: MapPinned,
         permission: 'attendance.view_committee',
       },
-      // The board and the request log replaced the Tools and Resources
-      // placeholders. Tools came back as its own section below, with a real
-      // page behind it; Resources never had one.
-      //
-      // Both are readable by the whole class — tasks.view_all and
-      // requests.view_all are in the Member baseline. The keys stay on the
-      // items so the rows follow the grants if that ever changes.
       {
-        label: 'L2 Board',
-        to: '/board',
-        icon: SquareKanban,
-        permission: 'tasks.view_all',
-      },
-      {
-        label: 'Requests',
-        to: '/requests',
-        icon: Send,
-        permission: 'requests.view_all',
+        label: 'Campers',
+        to: '/admin/users',
+        icon: Users,
+        permission: 'users.view',
       },
       // Hidden from campers entirely. Advisers see it and get a read-only
       // page; only settings.edit holders can change anything.
@@ -148,18 +148,6 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Tools',
-    items: [
-      { label: 'All tools', to: '/tools', icon: Settings2 },
-      {
-        label: 'Note Taker',
-        to: '/note-taker',
-        icon: Mic,
-        permission: 'note_taker.view',
-      },
-    ],
-  },
-  {
     title: 'You',
     items: [{ label: 'My settings', to: '/settings', icon: UserCog }],
   },
@@ -168,6 +156,7 @@ export const NAV_SECTIONS: NavSection[] = [
 /** Routes that exist today. Anything else renders as "coming soon". */
 export const IMPLEMENTED_ROUTES = new Set([
   '/dashboard',
+  '/tasks',
   '/board',
   '/requests',
   '/inbox',

@@ -6,6 +6,7 @@ import { useSignOutOnExpiry } from '../../../auth/useSignOutOnExpiry'
 import { AppShell } from '../../../components/layout/AppShell'
 import { FullPageMessage } from '../../../components/FullPageMessage'
 import { ErrorState } from '../../../components/ui/ErrorState'
+import { SampleDataNotice } from '../../../components/ui/SampleDataNotice'
 
 /**
  * Grades route chrome: reuses the shared dashboard AppShell so navigation,
@@ -64,6 +65,10 @@ export function GradesLayout() {
       permissions={me.permissions}
       contentClassName="lg:py-6"
     >
+      <SampleDataNotice>
+        These grades are placeholders, not your real scores, until the
+        gradebook is connected.
+      </SampleDataNotice>
       <Outlet />
     </AppShell>
   )

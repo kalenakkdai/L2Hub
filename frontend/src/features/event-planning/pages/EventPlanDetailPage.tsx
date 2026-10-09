@@ -17,6 +17,7 @@ import {
   usePlanningReports,
 } from '../hooks/useEventPlanning'
 import type { PlanAssignment, PlanningReport } from '../types'
+import { SampleDataNotice } from '../../../components/ui/SampleDataNotice'
 
 export function EventPlanDetailPage() {
   const { planId = '' } = useParams()
@@ -33,7 +34,7 @@ export function EventPlanDetailPage() {
   if (meQuery.isError || !meQuery.data) {
     return (
       <FullPageMessage>
-        <ErrorState title="Could not load profile" description="Sign in again." />
+        <ErrorState title="Could not load profile" description="Refresh the page. If it keeps happening, sign out and back in." />
       </FullPageMessage>
     )
   }
@@ -90,6 +91,10 @@ export function EventPlanDetailPage() {
         </div>
         <PlanStatusBadge status={plan.status} />
       </header>
+
+      <SampleDataNotice>
+        This plan is a placeholder; changes reset when the page reloads.
+      </SampleDataNotice>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {plan.status === 'draft' && plan.createdById === currentUserId ? (

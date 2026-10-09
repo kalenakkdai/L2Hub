@@ -38,12 +38,14 @@ import {
 } from './features/note-taker'
 import { InboxPage } from './features/work/InboxPage'
 import { L2BoardPage } from './features/work/L2BoardPage'
+import { MyTasksPage } from './features/work/MyTasksPage'
 import { RequestsPage } from './features/work/RequestsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommitteeDetailPage } from './features/committees/CommitteeDetailPage'
 import { CommitteesPage } from './features/committees/CommitteesPage'
 import { DevHealthPage } from './pages/DevHealthPage'
 import { LoginPage } from './pages/LoginPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { ToolsPage } from './pages/ToolsPage'
 import { MySettings } from './pages/settings/MySettings'
@@ -100,6 +102,14 @@ export function AppRoutes() {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/tasks"
+        element={
+          <RequireAuth>
+            <MyTasksPage />
           </RequireAuth>
         }
       />
@@ -325,6 +335,14 @@ export function AppRoutes() {
       </Route>
       {/* Unauthenticated on purpose — diagnostics must work when auth does not. */}
       <Route path="/dev/health" element={<DevHealthPage />} />
+      <Route
+        path="*"
+        element={
+          <RequireAuth>
+            <NotFoundPage />
+          </RequireAuth>
+        }
+      />
     </Routes>
   )
 }

@@ -358,7 +358,7 @@ export function EventCampfireBoard({ permissions }: EventCampfireBoardProps) {
       ) : null}
       {eventsQuery.isError ? (
         <p className="px-4 py-6 text-sm text-navy-ink-muted">
-          Could not load events. Check that the backend is running.
+          Could not load events. Try again in a moment.
         </p>
       ) : null}
 

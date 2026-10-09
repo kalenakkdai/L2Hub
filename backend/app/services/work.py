@@ -347,13 +347,21 @@ def update_task(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Task not found."
         )
 
-    _require_committee_scope(
-        db,
-        profile,
-        task.committee_id,
-        pk.TASKS_MANAGE_COMMITTEE,
-        org_wide=pk.TASKS_MANAGE_ALL,
+    # Whoever has a task can move it along; handing it to someone else still
+    # takes the committee's manage key.
+    own_status_only = (
+        task.assignee_user_id == profile.id
+        and assignee_user_id is None
+        and not clear_assignee
     )
+    if not own_status_only:
+        _require_committee_scope(
+            db,
+            profile,
+            task.committee_id,
+            pk.TASKS_MANAGE_COMMITTEE,
+            org_wide=pk.TASKS_MANAGE_ALL,
+        )
 
     if status is not None:
         if status not in TASK_STATUSES:

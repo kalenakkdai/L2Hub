@@ -15,6 +15,8 @@ vi.mock('../../lib/supabase', async () => {
 const { supabase } = await import('../../lib/supabase')
 const { L2BoardPage } = await import('./L2BoardPage')
 const { RequestsPage } = await import('./RequestsPage')
+const { MyTasksPage } = await import('./MyTasksPage')
+const { InboxPage } = await import('./InboxPage')
 const { Sidebar } = await import('../../components/layout/Sidebar')
 
 const mock = supabase as unknown as SupabaseMock
@@ -301,7 +303,7 @@ describe('Requests log', () => {
 
     renderWithProviders(<RequestsPage />)
 
-    expect(await screen.findByText('Leadership · 1 open')).toBeInTheDocument()
+    expect(await screen.findByText('1 open')).toBeInTheDocument()
   })
 
   it('filters down to one status', async () => {
@@ -320,6 +322,187 @@ describe('Requests log', () => {
   })
 })
 
+const ME = '11111111-1111-4111-8111-111111111111'
+
+function myTask(overrides: Record<string, unknown>) {
+  return {
+    committeeId: FUNDRAISING,
+    details: '',
+    status: 'todo',
+    assignee: { id: ME, name: 'Ada Lovelace' },
+    dueOn: null,
+    createdAt: '2026-08-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+const MY_BOARD = {
+  committees: [
+    {
+      ...BOARD.committees[0],
+      // Not a manager here: the status menu must come from being the assignee.
+      canAddTask: false,
+      tasks: [
+        myTask({ id: 'm1', title: 'Book the gym', dueOn: stamp(-2) }),
+        myTask({ id: 'm2', title: 'Print the flyers', status: 'doing', dueOn: stamp(3) }),
+        myTask({ id: 'm3', title: 'Order the cups', status: 'done' }),
+        myTask({
+          id: 'm4',
+          title: 'Someone else’s job',
+          assignee: { id: 'u1', name: 'Avery Chen' },
+        }),
+      ],
+    },
+    BOARD.committees[1],
+  ],
+}
+
+describe('My tasks', () => {
+  beforeEach(() => {
+    mock.__setSession(makeSession())
+    vi.restoreAllMocks()
+  })
+
+  it('shows only what is assigned to me, grouped by what needs doing', async () => {
+    mockApi({ '/board': MY_BOARD })
+
+    renderWithProviders(<MyTasksPage />)
+
+    const overdue = await screen.findByRole('region', { name: 'Overdue' })
+    expect(within(overdue).getByText('Book the gym')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('region', { name: 'In progress' })).getByText(
+        'Print the flyers',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Someone else’s job')).not.toBeInTheDocument()
+    // Finished work is folded away until asked for.
+    expect(screen.queryByText('Order the cups')).not.toBeInTheDocument()
+    expect(screen.getByText('2 open · 1 overdue')).toBeInTheDocument()
+  })
+
+  it('lets the assignee move their own task without manage rights', async () => {
+    const { posted } = mockApi({ '/board': MY_BOARD })
+    const user = userEvent.setup()
+
+    renderWithProviders(<MyTasksPage />)
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Status of Book the gym' }),
+      'done',
+    )
+
+    await waitFor(() =>
+      expect(posted).toContainEqual({
+        url: expect.stringContaining('/board/tasks/m1'),
+        body: { status: 'done' },
+      }),
+    )
+  })
+
+  it('says so when nothing is assigned', async () => {
+    mockApi({ '/board': BOARD })
+
+    renderWithProviders(<MyTasksPage />)
+
+    expect(await screen.findByText('Nothing assigned to you')).toBeInTheDocument()
+  })
+})
+
+describe('answering requests on the Requests page', () => {
+  beforeEach(() => {
+    mock.__setSession(makeSession())
+    vi.restoreAllMocks()
+  })
+
+  const MINE = {
+    inbound: [REQUESTS.requests[0]],
+    outbound: [],
+    committees: [{ id: PUBLICITY, name: 'Publicity' }],
+  }
+
+  it('offers Accept and Decline only on requests sent to my committee', async () => {
+    mockApi({ '/requests': REQUESTS, '/requests/mine': MINE })
+
+    renderWithProviders(<RequestsPage />)
+
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Accept' })).toHaveLength(1)
+    expect(screen.getByText('1 waiting on your committee')).toBeInTheDocument()
+  })
+
+  it('sends the answer', async () => {
+    const { posted } = mockApi({ '/requests': REQUESTS, '/requests/mine': MINE })
+    const user = userEvent.setup()
+
+    renderWithProviders(<RequestsPage />)
+    await user.click(await screen.findByRole('button', { name: 'Accept' }))
+
+    await waitFor(() =>
+      expect(posted).toContainEqual({
+        url: expect.stringContaining('/requests/r1/respond'),
+        body: { status: 'accepted' },
+      }),
+    )
+  })
+
+  it('shows no answer controls to someone outside both committees', async () => {
+    mockApi({ '/requests': REQUESTS })
+
+    renderWithProviders(<RequestsPage />)
+    await screen.findByText('Instagram post for the winter fundraiser')
+
+    expect(screen.queryByRole('button', { name: 'Accept' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ask a committee/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('the inbox', () => {
+  beforeEach(() => {
+    mock.__setSession(makeSession())
+    vi.restoreAllMocks()
+  })
+
+  it('links each notification to the thing it is about', async () => {
+    mockApi(
+      {
+        '/notifications': {
+          unread: 2,
+          notifications: [
+            {
+              id: 'n1',
+              type: 'task.assigned',
+              title: 'New task: Book the gym',
+              body: 'This was just assigned to you.',
+              payload: { taskId: 'm1' },
+              readAt: null,
+              createdAt: '2026-08-01T00:00:00Z',
+            },
+            {
+              id: 'n2',
+              type: 'request.received',
+              title: 'Publicity needs something',
+              body: 'Poster copy',
+              payload: { requestId: 'r1' },
+              readAt: null,
+              createdAt: '2026-08-01T00:00:00Z',
+            },
+          ],
+        },
+      },
+      ['notifications.view_own'],
+    )
+
+    renderWithProviders(<InboxPage />)
+
+    expect(
+      await screen.findByRole('link', { name: 'New task: Book the gym' }),
+    ).toHaveAttribute('href', '/tasks')
+    expect(
+      screen.getByRole('link', { name: 'Publicity needs something' }),
+    ).toHaveAttribute('href', '/requests')
+  })
+})
+
 describe('board and request navigation', () => {
   beforeEach(() => {
     mock.__setSession(makeSession())
@@ -334,9 +517,9 @@ describe('board and request navigation', () => {
     )
 
     expect(screen.queryByText('Resources')).not.toBeInTheDocument()
-    // Tools is not gone: it moved to its own section with a real page behind
-    // it, so only the Leadership placeholder was reclaimed.
-    expect(screen.getByText('All tools')).toBeInTheDocument()
+    // Tools held one tool, which already had its own row; the row for the
+    // section page went with it.
+    expect(screen.queryByText('All tools')).not.toBeInTheDocument()
   })
 
   it('still filters on the key, for a caller who somehow lacks it', () => {
