@@ -34,6 +34,20 @@ def _resolve_committee(db: DbSession, committee_ref: str) -> Committee:
     return committee
 
 
+@router.get("")
+def list_committees(profile: CurrentProfile, db: DbSession) -> dict:
+    """The committees directory. Every member can read it."""
+    return committee_service.directory_payload(db, profile)
+
+
+@router.get("/{committee_ref}")
+def read_committee(committee_ref: str, profile: CurrentProfile, db: DbSession) -> dict:
+    """One committee: roster, tasks, and the events it manages."""
+    committee_service.prepare_directory(db)
+    committee = _resolve_committee(db, committee_ref)
+    return committee_service.directory_detail(db, profile, committee)
+
+
 @router.get("/{committee_ref}/tasks")
 def read_committee_tasks(
     committee_ref: str, profile: CurrentProfile, db: DbSession

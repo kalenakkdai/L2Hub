@@ -72,14 +72,18 @@ export function CommitteeDetailPage() {
           </h1>
           {data && (
             <p className="mt-1.5 text-[13.5px] text-ink-subtle">
-              {data.camperCount} campers ·{' '}
-              {data.head ? `Committee head ${data.head}` : 'No committee head yet'} ·{' '}
-              {data.email}
+              {[
+                `${data.camperCount} campers`,
+                data.head ? `Committee head ${data.head}` : 'No committee head yet',
+                data.email,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           )}
         </div>
 
-        {data && (
+        {data?.email && (
           <ButtonLink to={`mailto:${data.email}`} size="sm">
             Message committee
             <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />

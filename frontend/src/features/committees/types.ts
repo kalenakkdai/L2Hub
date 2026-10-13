@@ -1,17 +1,21 @@
 /**
- * Shapes the committees screens are built against.
+ * Shapes returned by `GET /committees` and `GET /committees/{ref}`.
  *
- * The backend has `/committees/{ref}/tasks` but no list endpoint yet, so both
- * screens read from a fixture for now. When the endpoints land, only
- * useCommittees.ts changes.
+ * `id` is the committee slug, so links stay `/committees/activities`.
  */
+
+export type CommitteeDirectory = {
+  camperTotal: number
+  committees: CommitteeSummary[]
+}
 
 export type CommitteeSummary = {
   id: string
   name: string
-  /** Null when nobody leads it yet. */
+  /** Null when nobody leads it yet. Several heads are joined with a comma. */
   head: string | null
-  email: string
+  /** Null for a committee that has no published contact address. */
+  email: string | null
   camperCount: number
   /** Whether the signed-in camper belongs to this committee. */
   isMine: boolean

@@ -1,19 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { SAMPLE_COMMITTEES, sampleCommitteeDetail } from './fixtures/sampleCommittees'
-import type { CommitteeDetail, CommitteeSummary } from './types'
-
-/**
- * TEMPORARY: both hooks resolve fixtures. These are the seams that become
- * real requests once the endpoints exist:
- *
- *   apiFetch<CommitteeSummary[]>('/committees')
- *   apiFetch<CommitteeDetail>(`/committees/${id}`)
- */
+import { ApiError, apiFetch } from '../../api/client'
+import type { CommitteeDetail, CommitteeDirectory } from './types'
 
 export function useCommittees() {
-  return useQuery<CommitteeSummary[]>({
+  return useQuery<CommitteeDirectory>({
     queryKey: ['committees'],
-    queryFn: async () => SAMPLE_COMMITTEES,
+    queryFn: () => apiFetch<CommitteeDirectory>('/committees'),
     staleTime: 60_000,
   })
 }
@@ -21,7 +13,15 @@ export function useCommittees() {
 export function useCommittee(id: string | undefined) {
   return useQuery<CommitteeDetail | null>({
     queryKey: ['committees', id],
-    queryFn: async () => (id ? sampleCommitteeDetail(id) : null),
+    queryFn: async () => {
+      try {
+        return await apiFetch<CommitteeDetail>(`/committees/${id}`)
+      } catch (error) {
+        // A missing slug is an empty page with an explanation, not a crash.
+        if (error instanceof ApiError && error.status === 404) return null
+        throw error
+      }
+    },
     enabled: Boolean(id),
     staleTime: 60_000,
   })
