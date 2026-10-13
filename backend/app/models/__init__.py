@@ -11,6 +11,7 @@ from app.models.attendance import (
     WhereaboutsPing,
 )
 from app.models.campsite import CampsiteSettings
+from app.models.class_officers import ClassOfficerWorkspace
 from app.models.event_summary import (
     DebriefParticipant,
     Event,
@@ -53,6 +54,7 @@ __all__ = [
     "AttendanceRecord",
     "AuditLog",
     "CampsiteSettings",
+    "ClassOfficerWorkspace",
     "Committee",
     "CommitteeMembership",
     "CommitteeRequest",

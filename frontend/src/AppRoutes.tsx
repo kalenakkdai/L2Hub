@@ -30,8 +30,8 @@ import {
   ClassOfficersOverviewPage,
   FundraiserPage,
   HomecomingPage,
-  MockClassOfficersDataProvider,
 } from './features/class-officers'
+import { FastApiClassOfficersDataProvider } from './features/class-officers/api/fastapiClassOfficersAdapter'
 import {
   NoteTakerLayout,
   NoteTakerListPage,
@@ -85,7 +85,7 @@ const eventPlanningAuthProvider = new MockEventPlanningAuthProvider([
   'knowledge.view',
 ])
 
-const classOfficersDataProvider = new MockClassOfficersDataProvider()
+const classOfficersDataProvider = new FastApiClassOfficersDataProvider()
 
 /**
  * The route table, separated from App so tests can mount it inside a

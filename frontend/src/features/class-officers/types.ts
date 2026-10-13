@@ -1,6 +1,6 @@
 /**
  * Class Officers platform domain types.
- * Fundraiser + Homecoming live in a mock adapter for MVP; permissions are real.
+ * Fundraiser + Homecoming are stored per cohort by the API. Permissions are real.
  */
 
 export type ClassCohort = 'senior' | 'junior'

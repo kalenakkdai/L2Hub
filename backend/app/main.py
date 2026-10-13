@@ -5,6 +5,7 @@ from app.api.routes_attendance import router as attendance_router
 from app.api.routes_auth import router as auth_router
 from app.api.routes_calendar import router as calendar_router
 from app.api.routes_campsite import router as campsite_router
+from app.api.routes_class_officers import router as class_officers_router
 from app.api.routes_committees import router as committees_router
 from app.api.routes_dashboard import router as dashboard_router
 from app.api.routes_events import router as events_router
@@ -37,6 +38,7 @@ app.include_router(dashboard_router)
 app.include_router(attendance_router)
 app.include_router(campsite_router)
 app.include_router(calendar_router)
+app.include_router(class_officers_router)
 app.include_router(grades_router)
 app.include_router(feedback_router)
 app.include_router(committees_router)
