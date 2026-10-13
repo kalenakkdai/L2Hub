@@ -8,6 +8,7 @@ from app.api.routes_campsite import router as campsite_router
 from app.api.routes_class_officers import router as class_officers_router
 from app.api.routes_committees import router as committees_router
 from app.api.routes_dashboard import router as dashboard_router
+from app.api.routes_event_planning import router as event_planning_router
 from app.api.routes_events import router as events_router
 from app.api.routes_feedback import router as feedback_router
 from app.api.routes_grades import router as grades_router
@@ -43,6 +44,7 @@ app.include_router(grades_router)
 app.include_router(feedback_router)
 app.include_router(committees_router)
 app.include_router(users_router)
+app.include_router(event_planning_router)
 app.include_router(events_router)
 app.include_router(note_taker_router)
 app.include_router(owl_router)

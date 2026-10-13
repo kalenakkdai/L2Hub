@@ -19,8 +19,8 @@ import {
   EventPlanDetailPage,
   EventPlanningPage,
   EventPlanningProvider,
-  MockEventPlanningAuthProvider,
-  MockEventPlanningDataProvider,
+  FastApiEventPlanningAuthProvider,
+  FastApiEventPlanningDataProvider,
 } from './features/event-planning'
 import {
   ClassOfficersGate,
@@ -75,15 +75,8 @@ const gradebookDataProvider = new FastApiGradebookDataProvider()
 const gradebookCommandProvider = new FastApiGradebookCommandProvider()
 const gradebookAuthProvider = new FastApiGradebookAuthProvider()
 
-const eventPlanningDataProvider = new MockEventPlanningDataProvider()
-const eventPlanningAuthProvider = new MockEventPlanningAuthProvider([
-  'planning.view',
-  'planning.create',
-  'planning.assign',
-  'planning.enable',
-  'feedback.view_anonymous',
-  'knowledge.view',
-])
+const eventPlanningDataProvider = new FastApiEventPlanningDataProvider()
+const eventPlanningAuthProvider = new FastApiEventPlanningAuthProvider()
 
 const classOfficersDataProvider = new FastApiClassOfficersDataProvider()
 

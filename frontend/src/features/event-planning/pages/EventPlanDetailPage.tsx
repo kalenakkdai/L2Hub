@@ -55,6 +55,7 @@ export function EventPlanDetailPage() {
   const me = meQuery.data
   const plan = planQuery.data
   const currentUserId = userQuery.data?.id
+  const myCommitteeIds = new Set((me.committees ?? []).map((committee) => committee.id))
   const canEnable = hasPermission('planning.enable')
   const canAssign =
     hasPermission('planning.assign') &&
@@ -134,8 +135,11 @@ export function EventPlanDetailPage() {
                   ? assignment.committeeName
                   : assignment.memberName
               const isMine =
-                assignment.targetType === 'individual' &&
-                assignment.memberId === currentUserId
+                (assignment.targetType === 'individual' &&
+                  assignment.memberId === currentUserId) ||
+                (assignment.targetType === 'committee' &&
+                  assignment.committeeId != null &&
+                  myCommitteeIds.has(assignment.committeeId))
               return (
                 <li
                   key={assignment.id}

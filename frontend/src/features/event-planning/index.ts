@@ -5,6 +5,10 @@ export {
   createAcPlanningAuthProvider,
   createAsboPlanningAuthProvider,
 } from './api/mockPlanningAdapter'
+export {
+  FastApiEventPlanningAuthProvider,
+  FastApiEventPlanningDataProvider,
+} from './api/fastapiPlanningAdapter'
 export type {
   EventPlanningDataProvider,
   EventPlanningAuthProvider,

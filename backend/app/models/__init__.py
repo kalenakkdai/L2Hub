@@ -12,6 +12,7 @@ from app.models.attendance import (
 )
 from app.models.campsite import CampsiteSettings
 from app.models.class_officers import ClassOfficerWorkspace
+from app.models.event_planning import EventPlan, EventPlanAssignment, EventPlanReport
 from app.models.event_summary import (
     DebriefParticipant,
     Event,
@@ -61,6 +62,9 @@ __all__ = [
     "DebriefParticipant",
     "Event",
     "EventAgenda",
+    "EventPlan",
+    "EventPlanAssignment",
+    "EventPlanReport",
     "EventSummary",
     "EventSummaryRequest",
     "GradeAssignment",
